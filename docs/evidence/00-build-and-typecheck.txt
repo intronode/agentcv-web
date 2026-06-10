@@ -1,0 +1,46 @@
+=== npx tsc --noEmit (2026-06-11 00:36:54) ===
+exit code: 0 — zero errors
+
+=== npm run build ===
+
+> agentcv@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.12
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 939ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/5) ...
+   Generating static pages (1/5) 
+   Generating static pages (2/5) 
+   Generating static pages (3/5) 
+ ✓ Generating static pages (5/5)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ƒ /                                      162 B         106 kB
+├ ○ /_not-found                            132 B         102 kB
+├ ƒ /agents                              1.03 kB         107 kB
+├ ƒ /agents/[slug]                        1.9 kB         107 kB
+├ ƒ /api/agents                            132 B         102 kB
+├ ƒ /api/contact                           132 B         102 kB
+├ ƒ /api/proof                             132 B         102 kB
+├ ƒ /owners/[handle]                     1.18 kB         107 kB
+├ ○ /register                            1.94 kB         104 kB
+├ ƒ /teams                                 168 B         106 kB
+├ ƒ /teams/[slug]                         1.9 kB         107 kB
+└ ○ /trust                                 168 B         106 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/255-ebd51be49873d76c.js         46 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          1.92 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+build exit code: 0

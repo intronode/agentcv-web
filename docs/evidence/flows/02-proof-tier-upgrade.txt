@@ -1,0 +1,18 @@
+=== FLOW 2: Proof entries upgrade computed tier (POST /api/proof x3) ===
+--- entry 1 (with evidence URL):
+{"id":28,"tier":"self_reported"}
+--- http_status: 201
+--- entry 2 (with evidence URL):
+{"id":29,"tier":"self_reported"}
+--- http_status: 201
+--- entry 3 (with evidence URL):
+{"id":30,"tier":"evidence_linked"}
+--- http_status: 201
+--- expected: tier self_reported after entries 1-2, evidence_linked after entry 3 (threshold=3)
+--- DB rows:
+id|subject_type|subject_id|type|title|evidence_url|provenance
+28|agent|13|task|Evidence-run task 1|https://example.com/atlas/run-1|evidence_linked
+29|agent|13|task|Evidence-run task 2|https://example.com/atlas/run-2|evidence_linked
+30|agent|13|task|Evidence-run task 3|https://example.com/atlas/run-3|evidence_linked
+--- profile now renders Evidence-Linked badge:
+   4 Evidence-Linked

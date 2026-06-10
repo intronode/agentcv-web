@@ -1,0 +1,13 @@
+=== FLOW 5: API read round-trip (GET /api/agents?tier=evidence_linked) ===
+[
+ {
+  "slug": "atlas-qa",
+  "tier": "evidence_linked",
+  "proofCount": 3
+ },
+ {
+  "slug": "haven-support",
+  "tier": "evidence_linked",
+  "proofCount": 3
+ }
+]

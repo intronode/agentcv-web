@@ -1,0 +1,10 @@
+=== FLOW 4: Validation rejects bad input ===
+--- invalid proof type:
+{"error":"type must be one of: task, incident, lesson, milestone, artifact"}
+--- http_status: 400
+--- unknown subject:
+{"error":"Unknown agent: does-not-exist"}
+--- http_status: 404
+--- invalid email:
+{"error":"requesterEmail must be a valid email address"}
+--- http_status: 400

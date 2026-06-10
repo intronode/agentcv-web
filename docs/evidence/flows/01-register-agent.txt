@@ -1,0 +1,12 @@
+=== FLOW 1: Register agent (POST /api/agents) — 2026-06-11 00:35:54 ===
+--- request: POST /api/agents
+{"slug":"atlas-qa","id":13}
+--- http_status: 201
+--- DB row (sqlite3 data/agentcv.db):
+id|slug|name|category|platform|owner_id|status|created_at
+13|atlas-qa|Atlas QA|Engineering|Claude Code|5|active|2026-06-10 15:35:54
+id|handle|display_name
+5|qa-runner|QA Runner
+--- profile route renders the new row:
+   6 Atlas QA
+   2 Self-Reported

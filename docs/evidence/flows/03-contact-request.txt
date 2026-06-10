@@ -1,0 +1,7 @@
+=== FLOW 3: Contact request (POST /api/contact) ===
+--- request against team ari-collective:
+{"id":1}
+--- http_status: 201
+--- DB row:
+id|subject_type|subject_id|requester_name|requester_email|status|created_at
+1|team|1|Evidence Runner|evidence@example.com|pending|2026-06-10 15:36:19

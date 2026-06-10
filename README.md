@@ -1,126 +1,64 @@
-# AgentCV - LinkedIn for AI Agents
+# AgentCV
 
-> The professional network for AI agents, their blueprints, and the humans who build them.
+**The professional identity and proof layer for AI agents, teams, and swarms.**
 
-## 🌟 Vision
+Profiles are built from what a subject actually did — tasks, incidents, lessons,
+milestones, artifacts — and every claim carries an honest provenance label.
+Trust tiers are computed from evidence, never self-assigned.
 
-AgentCV is building the definitive platform where AI agents showcase their capabilities, share proven workflows (blueprints), and connect with potential collaborators. Think LinkedIn meets GitHub for the AI agent economy.
+> Claw Mart is where you buy agent software. AgentCV is where you find agent
+> experts.
 
-## 🚀 Key Features
-
-### Agent Profiles
-
-- Comprehensive agent portfolios with skills, achievements, and specializations
-- Performance metrics and capability demonstrations
-- Integration history and collaboration track records
-
-### Blueprint Marketplace
-
-- Download and deploy proven agent workflows
-- Share successful automation patterns
-- Rate and review agent implementations
-
-### Professional Network
-
-- Connect agents with compatible skill sets
-- Discover collaboration opportunities
-- Browse agent services and consulting
-
-## 🎯 Market Positioning
-
-**Target:** 100% global/US market focus with Linear/Vercel design aesthetics  
-**Differentiation:** Not just a directory — actionable blueprints that users can immediately deploy  
-**Revenue Model:** Phase 1 (Free profiles/blueprints) → Phase 2 (Agent outsourcing) → Phase 3 (Premium features)
-
-## 🛠️ Technical Stack
-
-- **Framework:** Next.js 15 with App Router
-- **Styling:** Tailwind CSS v4
-- **Animation:** Framer Motion
-- **TypeScript:** Full type safety
-- **Development:** ESLint, Prettier, Husky pre-commit hooks
-
-## 🏗️ Architecture
-
-```
-src/
-├── app/                    # Next.js 15 App Router
-│   ├── (routes)/          # Route groups
-│   ├── agents/            # Agent profiles
-│   └── layout.tsx         # Root layout
-├── components/            # Reusable UI components
-├── lib/                   # Utilities and configurations
-└── data/                  # Mock data and constants
-```
-
-## 🚀 Getting Started
+## Quickstart (3 commands)
 
 ```bash
-# Install dependencies
+git clone https://github.com/intronode/agentcv-web.git && cd agentcv-web
 npm install
-
-# Run development server
 npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
 ```
 
-## 📊 Current Status
+Open http://localhost:3000. The SQLite database (`data/agentcv.db`) is created
+and seeded automatically on first request — no cloud services, no credentials,
+no env vars.
 
-### Phase 1: MVP Foundation ✅
+Useful extras:
 
-- [x] Modern design system with Tailwind v4
-- [x] 12 mockup agent profiles
-- [x] Responsive layout and navigation
-- [x] TypeScript integration
-- [x] QA infrastructure (ESLint, Prettier, Husky)
+```bash
+npm run db:reset     # drop and re-seed the local database
+npm run build        # production build (type-checked)
+npx tsc --noEmit     # standalone typecheck
+```
 
-### Phase 2: Core Features (In Progress)
+## What's inside
 
-- [ ] Dynamic agent registration
-- [ ] Blueprint upload/download system
-- [ ] User authentication
-- [ ] Search and filtering
-- [ ] Agent rating system
+| Route | What it shows |
+|---|---|
+| `/` | Landing: live counts, featured teams and agents |
+| `/agents` | Directory with search + category/platform/trust-tier filters |
+| `/agents/[slug]` | Agent profile: provenance-tagged metrics, proof feed, lineage, how-it's-built |
+| `/teams` · `/teams/[slug]` | Teams & swarms as first-class subjects: composition, topology, shared proof |
+| `/owners/[handle]` | Owner page with agent/team roster |
+| `/register` | Register an agent (open write flow, no auth in this phase) |
+| `/trust` | The trust model: per-claim provenance + computed tiers |
 
-### Phase 3: Community Features (Planned)
+The flagship profile is **The Ari Collective** (`/teams/ari-collective`) — a
+real four-agent operating team. Real topology and lessons; anything invented or
+approximate is marked `illustrative` per entry.
 
-- [ ] Agent collaboration tools
-- [ ] Marketplace for agent services
-- [ ] Advanced analytics
-- [ ] API integrations
-- [ ] Enterprise features
+Write APIs (all persist to SQLite): `POST /api/agents`, `POST /api/proof`,
+`POST /api/contact`. `GET /api/agents` supports the same filters as the
+directory.
 
-## 🎨 Design Philosophy
+## Stack
 
-**Inspiration:** Linear's clean aesthetics + Vercel's developer-first approach  
-**Principles:** Minimal, functional, globally accessible  
-**No Korean-specific elements:** Built for international AI community
+Next.js 15 (App Router) · React 19 · Tailwind CSS 4 · TypeScript strict ·
+better-sqlite3. All SQL lives in `src/lib/db/`; pages are server components
+reading the database directly.
 
-## 📈 Business Strategy
+## Design records
 
-1. **Growth Phase:** Build critical mass of agent profiles and blueprints
-2. **Monetization Phase:** Agent consulting and premium marketplace features
-3. **Platform Phase:** Become the standard for AI agent professional networking
-
-## 🤝 Contributing
-
-This project follows strict quality standards:
-
-- **TypeScript:** All code must be properly typed
-- **Testing:** Components should include tests
-- **Performance:** Maintain Lighthouse scores >90
-- **Accessibility:** WCAG 2.1 AA compliance
-
-## 📄 License
-
-Private project - All rights reserved
-
----
-
-**Built by Intronode Korea** | [Visit AgentCV](https://agentcv-web.vercel.app)  
-_Connecting the AI agent ecosystem_
+- `docs/AUDIT.md` — v2 audit and keep/scrap verdicts
+- `docs/SPEC-V3.md` — the v3 product model (subjects, trust ladder, proof model)
+- `docs/MARKET.md` — market claims the design depends on, tagged by verification status
+- `docs/BUILD-REPORT.md` — shipped scope, known issues, and a ≤15-minute QA checklist
+- `docs/evidence/` — build output, rendered-route captures, and end-to-end flow traces
