@@ -1,5 +1,12 @@
 import type Database from 'better-sqlite3';
-import type { LineageKind, MetricUnit, ProofType, Provenance, SubjectType, TeamKind } from './types';
+import type {
+  LineageKind,
+  MetricUnit,
+  ProofType,
+  Provenance,
+  SubjectType,
+  TeamKind,
+} from './types';
 
 /**
  * Seed policy (SPEC-V3 §8):
@@ -68,7 +75,7 @@ export function seed(db: Database.Database): void {
 
   // ---- owners ----
   const insOwner = db.prepare(
-    'INSERT INTO owners (handle, display_name, kind, bio, website_url) VALUES (?,?,?,?,?)',
+    'INSERT INTO owners (handle, display_name, kind, bio, website_url) VALUES (?,?,?,?,?)'
   );
   const owners: [string, string, 'individual' | 'org', string, string | null][] = [
     [
@@ -108,7 +115,7 @@ export function seed(db: Database.Database): void {
   const insAgent = db.prepare(
     `INSERT INTO agents (slug, name, avatar, tagline, about, category, platform, model, owner_id,
        lineage_kind, lineage_of, lineage_note, oversight, how_built, operational_since, featured, illustrative)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   );
   const agents: SeedAgent[] = [
     {
@@ -223,12 +230,14 @@ export function seed(db: Database.Database): void {
       slug: 'helios-extractor',
       name: 'Helios Extractor',
       avatar: '☀️',
-      tagline: 'Structured-data extraction blueprint — origin of the Helios swarm. (Fictional demo data.)',
+      tagline:
+        'Structured-data extraction blueprint — origin of the Helios swarm. (Fictional demo data.)',
       about: 'Blueprint-origin agent: regional instances are deployed from this configuration.',
       category: 'Data Extraction',
       platform: 'Custom',
       owner: 'helios-labs',
-      howBuilt: 'Queue-fed extraction pipeline; schema-validated outputs; per-domain adapters. (Fictional.)',
+      howBuilt:
+        'Queue-fed extraction pipeline; schema-validated outputs; per-domain adapters. (Fictional.)',
       illustrative: true,
     },
     {
@@ -271,7 +280,7 @@ export function seed(db: Database.Database): void {
   for (const a of agents) {
     const ownerId = ownerIds.get(a.owner);
     if (ownerId === undefined) throw new Error(`seed: unknown owner ${a.owner}`);
-    const lineageOf = a.lineageOf ? agentIds.get(a.lineageOf) ?? null : null;
+    const lineageOf = a.lineageOf ? (agentIds.get(a.lineageOf) ?? null) : null;
     const res = insAgent.run(
       a.slug,
       a.name,
@@ -289,7 +298,7 @@ export function seed(db: Database.Database): void {
       a.howBuilt ?? null,
       a.operationalSince ?? null,
       a.featured ? 1 : 0,
-      a.illustrative ? 1 : 0,
+      a.illustrative ? 1 : 0
     );
     agentIds.set(a.slug, Number(res.lastInsertRowid));
   }
@@ -298,7 +307,7 @@ export function seed(db: Database.Database): void {
   const insTeam = db.prepare(
     `INSERT INTO teams (slug, name, avatar, kind, tagline, about, topology, oversight, how_built,
        owner_id, operational_since, featured, illustrative)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
   );
   const teams: {
     slug: string;
@@ -320,7 +329,8 @@ export function seed(db: Database.Database): void {
       name: 'The Ari Collective',
       avatar: '🧩',
       kind: 'team',
-      tagline: 'Four-agent operating team: orchestration, engineering, operations, independent audit.',
+      tagline:
+        'Four-agent operating team: orchestration, engineering, operations, independent audit.',
       about:
         'A real, operating agent team. The topology, role boundaries, and lessons below are real; metrics and some dates are illustrative pending verification and are marked as such.',
       topology:
@@ -344,7 +354,8 @@ export function seed(db: Database.Database): void {
       name: 'Mira Support Desk',
       avatar: '🛟',
       kind: 'team',
-      tagline: 'Bilingual support pod: frontline resolution plus localization. (Fictional demo data.)',
+      tagline:
+        'Bilingual support pod: frontline resolution plus localization. (Fictional demo data.)',
       topology:
         'Frontline/specialist split: Haven Support resolves; TranslateFlow localizes inbound and outbound. (Fictional.)',
       owner: 'mira-systems',
@@ -360,7 +371,8 @@ export function seed(db: Database.Database): void {
       name: 'Helios Swarm',
       avatar: '🌅',
       kind: 'swarm',
-      tagline: 'Homogeneous extraction worker pool deployed from a single blueprint. (Fictional demo data.)',
+      tagline:
+        'Homogeneous extraction worker pool deployed from a single blueprint. (Fictional demo data.)',
       topology:
         'Coordinator-less pool. Workers are instances of the Helios Extractor blueprint, fed from a shared job queue with state in a job ledger. (Fictional.)',
       owner: 'helios-labs',
@@ -373,7 +385,7 @@ export function seed(db: Database.Database): void {
     },
   ];
   const insMember = db.prepare(
-    'INSERT INTO team_members (team_id, agent_id, role, role_detail, ordinal) VALUES (?,?,?,?,?)',
+    'INSERT INTO team_members (team_id, agent_id, role, role_detail, ordinal) VALUES (?,?,?,?,?)'
   );
   for (const t of teams) {
     const ownerId = ownerIds.get(t.owner);
@@ -391,7 +403,7 @@ export function seed(db: Database.Database): void {
       ownerId,
       null,
       t.featured ? 1 : 0,
-      t.illustrative ? 1 : 0,
+      t.illustrative ? 1 : 0
     );
     const teamId = Number(res.lastInsertRowid);
     teamIds.set(t.slug, teamId);
@@ -403,7 +415,7 @@ export function seed(db: Database.Database): void {
   // ---- proof entries ----
   const insProof = db.prepare(
     `INSERT INTO proof_entries (subject_type, subject_id, entry_date, type, title, body, evidence_url, provenance, illustrative)
-     VALUES (?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?)`
   );
   const proofs: SeedProof[] = [
     // -- The Ari Collective (real content; illustrative flag marks approximations) --
@@ -664,14 +676,14 @@ export function seed(db: Database.Database): void {
       p.body ?? null,
       p.evidenceUrl ?? null,
       p.provenance ?? 'self_reported',
-      p.illustrative ? 1 : 0,
+      p.illustrative ? 1 : 0
     );
   }
 
   // ---- metrics (all numeric values illustrative unless noted) ----
   const insMetric = db.prepare(
     `INSERT INTO metrics (subject_type, subject_id, key, label, value, unit, provenance, illustrative, as_of)
-     VALUES (?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?)`
   );
   const m = (
     subject: [SubjectType, string],
@@ -679,7 +691,7 @@ export function seed(db: Database.Database): void {
     label: string,
     value: number,
     unit: MetricUnit,
-    illustrative = true,
+    illustrative = true
   ): SeedMetric => ({ subject, key, label, value, unit, asOf: '2026-06-01', illustrative });
   const metrics: SeedMetric[] = [
     m(['team', 'ari-collective'], 'tasks_completed', 'Tasks completed', 412, 'count'),
@@ -716,7 +728,7 @@ export function seed(db: Database.Database): void {
       x.unit,
       'self_reported',
       x.illustrative ? 1 : 0,
-      x.asOf,
+      x.asOf
     );
   }
 
@@ -745,7 +757,7 @@ export function seed(db: Database.Database): void {
   // ---- attestations (fictional only — the flagship has none yet, honestly) ----
   const insAtt = db.prepare(
     `INSERT INTO attestations (subject_type, subject_id, author_name, author_url, relationship, statement, illustrative)
-     VALUES (?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?)`
   );
   insAtt.run(
     'team',
@@ -754,7 +766,7 @@ export function seed(db: Database.Database): void {
     'https://example.com/nordwind',
     'Customer, 6 months',
     'The desk handled our EU launch volume without adding headcount. Escalations were clean and rare. (Fictional demo attestation.)',
-    1,
+    1
   );
   insAtt.run(
     'agent',
@@ -763,6 +775,6 @@ export function seed(db: Database.Database): void {
     'https://example.com/forge',
     'Customer, 1 year',
     'Caught two production-grade bugs in our payment path that human review missed. (Fictional demo attestation.)',
-    1,
+    1
   );
 }

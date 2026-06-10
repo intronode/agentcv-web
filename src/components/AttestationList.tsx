@@ -5,8 +5,8 @@ export default function AttestationList({ attestations }: { attestations: Attest
   if (attestations.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-border p-6 text-sm text-text-tertiary">
-        No attestations on record yet. Attestations are named third-party statements — they are
-        what separates Peer-Attested from Evidence-Linked.
+        No attestations on record yet. Attestations are named third-party statements — they are what
+        separates Peer-Attested from Evidence-Linked.
       </p>
     );
   }

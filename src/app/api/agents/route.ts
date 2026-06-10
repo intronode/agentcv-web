@@ -19,7 +19,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     q: params.get('q') ?? undefined,
     category: params.get('category') ?? undefined,
     platform: params.get('platform') ?? undefined,
-    tier: tierParam && (TIERS as readonly string[]).includes(tierParam) ? (tierParam as TrustTier) : undefined,
+    tier:
+      tierParam && (TIERS as readonly string[]).includes(tierParam)
+        ? (tierParam as TrustTier)
+        : undefined,
   });
   return NextResponse.json({ agents });
 }

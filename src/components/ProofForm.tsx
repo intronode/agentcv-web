@@ -76,8 +76,8 @@ export default function ProofForm({ subjectType, subjectSlug }: ProofFormProps) 
           className="space-y-3 rounded-xl border border-border bg-surface-elevated p-4"
         >
           <p className="text-xs text-text-tertiary">
-            New entries are recorded as <span className="text-text-secondary">self-reported</span>{' '}
-            — or <span className="text-blue-300">evidence-linked</span> if you attach a public
+            New entries are recorded as <span className="text-text-secondary">self-reported</span> —
+            or <span className="text-blue-300">evidence-linked</span> if you attach a public
             evidence URL. Tiers are recomputed from the record.
           </p>
           <div className="flex gap-2">
@@ -97,7 +97,12 @@ export default function ProofForm({ subjectType, subjectSlug }: ProofFormProps) 
             />
           </div>
           <input name="title" required placeholder="What happened?" className={inputClasses} />
-          <textarea name="body" rows={3} placeholder="Details (optional)" className={inputClasses} />
+          <textarea
+            name="body"
+            rows={3}
+            placeholder="Details (optional)"
+            className={inputClasses}
+          />
           <input
             name="evidenceUrl"
             type="url"

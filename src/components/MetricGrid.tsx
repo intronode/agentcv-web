@@ -22,7 +22,9 @@ export default function MetricGrid({ metrics }: { metrics: MetricRow[] }) {
             <ProvenanceTag provenance={metric.provenance} />
             {metric.illustrative === 1 && <IllustrativeMark />}
           </div>
-          <div className="mt-1.5 text-[10px] text-text-tertiary">as of {formatDate(metric.as_of)}</div>
+          <div className="mt-1.5 text-[10px] text-text-tertiary">
+            as of {formatDate(metric.as_of)}
+          </div>
         </div>
       ))}
     </div>

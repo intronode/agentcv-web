@@ -35,7 +35,9 @@ export default async function OwnerProfilePage({ params }: PageProps) {
           </div>
           <p className="mt-1 text-sm text-text-tertiary">@{owner.handle}</p>
           {owner.bio && (
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-secondary">{owner.bio}</p>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-secondary">
+              {owner.bio}
+            </p>
           )}
           {owner.website_url && (
             <a
@@ -49,14 +51,19 @@ export default async function OwnerProfilePage({ params }: PageProps) {
           )}
         </div>
         <div className="w-full max-w-xs">
-          <ContactForm subjectType="owner" subjectSlug={owner.handle} subjectName={owner.display_name} />
+          <ContactForm
+            subjectType="owner"
+            subjectSlug={owner.handle}
+            subjectName={owner.display_name}
+          />
         </div>
       </header>
 
       {teams.length > 0 && (
         <section className="mt-12">
           <h2 className="text-xl font-semibold tracking-tight">
-            Teams & swarms <span className="text-sm font-normal text-text-tertiary">({teams.length})</span>
+            Teams & swarms{' '}
+            <span className="text-sm font-normal text-text-tertiary">({teams.length})</span>
           </h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {teams.map((team) => (

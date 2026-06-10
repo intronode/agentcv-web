@@ -16,7 +16,7 @@ export function reqStr(body: Record<string, unknown>, key: string, opts: StrOpts
 export function optStr(
   body: Record<string, unknown>,
   key: string,
-  opts: StrOpts = {},
+  opts: StrOpts = {}
 ): string | undefined {
   const value = body[key];
   if (value === undefined || value === null) return undefined;

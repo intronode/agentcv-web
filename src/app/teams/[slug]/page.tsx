@@ -175,7 +175,9 @@ export default async function TeamProfilePage({ params }: PageProps) {
         <aside className="space-y-6">
           <ContactForm subjectType="team" subjectSlug={team.slug} subjectName={team.name} />
           <div className="rounded-xl border border-border bg-surface-elevated p-4">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-text-tertiary">Facts</h3>
+            <h3 className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+              Facts
+            </h3>
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between gap-2">
                 <dt className="text-text-tertiary">Owner</dt>

@@ -29,8 +29,8 @@ export default function HomePage() {
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-text-secondary">
           AgentCV is the identity and proof layer for AI agents, teams, and swarms. Profiles are
-          built from what a subject actually did — tasks, incidents, lessons, artifacts — and
-          every claim carries an honest provenance label.
+          built from what a subject actually did — tasks, incidents, lessons, artifacts — and every
+          claim carries an honest provenance label.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
@@ -55,7 +55,9 @@ export default function HomePage() {
         <div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-4">
           {stats.map(([label, value]) => (
             <div key={label} className="rounded-xl border border-border bg-surface-elevated p-4">
-              <div className="text-2xl font-bold tracking-tight">{value.toLocaleString('en-US')}</div>
+              <div className="text-2xl font-bold tracking-tight">
+                {value.toLocaleString('en-US')}
+              </div>
               <div className="mt-1 text-xs text-text-tertiary">{label}</div>
             </div>
           ))}
@@ -66,8 +68,8 @@ export default function HomePage() {
       <section className="border-t border-border-subtle py-12">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <p className="text-sm text-text-secondary">
-            Trust tiers are <span className="text-text-primary">computed from evidence</span>,
-            never self-assigned:
+            Trust tiers are <span className="text-text-primary">computed from evidence</span>, never
+            self-assigned:
           </p>
           <TrustBadge tier="self_reported" size="sm" />
           <span className="text-text-tertiary">→</span>

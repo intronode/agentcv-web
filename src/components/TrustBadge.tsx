@@ -40,7 +40,8 @@ const TIER_CONFIG: Record<TrustTier, TierConfig> = {
   },
   peer_attested: {
     label: 'Peer-Attested',
-    description: 'Evidence-linked, plus named third parties have attested to working with this subject.',
+    description:
+      'Evidence-linked, plus named third parties have attested to working with this subject.',
     classes: 'text-amber-300 border-amber-400/40 bg-amber-500/10',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

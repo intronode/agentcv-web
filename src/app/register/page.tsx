@@ -45,8 +45,8 @@ export default function RegisterPage() {
     <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="text-3xl font-bold tracking-tight">Register an agent</h1>
       <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-        New profiles start at <span className="text-slate-300">Self-Reported</span> — every claim
-        is labeled as yours. Log proof entries with public evidence links and the computed tier
+        New profiles start at <span className="text-slate-300">Self-Reported</span> — every claim is
+        labeled as yours. Log proof entries with public evidence links and the computed tier
         upgrades itself. Nothing here is self-assignable.
       </p>
 
@@ -58,7 +58,14 @@ export default function RegisterPage() {
               <label htmlFor="name" className={labelClasses}>
                 Agent name *
               </label>
-              <input id="name" name="name" required maxLength={80} placeholder="e.g. Atlas" className={`mt-1.5 ${inputClasses}`} />
+              <input
+                id="name"
+                name="name"
+                required
+                maxLength={80}
+                placeholder="e.g. Atlas"
+                className={`mt-1.5 ${inputClasses}`}
+              />
             </div>
             <div>
               <label htmlFor="category" className={labelClasses}>
@@ -105,13 +112,24 @@ export default function RegisterPage() {
               <label htmlFor="model" className={labelClasses}>
                 Model
               </label>
-              <input id="model" name="model" maxLength={80} placeholder="optional" className={`mt-1.5 ${inputClasses}`} />
+              <input
+                id="model"
+                name="model"
+                maxLength={80}
+                placeholder="optional"
+                className={`mt-1.5 ${inputClasses}`}
+              />
             </div>
             <div>
               <label htmlFor="operationalSince" className={labelClasses}>
                 Operating since
               </label>
-              <input id="operationalSince" name="operationalSince" type="date" className={`mt-1.5 ${inputClasses}`} />
+              <input
+                id="operationalSince"
+                name="operationalSince"
+                type="date"
+                className={`mt-1.5 ${inputClasses}`}
+              />
             </div>
           </div>
           <div>
@@ -166,7 +184,13 @@ export default function RegisterPage() {
               <label htmlFor="ownerName" className={labelClasses}>
                 Display name *
               </label>
-              <input id="ownerName" name="ownerName" required maxLength={80} className={`mt-1.5 ${inputClasses}`} />
+              <input
+                id="ownerName"
+                name="ownerName"
+                required
+                maxLength={80}
+                className={`mt-1.5 ${inputClasses}`}
+              />
             </div>
             <div>
               <label htmlFor="ownerHandle" className={labelClasses}>

@@ -1,0 +1,18 @@
+=== Fresh-clone quickstart verification (2026-06-11 00:38:49) ===
+Procedure: clone this repo to /tmp/agentcv-fresh and run the README quickstart.
+
+$ git clone <repo> /tmp/agentcv-fresh && cd /tmp/agentcv-fresh
+$ npm install        # exit 0 ("husky: command not found" warning at this
+                     # point in history was benign by design — husky has
+                     # since been added to devDependencies, see BUILD-REPORT)
+$ PORT=3001 npm run dev
+
+--- first-request DB auto-seed, no env vars, no credentials:
+GET / -> 200
+GET /teams/ari-collective -> 200
+flagship 'Laplace' occurrences in rendered HTML: 2
+--- auto-created database:
+-rw-r--r--  data/agentcv.db      (created on first request)
+sqlite3> SELECT COUNT(*) FROM agents;  -> 12 agents seeded
+
+Result: clone → install → dev = running app with seeded data in 3 commands.

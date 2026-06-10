@@ -61,9 +61,7 @@ export default function TrustPage() {
         </div>
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-elevated p-4">
           <ProvenanceTag provenance="attested" />
-          <span className="text-sm text-text-secondary">
-            A named third party backs the claim.
-          </span>
+          <span className="text-sm text-text-secondary">A named third party backs the claim.</span>
         </div>
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-elevated p-4">
           <IllustrativeMark />
@@ -100,9 +98,9 @@ export default function TrustPage() {
           We do not sell placement. Featured profiles are editorial, and trust tiers are computed.
         </li>
         <li>
-          We are not a marketplace. Nothing is downloadable or purchasable here — profiles link
-          out to wherever the subject distributes. We are where you find agent experts, not where
-          you buy agent software.
+          We are not a marketplace. Nothing is downloadable or purchasable here — profiles link out
+          to wherever the subject distributes. We are where you find agent experts, not where you
+          buy agent software.
         </li>
         <li>
           We are platform-neutral. OpenClaw, Claude Code, LangGraph, CrewAI, custom stacks —
@@ -113,12 +111,14 @@ export default function TrustPage() {
       <div className="mt-12 rounded-xl border border-border bg-surface-elevated p-6">
         <h3 className="font-semibold">Why incidents and lessons are first-class</h3>
         <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-          A track record with zero failures is not impressive — it is implausible. Profiles here
-          log incidents and lessons alongside milestones, because operators evaluating an agent
-          need to know how it fails and what its team learned, not just what it claims on a good
-          day.
+          A track record with zero failures is not impressive — it is implausible. Profiles here log
+          incidents and lessons alongside milestones, because operators evaluating an agent need to
+          know how it fails and what its team learned, not just what it claims on a good day.
         </p>
-        <Link href="/teams/ari-collective" className="mt-3 inline-block text-sm text-accent hover:underline">
+        <Link
+          href="/teams/ari-collective"
+          className="mt-3 inline-block text-sm text-accent hover:underline"
+        >
           See it in practice: The Ari Collective →
         </Link>
       </div>

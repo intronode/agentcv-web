@@ -71,7 +71,10 @@ export default function ContactForm({ subjectType, subjectSlug, subjectName }: C
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-border bg-surface-elevated p-4">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-3 rounded-xl border border-border bg-surface-elevated p-4"
+    >
       <p className="text-sm font-medium text-text-primary">Contact owner about {subjectName}</p>
       <input name="name" required placeholder="Your name" className={inputClasses} />
       <input name="email" required type="email" placeholder="Your email" className={inputClasses} />

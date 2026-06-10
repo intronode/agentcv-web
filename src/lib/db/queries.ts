@@ -68,7 +68,7 @@ function cardMetricsFor(subjectType: SubjectType, ids: number[]): Map<number, Me
   const rows = getDb()
     .prepare(
       `SELECT * FROM metrics WHERE subject_type=? AND subject_id IN (${placeholders}) AND key IN (${keyPlaceholders})
-       ORDER BY CASE key WHEN 'uptime_pct' THEN 0 WHEN 'tasks_completed' THEN 1 ELSE 2 END`,
+       ORDER BY CASE key WHEN 'uptime_pct' THEN 0 WHEN 'tasks_completed' THEN 1 ELSE 2 END`
     )
     .all(subjectType, ...ids, ...CARD_METRIC_KEYS) as MetricRow[];
   for (const row of rows) {
@@ -114,26 +114,31 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
        FROM agents a JOIN owners o ON o.id = a.owner_id
        ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
        ORDER BY ${orderBy}
-       LIMIT ?`,
+       LIMIT ?`
     )
     .all(...params, filters.limit ?? 100) as AgentListRow[];
 
-  const metrics = cardMetricsFor('agent', rows.map((r) => r.id));
-  const cards = rows.map((r): AgentCardData => ({
-    slug: r.slug,
-    name: r.name,
-    avatar: r.avatar,
-    tagline: r.tagline,
-    category: r.category,
-    platform: r.platform,
-    status: r.status,
-    ownerHandle: r.owner_handle,
-    ownerName: r.owner_name,
-    tier: computeTier(r.evidence_count, r.attestation_count),
-    proofCount: r.proof_count,
-    illustrative: r.illustrative === 1,
-    metrics: metrics.get(r.id) ?? [],
-  }));
+  const metrics = cardMetricsFor(
+    'agent',
+    rows.map((r) => r.id)
+  );
+  const cards = rows.map(
+    (r): AgentCardData => ({
+      slug: r.slug,
+      name: r.name,
+      avatar: r.avatar,
+      tagline: r.tagline,
+      category: r.category,
+      platform: r.platform,
+      status: r.status,
+      ownerHandle: r.owner_handle,
+      ownerName: r.owner_name,
+      tier: computeTier(r.evidence_count, r.attestation_count),
+      proofCount: r.proof_count,
+      illustrative: r.illustrative === 1,
+      metrics: metrics.get(r.id) ?? [],
+    })
+  );
   return filters.tier ? cards.filter((c) => c.tier === filters.tier) : cards;
 }
 
@@ -163,29 +168,34 @@ export function listTeams(ownerId?: number): TeamCardData[] {
        FROM teams tm JOIN owners o ON o.id = tm.owner_id
        ${ownerId !== undefined ? 'WHERE tm.owner_id = ?' : ''}
        ORDER BY tm.featured DESC, proof_count DESC, tm.name COLLATE NOCASE ASC
-       LIMIT 100`,
+       LIMIT 100`
     )
     .all(...(ownerId !== undefined ? [ownerId] : [])) as TeamListRow[];
 
-  const metrics = cardMetricsFor('team', rows.map((r) => r.id));
+  const metrics = cardMetricsFor(
+    'team',
+    rows.map((r) => r.id)
+  );
   const memberStmt = getDb().prepare(
     `SELECT a.slug, a.name, a.avatar, m.role FROM team_members m
-     JOIN agents a ON a.id = m.agent_id WHERE m.team_id = ? ORDER BY m.ordinal`,
+     JOIN agents a ON a.id = m.agent_id WHERE m.team_id = ? ORDER BY m.ordinal`
   );
-  return rows.map((r): TeamCardData => ({
-    slug: r.slug,
-    name: r.name,
-    avatar: r.avatar,
-    kind: r.kind,
-    tagline: r.tagline,
-    ownerHandle: r.owner_handle,
-    ownerName: r.owner_name,
-    tier: computeTier(r.evidence_count, r.attestation_count),
-    proofCount: r.proof_count,
-    illustrative: r.illustrative === 1,
-    members: memberStmt.all(r.id) as TeamCardData['members'],
-    metrics: metrics.get(r.id) ?? [],
-  }));
+  return rows.map(
+    (r): TeamCardData => ({
+      slug: r.slug,
+      name: r.name,
+      avatar: r.avatar,
+      kind: r.kind,
+      tagline: r.tagline,
+      ownerHandle: r.owner_handle,
+      ownerName: r.owner_name,
+      tier: computeTier(r.evidence_count, r.attestation_count),
+      proofCount: r.proof_count,
+      illustrative: r.illustrative === 1,
+      members: memberStmt.all(r.id) as TeamCardData['members'],
+      metrics: metrics.get(r.id) ?? [],
+    })
+  );
 }
 
 // ---- profiles -------------------------------------------------------------
@@ -197,7 +207,7 @@ function subjectExtras(subjectType: SubjectType, id: number) {
     .all(subjectType, id) as MetricRow[];
   const proof = db
     .prepare(
-      'SELECT * FROM proof_entries WHERE subject_type=? AND subject_id=? ORDER BY entry_date DESC, id DESC',
+      'SELECT * FROM proof_entries WHERE subject_type=? AND subject_id=? ORDER BY entry_date DESC, id DESC'
     )
     .all(subjectType, id) as ProofEntryRow[];
   const attestations = db
@@ -219,7 +229,7 @@ export function getAgentProfile(slug: string): AgentProfile | null {
   const teams = db
     .prepare(
       `SELECT t.slug, t.name, t.avatar, t.kind, m.role FROM team_members m
-       JOIN teams t ON t.id = m.team_id WHERE m.agent_id=? ORDER BY t.name`,
+       JOIN teams t ON t.id = m.team_id WHERE m.agent_id=? ORDER BY t.name`
     )
     .all(agent.id) as AgentProfile['teams'];
   const lineageParent = agent.lineage_of
@@ -230,7 +240,18 @@ export function getAgentProfile(slug: string): AgentProfile | null {
   const lineageChildren = db
     .prepare('SELECT slug, name, lineage_kind FROM agents WHERE lineage_of=? ORDER BY name')
     .all(agent.id) as AgentProfile['lineageChildren'];
-  return { agent, owner, tier, metrics, proof, capabilities, attestations, teams, lineageParent, lineageChildren };
+  return {
+    agent,
+    owner,
+    tier,
+    metrics,
+    proof,
+    capabilities,
+    attestations,
+    teams,
+    lineageParent,
+    lineageChildren,
+  };
 }
 
 export function getTeamProfile(slug: string): TeamProfile | null {
@@ -243,7 +264,7 @@ export function getTeamProfile(slug: string): TeamProfile | null {
     .prepare(
       `SELECT a.slug, a.name, a.avatar, a.tagline, m.role, m.role_detail AS roleDetail, m.ordinal
        FROM team_members m JOIN agents a ON a.id = m.agent_id
-       WHERE m.team_id=? ORDER BY m.ordinal`,
+       WHERE m.team_id=? ORDER BY m.ordinal`
     )
     .all(team.id) as TeamMemberData[];
   return { team, owner, tier, members, metrics, proof, attestations };
@@ -276,8 +297,12 @@ export function getFeatured(): { agents: AgentCardData[]; teams: TeamCardData[] 
   const featuredAgents = slugsOf('SELECT slug FROM agents WHERE featured=1');
   const featuredTeams = slugsOf('SELECT slug FROM teams WHERE featured=1');
   return {
-    agents: listAgents({ limit: 100 }).filter((a) => featuredAgents.has(a.slug)).slice(0, 6),
-    teams: listTeams().filter((t) => featuredTeams.has(t.slug)).slice(0, 2),
+    agents: listAgents({ limit: 100 })
+      .filter((a) => featuredAgents.has(a.slug))
+      .slice(0, 6),
+    teams: listTeams()
+      .filter((t) => featuredTeams.has(t.slug))
+      .slice(0, 2),
   };
 }
 
@@ -333,7 +358,7 @@ export function registerAgent(input: RegisterAgentInput): { slug: string; id: nu
     const res = db
       .prepare(
         `INSERT INTO agents (slug, name, tagline, category, platform, model, about, how_built, oversight, operational_since, owner_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         slug,
@@ -346,7 +371,7 @@ export function registerAgent(input: RegisterAgentInput): { slug: string; id: nu
         input.howBuilt ?? null,
         input.oversight ?? null,
         input.operationalSince ?? null,
-        owner.id,
+        owner.id
       );
     return { slug, id: Number(res.lastInsertRowid) };
   });
@@ -374,7 +399,7 @@ export function addProofEntry(input: AddProofInput): { id: number; tier: TrustTi
   const res = db
     .prepare(
       `INSERT INTO proof_entries (subject_type, subject_id, entry_date, type, title, body, evidence_url, provenance)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       input.subjectType,
@@ -384,7 +409,7 @@ export function addProofEntry(input: AddProofInput): { id: number; tier: TrustTi
       input.title,
       input.body ?? null,
       input.evidenceUrl ?? null,
-      provenance,
+      provenance
     );
   const { tier } = subjectExtras(input.subjectType, subject.id);
   return { id: Number(res.lastInsertRowid), tier };
@@ -403,14 +428,14 @@ export function createContactRequest(input: ContactInput): { id: number } {
   const table =
     input.subjectType === 'agent' ? 'agents' : input.subjectType === 'team' ? 'teams' : 'owners';
   const column = input.subjectType === 'owner' ? 'handle' : 'slug';
-  const subject = db
-    .prepare(`SELECT id FROM ${table} WHERE ${column}=?`)
-    .get(input.subjectSlug) as { id: number } | undefined;
+  const subject = db.prepare(`SELECT id FROM ${table} WHERE ${column}=?`).get(input.subjectSlug) as
+    | { id: number }
+    | undefined;
   if (!subject) throw new Error(`Unknown ${input.subjectType}: ${input.subjectSlug}`);
   const res = db
     .prepare(
       `INSERT INTO contact_requests (subject_type, subject_id, requester_name, requester_email, message)
-       VALUES (?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?)`
     )
     .run(input.subjectType, subject.id, input.requesterName, input.requesterEmail, input.message);
   return { id: Number(res.lastInsertRowid) };
