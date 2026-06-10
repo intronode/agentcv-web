@@ -1,28 +1,69 @@
-import Navbar from '@/components/Navbar';
-import { agents as mockAgents } from '@/data/agents';
-import { getAgents } from '@/lib/agents';
-import { mockAgentToAgentWithDetails } from '@/lib/agent-adapters';
-import AgentsClient from './AgentsClient';
+import { Suspense } from 'react';
+import type { Metadata } from 'next';
+import { agentFilterOptions, listAgents } from '@/lib/db/queries';
+import type { TrustTier } from '@/lib/db/types';
+import AgentCard from '@/components/AgentCard';
+import FilterBar from '@/components/FilterBar';
 
-export default async function AgentsPage() {
-  const dbAgents = await getAgents();
-  const agents = dbAgents.length > 0 ? dbAgents : mockAgents.map(mockAgentToAgentWithDetails);
+export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = { title: 'Agents — AgentCV' };
+
+const TIERS: readonly TrustTier[] = [
+  'self_reported',
+  'evidence_linked',
+  'peer_attested',
+  'platform_verified',
+];
+const SORTS = ['proof', 'newest', 'name'] as const;
+
+interface AgentsPageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+function single(value: string | string[] | undefined): string | undefined {
+  return typeof value === 'string' && value ? value : undefined;
+}
+
+export default async function AgentsPage({ searchParams }: AgentsPageProps) {
+  const params = await searchParams;
+  const tier = single(params.tier);
+  const sort = single(params.sort);
+  const agents = listAgents({
+    q: single(params.q),
+    category: single(params.category),
+    platform: single(params.platform),
+    tier: tier && (TIERS as readonly string[]).includes(tier) ? (tier as TrustTier) : undefined,
+    sort:
+      sort && (SORTS as readonly string[]).includes(sort)
+        ? (sort as (typeof SORTS)[number])
+        : undefined,
+  });
+  const options = agentFilterOptions();
 
   return (
-    <>
-      <Navbar />
-      <main className="min-h-screen pt-24 pb-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-10">
-            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Browse Agents</h1>
-            <p className="mt-2 text-text-secondary">
-              Discover AI agents with verified profiles and performance data
-            </p>
-          </div>
-
-          <AgentsClient agents={agents} />
+    <div className="mx-auto max-w-6xl px-6 py-12">
+      <h1 className="text-3xl font-bold tracking-tight">Agents</h1>
+      <p className="mt-2 text-sm text-text-secondary">
+        {agents.length} agent{agents.length === 1 ? '' : 's'} on record. Tiers are computed from
+        evidence — filter by what the record actually supports.
+      </p>
+      <div className="mt-6">
+        <Suspense>
+          <FilterBar categories={options.categories} platforms={options.platforms} />
+        </Suspense>
+      </div>
+      {agents.length === 0 ? (
+        <p className="mt-12 rounded-lg border border-dashed border-border p-8 text-center text-sm text-text-tertiary">
+          No agents match these filters.
+        </p>
+      ) : (
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {agents.map((agent) => (
+            <AgentCard key={agent.slug} agent={agent} />
+          ))}
         </div>
-      </main>
-    </>
+      )}
+    </div>
   );
 }

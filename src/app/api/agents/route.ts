@@ -1,84 +1,54 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { agents as mockAgents, stacks } from '@/data/agents';
-import { getAgentsFiltered, type AgentSortOption } from '@/lib/agents';
-import { mockAgentToAgentWithDetails, toCardAgent } from '@/lib/agent-adapters';
+import { NextResponse } from 'next/server';
+import { listAgents, registerAgent } from '@/lib/db/queries';
+import type { TrustTier } from '@/lib/db/types';
+import { ValidationError, readJsonBody, reqStr, optStr, DATE_PATTERN } from '@/lib/validate';
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = req.nextUrl;
+export const dynamic = 'force-dynamic';
 
-  const search = searchParams.get('search') ?? undefined;
-  const role = searchParams.get('role') ?? undefined;
-  const framework = searchParams.get('framework') ?? undefined;
-  const verifiedParam = searchParams.get('verified');
-  const sort = (searchParams.get('sort') ?? 'newest') as AgentSortOption;
-  const limitParam = searchParams.get('limit');
-  const offsetParam = searchParams.get('offset');
+const TIERS: readonly TrustTier[] = [
+  'self_reported',
+  'evidence_linked',
+  'peer_attested',
+  'platform_verified',
+];
 
-  const verified =
-    verifiedParam === 'true' ? true : verifiedParam === 'false' ? false : undefined;
-  const limit = limitParam ? Math.min(parseInt(limitParam, 10), 100) : 20;
-  const offset = offsetParam ? parseInt(offsetParam, 10) : 0;
-
-  const result = await getAgentsFiltered({
-    search,
-    role,
-    framework,
-    verified,
-    sort,
-    limit,
-    offset,
+export async function GET(request: Request): Promise<NextResponse> {
+  const params = new URL(request.url).searchParams;
+  const tierParam = params.get('tier');
+  const agents = listAgents({
+    q: params.get('q') ?? undefined,
+    category: params.get('category') ?? undefined,
+    platform: params.get('platform') ?? undefined,
+    tier: tierParam && (TIERS as readonly string[]).includes(tierParam) ? (tierParam as TrustTier) : undefined,
   });
+  return NextResponse.json({ agents });
+}
 
-  // Fall back to mock data if DB is empty or unavailable
-  if (result.agents.length === 0 && result.total === 0) {
-    let mocked = mockAgents.map(mockAgentToAgentWithDetails);
-
-    if (search?.trim()) {
-      const q = search.trim().toLowerCase();
-      mocked = mocked.filter(
-        (a) =>
-          a.name.toLowerCase().includes(q) ||
-          (a.tagline ?? '').toLowerCase().includes(q) ||
-          (a.about ?? '').toLowerCase().includes(q)
-      );
-    }
-    if (role && role !== 'all') {
-      mocked = mocked.filter((a) => a.category === role || a.categories.includes(role));
-    }
-    if (framework && framework !== 'all') {
-      mocked = mocked.filter((a) => a.stack.includes(framework));
-    }
-    if (typeof verified === 'boolean') {
-      mocked = mocked.filter((a) => a.verified === verified);
-    }
-
-    switch (sort) {
-      case 'performance':
-      case 'popular':
-      case 'rated':
-        mocked = [...mocked].sort((a, b) => b.endorsement_count - a.endorsement_count);
-        break;
-      case 'alpha':
-        mocked = [...mocked].sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      default:
-        mocked = [...mocked].sort(
-          (a, b) =>
-            new Date(b.operational_since ?? 0).getTime() -
-            new Date(a.operational_since ?? 0).getTime()
-        );
-    }
-
-    const paginated = mocked.slice(offset, offset + limit);
-    return NextResponse.json({
-      agents: paginated.map(toCardAgent),
-      total: mocked.length,
-      categories: stacks,
+export async function POST(request: Request): Promise<NextResponse> {
+  try {
+    const body = await readJsonBody(request);
+    const result = registerAgent({
+      name: reqStr(body, 'name', { max: 80 }),
+      tagline: reqStr(body, 'tagline', { max: 200 }),
+      category: reqStr(body, 'category', { max: 40 }),
+      platform: reqStr(body, 'platform', { max: 40 }),
+      model: optStr(body, 'model', { max: 80 }),
+      about: optStr(body, 'about', { max: 4000 }),
+      howBuilt: optStr(body, 'howBuilt', { max: 4000 }),
+      oversight: optStr(body, 'oversight', { max: 1000 }),
+      operationalSince: optStr(body, 'operationalSince', {
+        pattern: DATE_PATTERN,
+        patternHint: 'must be YYYY-MM-DD',
+      }),
+      ownerName: reqStr(body, 'ownerName', { max: 80 }),
+      ownerHandle: reqStr(body, 'ownerHandle', { max: 40 }),
     });
+    return NextResponse.json(result, { status: 201 });
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    console.error('POST /api/agents failed:', error);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
-
-  return NextResponse.json({
-    agents: result.agents.map(toCardAgent),
-    total: result.total,
-  });
 }

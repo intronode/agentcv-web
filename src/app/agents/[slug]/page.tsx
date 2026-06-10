@@ -1,47 +1,277 @@
-import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getAgent } from '@/data/agents';
-import { mockAgentToAgentWithDetails } from '@/lib/agent-adapters';
-import { getAgentBySlug } from '@/lib/agents';
-import AgentProfileClient from './AgentProfileClient';
+import type { Metadata } from 'next';
+import { getAgentProfile } from '@/lib/db/queries';
+import TrustBadge from '@/components/TrustBadge';
+import { IllustrativeMark } from '@/components/ProvenanceTag';
+import MetricGrid from '@/components/MetricGrid';
+import ProofFeed from '@/components/ProofFeed';
+import ProofForm from '@/components/ProofForm';
+import AttestationList from '@/components/AttestationList';
+import ContactForm from '@/components/ContactForm';
+import { formatDate } from '@/lib/format';
 
-export async function generateMetadata({
-  params,
-}: {
+export const dynamic = 'force-dynamic';
+
+interface PageProps {
   params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const dbAgent = await getAgentBySlug(slug);
-  const mockAgent = getAgent(slug);
-
-  const name = dbAgent?.name ?? mockAgent?.name;
-  const tagline = dbAgent?.tagline ?? mockAgent?.tagline;
-
-  if (!name || !tagline) {
-    return {
-      title: 'Agent Not Found | AgentCV',
-      description: 'This agent profile could not be found.',
-    };
-  }
-
-  return {
-    title: `${name} | AgentCV`,
-    description: tagline,
-  };
 }
 
-export default async function AgentProfilePage({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const dbAgent = await getAgentBySlug(slug);
+  const profile = getAgentProfile(slug);
+  return { title: profile ? `${profile.agent.name} — AgentCV` : 'Agent — AgentCV' };
+}
 
-  if (dbAgent) {
-    return <AgentProfileClient agent={dbAgent} />;
-  }
+export default async function AgentProfilePage({ params }: PageProps) {
+  const { slug } = await params;
+  const profile = getAgentProfile(slug);
+  if (!profile) notFound();
+  const { agent, owner, tier, metrics, proof, capabilities, attestations, teams, lineageParent, lineageChildren } =
+    profile;
 
-  const mockAgent = getAgent(slug);
-  if (!mockAgent) {
-    notFound();
-  }
+  return (
+    <div className="mx-auto max-w-6xl px-6 py-12">
+      {/* Header */}
+      <header className="flex flex-wrap items-start gap-5">
+        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-4xl">
+          {agent.avatar}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">{agent.name}</h1>
+            <TrustBadge tier={tier} size="md" />
+            {agent.status !== 'active' && (
+              <span className="rounded border border-border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-text-tertiary">
+                {agent.status}
+              </span>
+            )}
+          </div>
+          <p className="mt-1.5 max-w-2xl text-text-secondary">{agent.tagline}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+            <Link href={`/owners/${owner.handle}`} className="text-accent hover:underline">
+              {owner.display_name}
+            </Link>
+            <span className="text-text-tertiary">·</span>
+            <span className="rounded-md bg-surface-elevated px-2 py-0.5 text-text-secondary">
+              {agent.category}
+            </span>
+            <span className="rounded-md bg-surface-elevated px-2 py-0.5 text-text-tertiary">
+              {agent.platform}
+            </span>
+            {agent.model && (
+              <span className="rounded-md bg-surface-elevated px-2 py-0.5 text-text-tertiary">
+                {agent.model}
+              </span>
+            )}
+            {agent.lineage_kind !== 'original' && lineageParent && (
+              <span className="text-text-tertiary">
+                {agent.lineage_kind} of{' '}
+                <Link href={`/agents/${lineageParent.slug}`} className="text-accent hover:underline">
+                  {lineageParent.name}
+                </Link>
+              </span>
+            )}
+          </div>
+        </div>
+      </header>
 
-  return <AgentProfileClient agent={mockAgentToAgentWithDetails(mockAgent)} />;
+      {agent.illustrative === 1 && (
+        <p className="mt-6 rounded-lg border border-dashed border-orange-400/40 bg-orange-500/5 px-4 py-3 text-xs leading-relaxed text-orange-200">
+          Parts of this profile are illustrative — demo or approximate data, marked entry-by-entry.
+          Unmarked entries are real.
+        </p>
+      )}
+
+      <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_320px]">
+        <div className="min-w-0 space-y-10">
+          {agent.about && (
+            <section>
+              <h2 className="text-lg font-semibold tracking-tight">About</h2>
+              <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-text-secondary">
+                {agent.about}
+              </p>
+            </section>
+          )}
+
+          <section>
+            <h2 className="text-lg font-semibold tracking-tight">Metrics</h2>
+            <div className="mt-3">
+              <MetricGrid metrics={metrics} />
+            </div>
+          </section>
+
+          <section>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold tracking-tight">
+                Proof <span className="text-sm font-normal text-text-tertiary">({proof.length})</span>
+              </h2>
+            </div>
+            <p className="mt-1 text-xs text-text-tertiary">
+              Tasks, incidents, lessons, milestones, artifacts — incidents and lessons are
+              first-class proof here.
+            </p>
+            <div className="mt-5">
+              <ProofFeed entries={proof} />
+            </div>
+            <div className="mt-5">
+              <ProofForm subjectType="agent" subjectSlug={agent.slug} />
+            </div>
+          </section>
+
+          {(agent.how_built || agent.oversight) && (
+            <section>
+              <h2 className="text-lg font-semibold tracking-tight">How it&apos;s built</h2>
+              <p className="mt-1 text-xs text-text-tertiary">
+                Operational DNA — architecture and oversight, not files for sale.
+              </p>
+              <div className="mt-3 space-y-3">
+                {agent.how_built && (
+                  <div className="rounded-lg border border-border bg-surface-elevated p-4">
+                    <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                      Architecture
+                    </div>
+                    <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
+                      {agent.how_built}
+                    </p>
+                  </div>
+                )}
+                {agent.oversight && (
+                  <div className="rounded-lg border border-border bg-surface-elevated p-4">
+                    <div className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                      Oversight model
+                    </div>
+                    <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
+                      {agent.oversight}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {capabilities.length > 0 && (
+            <section>
+              <h2 className="text-lg font-semibold tracking-tight">Capabilities</h2>
+              <p className="mt-1 text-xs text-text-tertiary">Self-assessed, 0–100.</p>
+              <div className="mt-3 space-y-3">
+                {capabilities.map((cap) => (
+                  <div key={cap.id}>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-text-secondary">{cap.name}</span>
+                      <span className="text-text-tertiary">{cap.level}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 rounded-full bg-surface-elevated">
+                      <div
+                        className="h-1.5 rounded-full bg-accent/70"
+                        style={{ width: `${cap.level}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section>
+            <h2 className="text-lg font-semibold tracking-tight">Attestations</h2>
+            <div className="mt-3">
+              <AttestationList attestations={attestations} />
+            </div>
+          </section>
+        </div>
+
+        {/* Sidebar */}
+        <aside className="space-y-6">
+          <ContactForm subjectType="agent" subjectSlug={agent.slug} subjectName={agent.name} />
+
+          <div className="rounded-xl border border-border bg-surface-elevated p-4">
+            <h3 className="text-xs font-medium uppercase tracking-wide text-text-tertiary">Facts</h3>
+            <dl className="mt-3 space-y-2 text-sm">
+              <div className="flex justify-between gap-2">
+                <dt className="text-text-tertiary">Owner</dt>
+                <dd>
+                  <Link href={`/owners/${owner.handle}`} className="text-accent hover:underline">
+                    {owner.display_name}
+                  </Link>
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-text-tertiary">Platform</dt>
+                <dd className="text-text-secondary">{agent.platform}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-text-tertiary">Lineage</dt>
+                <dd className="text-text-secondary">{agent.lineage_kind}</dd>
+              </div>
+              {agent.operational_since && (
+                <div className="flex justify-between gap-2">
+                  <dt className="text-text-tertiary">Operating since</dt>
+                  <dd className="text-text-secondary">{formatDate(agent.operational_since)}</dd>
+                </div>
+              )}
+              <div className="flex justify-between gap-2">
+                <dt className="text-text-tertiary">Status</dt>
+                <dd className="text-text-secondary">{agent.status}</dd>
+              </div>
+            </dl>
+            {agent.lineage_note && (
+              <p className="mt-3 border-t border-border-subtle pt-3 text-xs leading-relaxed text-text-tertiary">
+                {agent.lineage_note}
+              </p>
+            )}
+          </div>
+
+          {teams.length > 0 && (
+            <div className="rounded-xl border border-border bg-surface-elevated p-4">
+              <h3 className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                Member of
+              </h3>
+              <ul className="mt-3 space-y-2">
+                {teams.map((team) => (
+                  <li key={team.slug}>
+                    <Link
+                      href={`/teams/${team.slug}`}
+                      className="flex items-center gap-2 rounded-lg p-2 text-sm transition-colors hover:bg-surface-hover"
+                    >
+                      <span className="text-lg">{team.avatar}</span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-text-primary">
+                          {team.name}
+                        </span>
+                        <span className="text-xs text-text-tertiary">
+                          {team.role} · {team.kind}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {lineageChildren.length > 0 && (
+            <div className="rounded-xl border border-border bg-surface-elevated p-4">
+              <h3 className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+                Deployments & forks
+              </h3>
+              <ul className="mt-3 space-y-1">
+                {lineageChildren.map((child) => (
+                  <li key={child.slug}>
+                    <Link
+                      href={`/agents/${child.slug}`}
+                      className="flex items-center justify-between rounded-lg p-2 text-sm transition-colors hover:bg-surface-hover"
+                    >
+                      <span className="text-text-primary">{child.name}</span>
+                      <span className="text-xs text-text-tertiary">{child.lineage_kind}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
+      </div>
+    </div>
+  );
 }
