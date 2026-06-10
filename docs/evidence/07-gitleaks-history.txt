@@ -1,0 +1,21 @@
+=== gitleaks full-history scan (2026-06-11) ===
+$ gitleaks version
+8.30.1
+$ gitleaks git .          # scans all reachable commit history
+
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+8:47AM INF 17 commits scanned.
+8:47AM INF scanned ~1274836 bytes (1.27 MB) in 230ms
+8:47AM INF no leaks found
+
+exit code: 0 (clean)
+
+Note: gitleaks scans tracked git history. The untracked sprint-era
+.env.local (old Supabase keys) is outside this scan's scope and remains
+flagged for HJ in BUILD-REPORT "Known issues" #4 — it was never committed
+(confirmed by this clean history scan).

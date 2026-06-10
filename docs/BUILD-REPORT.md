@@ -6,18 +6,18 @@
 
 ## Shipped vs CORE (SPEC-V3 §7)
 
-| CORE item | Status | Evidence |
-|---|---|---|
-| 8 routes (`/`, `/agents`, `/agents/[slug]`, `/teams`, `/teams/[slug]`, `/owners/[handle]`, `/register`, `/trust`) | Shipped, all HTTP 200 with real seed data | `docs/evidence/routes/*.html` (12 captures incl. filter & lineage variants), 404 handling verified |
-| Build + typecheck clean | `npm run build` exit 0, `npx tsc --noEmit` exit 0, zero errors | `docs/evidence/00-build-and-typecheck.txt` |
-| Flow: register agent → DB row → profile renders | Verified (201 → `agents` row id 13 → route renders) | `docs/evidence/flows/01-register-agent.txt` |
-| Flow: proof entries upgrade computed tier | Verified — tier flipped `self_reported → evidence_linked` exactly at the 3rd evidence entry | `docs/evidence/flows/02-proof-tier-upgrade.txt` |
-| Flow: contact request persists | Verified (201 → `contact_requests` row, status `pending`) | `docs/evidence/flows/03-contact-request.txt` |
-| Input validation | Verified (400 on bad enum/email, 404 on unknown subject) | `docs/evidence/flows/04-validation.txt` |
-| API read round-trip with tier filter | Verified | `docs/evidence/flows/05-api-read.txt` |
-| Flagship: Ari Collective with real topology | Shipped at `/teams/ari-collective`; real roles/lessons, invented data marked `illustrative` per row | `docs/evidence/routes/team-ari-collective.html` |
-| No mock imports on CORE paths | Verified — `grep -r "data/agents\|supabase" src` returns nothing; v2 mock layer deleted | grep output in session; files removed in commit history |
-| README quickstart ≤3 commands | Shipped; fresh-clone verification recorded below | `docs/evidence/06-fresh-clone.txt` |
+| CORE item                                                                                                         | Status                                                                                              | Evidence                                                                                           |
+| ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 8 routes (`/`, `/agents`, `/agents/[slug]`, `/teams`, `/teams/[slug]`, `/owners/[handle]`, `/register`, `/trust`) | Shipped, all HTTP 200 with real seed data                                                           | `docs/evidence/routes/*.html` (12 captures incl. filter & lineage variants), 404 handling verified |
+| Build + typecheck clean                                                                                           | `npm run build` exit 0, `npx tsc --noEmit` exit 0, zero errors                                      | `docs/evidence/00-build-and-typecheck.txt`                                                         |
+| Flow: register agent → DB row → profile renders                                                                   | Verified (201 → `agents` row id 13 → route renders)                                                 | `docs/evidence/flows/01-register-agent.txt`                                                        |
+| Flow: proof entries upgrade computed tier                                                                         | Verified — tier flipped `self_reported → evidence_linked` exactly at the 3rd evidence entry         | `docs/evidence/flows/02-proof-tier-upgrade.txt`                                                    |
+| Flow: contact request persists                                                                                    | Verified (201 → `contact_requests` row, status `pending`)                                           | `docs/evidence/flows/03-contact-request.txt`                                                       |
+| Input validation                                                                                                  | Verified (400 on bad enum/email, 404 on unknown subject)                                            | `docs/evidence/flows/04-validation.txt`                                                            |
+| API read round-trip with tier filter                                                                              | Verified                                                                                            | `docs/evidence/flows/05-api-read.txt`                                                              |
+| Flagship: Ari Collective with real topology                                                                       | Shipped at `/teams/ari-collective`; real roles/lessons, invented data marked `illustrative` per row | `docs/evidence/routes/team-ari-collective.html`                                                    |
+| No mock imports on CORE paths                                                                                     | Verified — `grep -r "data/agents\|supabase" src` returns nothing; v2 mock layer deleted             | grep output in session; files removed in commit history                                            |
+| README quickstart ≤3 commands                                                                                     | Shipped; fresh-clone verification recorded below                                                    | `docs/evidence/06-fresh-clone.txt`                                                                 |
 
 ## Deliberate cuts (and why)
 
@@ -38,7 +38,7 @@
 
 ## Known issues / honest notes
 
-1. **Open writes.** Anyone can register agents, add proof to *any* profile,
+1. **Open writes.** Anyone can register agents, add proof to _any_ profile,
    and create contact requests. Acceptable for a local demo; must not deploy
    as-is. (Recorded in SPEC-V3 §6.)
 2. **`platform_verified` is designed, not implemented** — by intent; no
@@ -61,14 +61,14 @@
 ## [[NEEDS CONFIRMATION: …]] items for HJ
 
 - [[NEEDS CONFIRMATION: operational-since dates for Ari/Stanley/Arthur/
-  Laplace and the Collective — left NULL rather than guessed]]
+Laplace and the Collective — left NULL rather than guessed]]
 - [[NEEDS CONFIRMATION: Ari team metrics (tasks completed, success rate,
-  cost/task) — seeded values are marked illustrative; replace with real
-  numbers if you want the flagship fully evidence-grade]]
+cost/task) — seeded values are marked illustrative; replace with real
+numbers if you want the flagship fully evidence-grade]]
 - [[NEEDS CONFIRMATION: whether sprint-attribution "Stanley implemented
-  Sprints 1–5" is accurate — marked illustrative in seed]]
+Sprints 1–5" is accurate — marked illustrative in seed]]
 - [[NEEDS CONFIRMATION: HJ owner-profile bio wording — kept minimal, no
-  personal info, no company branding]]
+personal info, no company branding]]
 
 ## QA checklist (≤15 min, independent reviewer)
 
@@ -99,3 +99,44 @@ Setup (2 min): `git clone <repo> && cd agentcv-web && npm install && npm run dev
 
 Pass = all 8 behave as described. The evidence files in `docs/evidence/`
 show the same checks performed on 2026-06-11.
+
+## QA findings resolution (2026-06-11, post ACCEPT-WITH-FINDINGS)
+
+Laplace's independent pass returned ACCEPT-WITH-FINDINGS with two technical
+findings. Resolution:
+
+### Finding 1 — `npm install` reported 6 vulnerabilities (3 moderate, 3 high)
+
+Triage per advisory (all verified against `npm audit` on 2026-06-11):
+
+| Package                                                                                           | Severity | Resolution                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `next` (multiple advisories: request smuggling, middleware bypass, RSC cache poisoning, DoS, XSS) | high     | **Fixed** — upgraded 15.5.12 → 15.5.19 (latest 15.x, in-range, non-breaking) via `npm audit fix`.                                                                                                                                                                                               |
+| `flatted` (prototype pollution / unbounded recursion in `parse()`)                                | high     | **Fixed** by `npm audit fix` (transitive, eslint toolchain — dev-only).                                                                                                                                                                                                                         |
+| `picomatch` (ReDoS via extglob, POSIX class method injection)                                     | high     | **Fixed** by `npm audit fix` (transitive, build/lint toolchain).                                                                                                                                                                                                                                |
+| `brace-expansion` (ReDoS)                                                                         | moderate | **Fixed** by `npm audit fix` (transitive via minimatch, dev-only).                                                                                                                                                                                                                              |
+| `yaml` (stack overflow on deeply nested collections)                                              | moderate | **Fixed** by `npm audit fix` (transitive, dev toolchain).                                                                                                                                                                                                                                       |
+| `postcss` < 8.5.10 (GHSA-qx2v-qp2m-jg93, XSS via unescaped `</style>` in stringify output)        | moderate | Top-level copy **fixed** (8.5.15). **Accepted risk** for the copy _vendored inside next_ (`node_modules/next/node_modules/postcss@8.4.31`): even the latest next 15.5.19 pins it, and npm's only automated "fix" is `npm audit fix --force` → **next@9.3.3**, a nonsensical breaking downgrade. |
+
+**Accepted-risk reasoning (vendored postcss):** the advisory requires the
+attacker to control CSS input that postcss stringifies into emitted output.
+In this app postcss runs at build time over first-party CSS only (Tailwind +
+`globals.css`); no user-supplied CSS exists anywhere, and the app is
+local-only this phase. Exposure: none on current threat model. Follow-up:
+re-run `npm audit` on the next `next` upgrade — this clears whenever Vercel
+bumps the vendored copy. This is an advisory-level acceptance, not a
+structural fix, and is labeled as such.
+
+Post-fix state: `npm audit` reports **2 moderate** (both the single vendored
+postcss root cause above), 0 high. `npm run build` and `npx tsc --noEmit`
+both pass with zero errors after the upgrades, and a runtime smoke check
+(`/` and `/teams/ari-collective` → HTTP 200) confirms 15.5.19 serves
+correctly.
+
+### Finding 2 — secret scan of full git history
+
+`gitleaks 8.30.1` installed via Homebrew; `gitleaks git .` scanned all 17
+commits of reachable history: **no leaks found** (exit 0). Output:
+`docs/evidence/07-gitleaks-history.txt`. This also confirms the sprint-era
+`.env.local` (Known issues #4) was never committed; it remains an untracked
+local file for HJ to delete/rotate.
