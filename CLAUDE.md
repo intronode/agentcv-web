@@ -1,207 +1,150 @@
-# CLAUDE.md - AgentCV
+# AgentCV — Mission Brief (CLAUDE.md)
 
-## Project
+> June 2026 reset. This file replaces the previous CLAUDE.md (preserved in git
+> history; treat it and PRODUCT-SPEC-V2.md as reference, not law). Authored by
+> the orchestration session from HJ's direction + Ari's founding-concept dump
+> (#ari-agentcv, 2026-06-10). You — Claude Code (Fable 5) — have broad design
+> authority here. This file tells you what is fixed, what is yours to decide,
+> and what must never happen.
 
-**AgentCV.ai** — "LinkedIn for AI Agents"
-AI 에이전트의 **검증된 성과**를 보여주고, 에이전트 전문가와 연결해주는 플랫폼.
+## 1. The mission
 
-> "Claw Mart is where you buy agent software. AgentCV is where you find agent experts."
+Build AgentCV (agentcv.ai): **the LinkedIn + Glassdoor + AngelList for AI
+agents** — the public professional-identity, proof, and connection layer for
+the agent/swarm era. Profiles are not only for individual agents: **teams and
+swarms are first-class subjects**, with hiring/connection surfaces possible
+later.
 
-**Tech Stack:** Next.js 15 (App Router) · TypeScript (strict) · Tailwind CSS v4 · Supabase (DB + Auth) · Vercel
+This sprint (now → June 22) covers **research → planning → design → local
+development only**. Deployment, operations, and marketing are a later phase
+with HJ. The meta-goal: demonstrate that Fable 5 can carry a product
+end-to-end with minimal human input. Work accordingly — decide, execute,
+report; don't idle waiting for routine approval.
 
----
+One-line positioning (canonical): *"Claw Mart is where you buy agent
+software. AgentCV is where you find agent experts."*
 
-## v2 Product Direction
+## 2. Founding spirit — preserve even if you scrap everything else
 
-We are rebuilding from a static mock-data MVP into a Supabase-backed platform.
+From the original Feb–Mar 2026 concept (source: Ari's memory dump):
 
-**Core Value Proposition:**
+1. **Agents need professional identity independent of platform.** Not a
+   listing inside GPT Store / ClawHub / LangChain — a public identity layer
+   for the agent itself. Cross-platform neutral: OpenClaw, Hermes, Claude
+   Code/Codex, custom stacks.
+2. **Track record beats marketing copy.** The center of a profile is proof —
+   logs, tasks, lessons, uptime, artifacts, workflow history — not taglines.
+   "What it actually did and who/what verified it," not "what it could do."
+3. **Identity model: template + instance + owner/org.** Humans have one
+   identity; agents are cloned, forked, versioned. Agent Template (reusable
+   identity/config) → many Deployments/Instances (each with its own metrics,
+   logs, reviews) → owned by Builder/Org. Teams/swarms follow the same split:
+   Team Template / Swarm Blueprint vs. deployed team instance with proof
+   (composition, roles, routing, completed projects, cost/latency, oversight
+   model). Many agents are boring alone but valuable as a system.
+4. **Ari's team as lived flagship.** Ari/Stanley/Arthur/Laplace is the
+   showcase profile — real operating history, real lessons, real team
+   topology. Not an invented mascot.
+5. **AgentLab flywheel without dominating UX.** Consulting connection
+   ("Request Setup" → lead) is the revenue wedge, but the product must feel
+   like neutral identity/trust infrastructure, not an AgentLab brochure.
 
-- Agent profiles with **verifiable, measurable metrics** (not just claims)
-- Trust through a tiered **Verification System**: Basic → Verified → Certified → Enterprise
-- **Consulting connection** as the revenue model — "Request Setup" → owner gets the lead
-- Blueprints are **links to Claw Mart** (no file selling here)
+Also inherited: **Blueprint = shareable operational DNA** ("architectural
+plans, not a photo of the house"). Do not rebuild it as file sales (Claw Mart
+owns that); reinterpret it as *why this agent works / how it was built / what
+evidence backs it*. The early privacy/sanitizer idea (preserve patterns,
+generalize specifics — regex → semantic filter → owner review) is a long-term
+moat concept worth keeping in the architecture's line of sight, even if not
+built now.
 
-**What we're NOT building in v2:**
+## 3. Dead ends — do not re-explore
 
-- ❌ Payment/transaction system
-- ❌ Agent-to-agent communication
-- ❌ Real-time API verification (Phase 3)
-- ❌ Mobile app
+Each was considered and rejected with reasons (Ari's record):
+- **Direct agent-package/file marketplace** — small TAM, high copyability,
+  privacy risk, Claw Mart owns distribution.
+- **Korean-first product** — 100% global/US; Linear/Vercel aesthetic; no
+  Korean sensibility in UI/product.
+- **Enterprise-first** — slow; indie builders/SMBs move first. Enterprise is
+  a later trust tier, not the wedge.
+- **App store** — "You're not selling agents. You're building identity +
+  discovery + trust."
+- **Full verification at launch** — self-reported metrics with honest
+  labeling first; but design the verification ladder seriously now
+  (Basic → Verified → Certified → Enterprise was the v2 ladder; revise as
+  you see fit, keep the trust-ladder principle).
 
----
+## 4. Market context (June 2026 — re-verify what your decisions depend on)
 
-## Database Schema Overview
+- ClawHub/OpenClaw trust collapse (CVE-2026-25253, ClawHavoc supply-chain
+  attack) is a tailwind for verification positioning and a reason NOT to
+  brand-couple with ClawHub. AgentCV is trust infrastructure, not an
+  OpenClaw-dependent app.
+- MCP registries are saturated (27k+ servers, multiple verification
+  entrants — all developer/server-oriented). Catalog listing = top-of-funnel
+  surface at most, not the core product.
+- Claw Mart (shopclawmart.com) is third-party (Nat Eliason ecosystem).
+  Relationship = outbound links only. No shared auth, revenue, or runtime
+  dependency.
+- "Agent washing" discourse and the business-buyer trust gap directly support
+  verified-performance positioning. Closest comparable to track: ReputAgent.
 
-Schema defined in `docs/schema.sql`. Apply before any Supabase work.
+## 5. What is delegated to you
 
-### Tables
+After your code audit: **spec, schema, stack, and keep-vs-scrap are
+your call.** Existing Sprint 1–5 code, docs/schema.sql, and PRODUCT-SPEC-V2.md
+are disposable reference assets. Salvage what earns its place; delete what
+doesn't. Design the v3 product model yourself — the template/instance/team
+model in §2.3 is strong input, not a mandate.
 
-| Table                 | Purpose                                                                                                              |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `profiles`            | Human users / agent owners. Linked to `auth.users` via id FK.                                                        |
-| `agents`              | Core agent profiles. slug, name, tagline, avatar, category, categories[], stack[], industry, verification, owner_id. |
-| `agent_capabilities`  | Many-to-many. (agent_id, capability_name, level 0–100). Unique per agent.                                            |
-| `agent_metrics`       | 1:1 with agents. uptime_pct, tasks_completed, success_rate, avg_response_time_ms, revenue_generated, github_commits. |
-| `agent_activity`      | Activity feed entries. (agent_id, date, description, type).                                                          |
-| `agent_blueprints`    | Lightweight references linking to Claw Mart (external_url).                                                          |
-| `consulting_requests` | Contact form submissions. Public insert, owner-only read.                                                            |
-| `endorsements`        | Agent-to-agent. Unique pair, self-endorsement blocked via CHECK. Triggers endorsement_count cache on agents.         |
+## 6. Fixed constraints
 
-### Key Design Decisions
+- **Language/aesthetic:** English-only UI. Dark-mode default, data-dense,
+  premium developer feel ("GitHub profile meets LinkedIn meets Vercel
+  dashboard"). Agent cards: metrics visibility over decoration. Visual
+  design is fully yours — no external design pass precedes or constrains you.
+- **Stack quality bar:** TypeScript strict (no `any`). `npm run build` and
+  `npx tsc --noEmit` must pass at every milestone. The repo has husky
+  pre-commit hooks (auto-format); keep them working or consciously replace
+  them.
+- **This sprint:** local development only. No deployments, no cloud secrets,
+  no payments, no marketing actions. If a database is needed, use a locally
+  runnable option (e.g. SQLite / local Postgres / Supabase local) requiring
+  zero cloud credentials.
+- **Boundaries (hard):**
+  - `~/projects/agentlab-web` — never touch. AgentLab is a separate company
+    workstream. Never generate AgentLab code, brand, or copy here.
+  - `agentlab` branch on the `vercel-fork` remote — never touch.
+  - No Vercel project or domain changes of any kind.
+- **Repos:** `origin` = `github.com/intronode/agentcv-web` (canonical).
+  `vercel-fork` = `github.com/ari-hjunk/agentcv-web` (kept only because
+  Vercel cannot link the org repo; used as a deploy mirror in a later phase —
+  do not push to it this sprint). Working checkout: `~/projects/agentcv-web`.
 
-- **avg_response_time stored as milliseconds** (integer) — enables sorting/filtering. Display layer converts to "1.2s".
-- **categories[] is a Postgres array** with a GIN index — enables `@>` contains queries for multi-category filtering.
-- **endorsement_count is a denormalized cache** on agents — updated via trigger. Avoids COUNT(\*) on every page load.
-- **owner_id can be NULL** — seed agents are "unclaimed". Owners claim via a future /api/claim-agent endpoint.
-- **RLS**: Public read on all agent data. Owner-only write (via `auth.uid() = owner_id`). Consulting requests are public-insert / owner-read.
+## 7. Definition of done & QA
 
----
+- **Build passes ≠ done. Demonstrated behavior = done.** Every "done" claim
+  needs evidence: rendered route, DB row, log, screenshot, or trace, saved
+  under `docs/evidence/`.
+- **No self-QA.** You do not pass your own work to HJ. Final acceptance goes
+  through an independent QA pass (Laplace gate or HJ's own browser check).
+  Your job is to make that pass trivially easy: reproducible steps, seed
+  data, a README quickstart that runs in ≤3 commands.
 
-## Sprint Plan
+## 8. Epistemics (anti-hallucination rules — non-negotiable)
 
-### Sprint 1: Foundation (2–3 days) ← CURRENT
+1. If you don't know, say so explicitly; look it up or ask. Never fill gaps
+   with "probably/usually."
+2. Tag unverified facts with source + PENDING status; verify before stacking
+   expensive decisions on them.
+3. Compile/stdout success is a precondition, not completion evidence.
+4. No self-QA (see §7).
+5. Declare your biases when a recommendation may be preference-driven; state
+   the conditions under which your recommendation would be wrong.
+6. Re-check anything that can change (prices, APIs, tool capabilities,
+   competitor states) — confidence is not fact.
+7. If you were wrong, correct immediately and explicitly. Never rationalize
+   or bury it. A mistake is 100× better than a cover-up.
+8. Facts only HJ can know get explicit `[[NEEDS CONFIRMATION: ...]]`
+   placeholders — never guesses.
 
-- [ ] Supabase project setup (apply schema.sql)
-- [ ] Agent profile CRUD (Supabase client)
-- [ ] Replace mock data imports with Supabase queries
-- [ ] Seed DB (run seed.sql)
-- [ ] Deploy to Vercel with env vars
-
-### Sprint 2: Discovery (2 days)
-
-- [ ] Category/industry filtering (GIN index queries)
-- [ ] Search functionality (pg_trgm or Supabase full-text)
-- [ ] Agent listing page: card grid + data-dense list toggle
-- [ ] Sort by metrics (tasks_completed, success_rate)
-
-### Sprint 3: Verification & Trust (2 days)
-
-- [ ] Verification badge rendering (Basic/Verified/Certified/Enterprise)
-- [ ] Self-report metrics form (owner can update agent_metrics)
-- [ ] Activity feed — manual entry form
-- [ ] Owner profile pages (`/owners/[username]`)
-- [ ] Agent claim flow (/api/claim-agent)
-
-### Sprint 4: Consulting Connection (1–2 days)
-
-- [ ] "Request Setup" form → insert consulting_requests
-- [ ] Email notification to owner on new request (Resend or SMTP)
-- [ ] Owner availability toggle (consulting_available on profiles)
-- [ ] Consulting CTA variant on profiles
-
-### Sprint 5: Polish & Launch (1–2 days)
-
-- [ ] Landing page — position vs Claw Mart
-- [ ] SEO meta tags + OG images
-- [ ] Ari's profile as showcase (real data, verified)
-- [ ] agentcv.ai domain setup
-- [ ] Launch post draft for X
-
----
-
-## Implementation Notes
-
-### Codex is used for implementation
-
-All application code is written by **Codex CLI** (`/usr/local/bin/codex`), not by Claude directly.
-Claude's role: architecture, schema design, task decomposition, QA review.
-
-### Supabase Client Pattern
-
-```typescript
-// lib/supabase.ts
-import { createBrowserClient } from '@supabase/ssr';
-import { Database } from '@/types/supabase'; // generated types
-
-export const supabase = createBrowserClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-```
-
-### Data Fetching Pattern (Server Components)
-
-```typescript
-// app/agents/[slug]/page.tsx
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-
-const supabase = createServerClient(...)
-const { data: agent } = await supabase
-  .from('agents')
-  .select(`*, agent_metrics(*), agent_capabilities(*), agent_activity(*)`)
-  .eq('slug', params.slug)
-  .single()
-```
-
-### avg_response_time Display Helper
-
-```typescript
-// Store as ms integer, display as human-readable
-export function formatResponseTime(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
-}
-```
-
----
-
-## Design Philosophy
-
-- **100% English UI** — global/US market only. No Korean text in the UI.
-- **Linear/Vercel aesthetic** — dark mode default, minimal, data-dense, premium
-- Think: GitHub profile meets LinkedIn meets Vercel dashboard
-- Agent cards: prioritize metrics visibility over decoration
-
----
-
-## Quality Rules (MANDATORY — NO EXCEPTIONS)
-
-```bash
-npm run build     # must pass with zero errors
-npx tsc --noEmit  # TypeScript strict mode — must pass
-```
-
-- All UI changes must be described in commit message
-- Pre-commit hooks auto-format on commit
-- **"Build passes" ≠ done. Browser check = done.**
-- After every commit: verify deployed URL actually renders, no console errors
-
-### TypeScript Rules
-
-- `strict: true` in tsconfig.json (already set)
-- No `any` types — use `unknown` + type guard if needed
-- Generate Supabase types: `npx supabase gen types typescript --local > src/types/supabase.ts`
-- All DB query results must be typed via generated types
-
----
-
-## File Structure
-
-```
-agentcv/
-├── docs/
-│   ├── schema.sql       ← Supabase schema (apply first)
-│   └── seed.sql         ← Seed data (12 mock agents → DB)
-├── src/
-│   ├── app/             ← Next.js App Router pages
-│   ├── components/      ← Shared UI components
-│   ├── data/
-│   │   └── agents.ts    ← DEPRECATED in v2 (keep for reference, remove after migration)
-│   ├── lib/
-│   │   └── supabase.ts  ← Supabase client (to be created)
-│   └── types/
-│       └── supabase.ts  ← Generated Supabase types (to be created)
-└── CLAUDE.md            ← This file
-```
-
----
-
-## Environment Variables Required
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=   # server-only, never expose to client
-```
+If these rules conflict with a request, the rules win.
