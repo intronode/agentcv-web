@@ -205,31 +205,33 @@ export default async function OwnerProfilePage({ params }: PageProps) {
               <span className="text-text-tertiary">{totalProof} total.</span>
             </p>
           </div>
-          <div className="space-y-3">
-            {proofFeed.map((entry) => (
-              <div
-                key={`${entry.subject_type}-${entry.id}`}
-                className="rounded-xl border border-border bg-surface-elevated px-5 py-4"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Subject attribution */}
+          <div className="space-y-2">
+            {proofFeed.map((entry) => {
+              const isOneLiner = !entry.body || entry.body.trim().length === 0;
+              return isOneLiner ? (
+                /* ── Compact row for title-only entries ── */
+                <div
+                  key={`${entry.subject_type}-${entry.id}`}
+                  className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-elevated px-4 py-2.5"
+                >
                   <Link
                     href={`/${entry.subjectKind === 'agent' ? 'agents' : 'configurations'}/${entry.subjectSlug}`}
-                    className="inline-flex items-center gap-1 rounded border border-border bg-surface px-2 py-0.5 text-[11px] font-medium text-text-secondary hover:text-accent"
+                    className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] font-medium text-text-secondary hover:text-accent"
                   >
                     {entry.subjectKind === 'configuration' ? '⚙' : '🤖'} {entry.subjectName}
                   </Link>
-                  {/* Entry type */}
-                  <span className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-text-tertiary">
+                  <span className="rounded border border-border px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-text-tertiary">
                     {PROOF_TYPE_LABELS[entry.type] ?? entry.type}
                   </span>
-                  {/* Evidence link indicator */}
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-primary">
+                    {entry.title}
+                  </span>
                   {entry.evidence_url && (
                     <a
                       href={entry.evidence_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] text-blue-300 hover:underline"
+                      className="inline-flex shrink-0 items-center gap-1 text-[11px] text-blue-300 hover:underline"
                     >
                       <svg
                         width="10"
@@ -246,18 +248,59 @@ export default async function OwnerProfilePage({ params }: PageProps) {
                       evidence
                     </a>
                   )}
-                  <span className="ml-auto text-[10px] text-text-tertiary">
+                  <span className="shrink-0 text-[10px] text-text-tertiary">
                     {formatDate(entry.entry_date)}
                   </span>
                 </div>
-                <p className="mt-2 text-sm font-medium text-text-primary">{entry.title}</p>
-                {entry.body && (
+              ) : (
+                /* ── Full card for entries with body text ── */
+                <div
+                  key={`${entry.subject_type}-${entry.id}`}
+                  className="rounded-xl border border-border bg-surface-elevated px-5 py-4"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/${entry.subjectKind === 'agent' ? 'agents' : 'configurations'}/${entry.subjectSlug}`}
+                      className="inline-flex items-center gap-1 rounded border border-border bg-surface px-2 py-0.5 text-[11px] font-medium text-text-secondary hover:text-accent"
+                    >
+                      {entry.subjectKind === 'configuration' ? '⚙' : '🤖'} {entry.subjectName}
+                    </Link>
+                    <span className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-text-tertiary">
+                      {PROOF_TYPE_LABELS[entry.type] ?? entry.type}
+                    </span>
+                    {entry.evidence_url && (
+                      <a
+                        href={entry.evidence_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] text-blue-300 hover:underline"
+                      >
+                        <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 0 2 2h3" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                        evidence
+                      </a>
+                    )}
+                    <span className="ml-auto text-[10px] text-text-tertiary">
+                      {formatDate(entry.entry_date)}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm font-medium text-text-primary">{entry.title}</p>
                   <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-text-tertiary">
                     {entry.body}
                   </p>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

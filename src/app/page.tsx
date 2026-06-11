@@ -27,7 +27,7 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-6xl px-6">
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="border-b border-border-subtle pt-20 pb-12 md:pt-28 md:pb-14">
+      <section className="border-b border-border-subtle pt-12 pb-12 md:pt-16 md:pb-14">
         <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-16">
           {/* ── Left column: copy + CTAs + stats ── */}
           <div className="min-w-0 flex-1">

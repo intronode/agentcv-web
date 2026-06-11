@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import TopologyGlyph, { TOPOLOGY_LABELS } from '@/components/TopologyGlyph';
 import type { TopologyType } from '@/lib/db/types';
@@ -25,6 +25,17 @@ const TOPOLOGY_TYPES: TopologyType[] = [
   'solo_plus_tools',
   'other',
 ];
+
+// ── Section definitions ────────────────────────────────────────────────────
+
+const SECTIONS = [
+  { id: 'section-identity', label: 'Identity' },
+  { id: 'section-comparable', label: 'Comparable fields' },
+  { id: 'section-blueprint', label: 'Blueprint' },
+  { id: 'section-owner', label: 'Owner' },
+] as const;
+
+type SectionId = (typeof SECTIONS)[number]['id'];
 
 // ── Tag input component ────────────────────────────────────────────────────
 
@@ -181,6 +192,16 @@ function CharTextarea({
   );
 }
 
+// ── ISO date validation ────────────────────────────────────────────────────
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidISODate(s: string): boolean {
+  if (!ISO_DATE_RE.test(s)) return false;
+  const d = new Date(s);
+  return !isNaN(d.getTime());
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 
 interface FieldErrors {
@@ -202,6 +223,44 @@ export default function SubmitPage() {
   const [howBuilt, setHowBuilt] = useState('');
   const [oversight, setOversight] = useState('');
   const [topologyProse, setTopologyProse] = useState('');
+  const [opSinceDraft, setOpSinceDraft] = useState('');
+
+  // ── Scroll-spy active section ──────────────────────────────────────────
+  const [activeSection, setActiveSection] = useState<SectionId>('section-identity');
+
+  useEffect(() => {
+    const sectionEls = SECTIONS.map(({ id }) => document.getElementById(id)).filter(
+      Boolean
+    ) as HTMLElement[];
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Pick the topmost visible section
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0) {
+          // visible[0] is guaranteed by the length check above
+          setActiveSection(visible[0]!.target.id as SectionId);
+        }
+      },
+      {
+        // rootMargin: start detecting when section is in the upper 40% of viewport
+        rootMargin: '-10% 0px -55% 0px',
+        threshold: 0,
+      }
+    );
+
+    sectionEls.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  function scrollToSection(id: string) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
 
   // Client-side validation mirroring server rules
   function validate(form: FormData): FieldErrors {
@@ -228,6 +287,10 @@ export default function SubmitPage() {
       const n = parseInt(ac, 10);
       if (!Number.isInteger(n) || n < 1 || n > 50)
         errs['agentCount'] = 'Agent count must be an integer between 1 and 50';
+    }
+
+    if (opSinceDraft.trim() && !isValidISODate(opSinceDraft.trim())) {
+      errs['operationalSince'] = 'Use YYYY-MM-DD format — e.g. 2024-03-15';
     }
 
     return errs;
@@ -266,7 +329,7 @@ export default function SubmitPage() {
     if (howBuilt.trim()) payload['howBuilt'] = howBuilt.trim();
     if (oversight.trim()) payload['oversight'] = oversight.trim();
 
-    const opSince = (form.get('operationalSince') as string | null)?.trim();
+    const opSince = opSinceDraft.trim();
     if (opSince) payload['operationalSince'] = opSince;
 
     try {
@@ -306,7 +369,7 @@ export default function SubmitPage() {
         Document a working agent harness — the role topology, platform, and evidence that makes it
         real.{' '}
         <span className="text-text-tertiary">
-          ~6–8 minutes — most fields are short; the blueprint prose is the work.
+          6–8 minutes — most fields are short; the blueprint prose is the work.
         </span>
       </p>
 
@@ -321,37 +384,42 @@ export default function SubmitPage() {
         creation and the computed tier upgrades itself. Nothing is self-assignable.
       </div>
 
-      {/* Section navigator — sticky under navbar, bg-blur */}
+      {/* Section navigator — sticky under navbar */}
       <nav
         aria-label="Form sections"
-        className="sticky top-14 z-20 mt-6 flex flex-wrap items-center gap-x-0 divide-x divide-border overflow-hidden rounded-lg border border-border bg-surface-elevated/80 text-xs backdrop-blur-md"
+        className="sticky top-16 z-20 mt-6 flex flex-wrap items-center gap-x-0 divide-x divide-border overflow-hidden rounded-lg border border-border bg-surface-elevated/80 text-xs backdrop-blur-md"
       >
-        {(
-          [
-            { id: 'section-identity', label: 'Identity' },
-            { id: 'section-comparable', label: 'Comparable fields' },
-            { id: 'section-blueprint', label: 'Blueprint' },
-            { id: 'section-owner', label: 'Owner' },
-          ] as const
-        ).map(({ id, label }, i) => (
-          <a
-            key={id}
-            href={`#${id}`}
-            className="flex items-center gap-1.5 px-3 py-2 text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
-          >
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-surface text-[9px] font-semibold text-text-tertiary">
-              {i + 1}
-            </span>
-            {label}
-          </a>
-        ))}
+        {SECTIONS.map(({ id, label }, i) => {
+          const isActive = activeSection === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => scrollToSection(id)}
+              className={`flex items-center gap-1.5 px-3 py-2 transition-colors ${
+                isActive
+                  ? 'bg-accent/10 text-accent'
+                  : 'text-text-tertiary hover:bg-surface-hover hover:text-text-primary'
+              }`}
+            >
+              <span
+                className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-semibold transition-colors ${
+                  isActive ? 'bg-accent text-white' : 'bg-surface text-text-tertiary'
+                }`}
+              >
+                {i + 1}
+              </span>
+              {label}
+            </button>
+          );
+        })}
       </nav>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6" noValidate>
         {/* ── Identity ── */}
         <section
           id="section-identity"
-          className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
+          className="scroll-mt-32 space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
         >
           <h2 className="text-sm font-semibold">Identity</h2>
 
@@ -390,29 +458,37 @@ export default function SubmitPage() {
           </div>
 
           <div>
-            <label htmlFor="operationalSince" className={labelClasses}>
-              Operating since
-            </label>
+            <div className="flex items-baseline gap-2">
+              <label htmlFor="operationalSince" className={labelClasses}>
+                Operating since
+              </label>
+              <span className="text-[10px] text-text-tertiary">(optional)</span>
+            </div>
             <input
               id="operationalSince"
               name="operationalSince"
               type="text"
               inputMode="numeric"
-              pattern="\d{4}-\d{2}-\d{2}"
               placeholder="YYYY-MM-DD"
               maxLength={10}
-              className={`mt-1.5 ${inputClasses} font-mono`}
+              value={opSinceDraft}
+              onChange={(e) => setOpSinceDraft(e.target.value)}
+              className={`mt-1.5 ${inputClasses} font-mono ${fieldErrors['operationalSince'] ? 'border-red-500/50' : ''}`}
             />
-            <p className="mt-0.5 text-[11px] text-text-tertiary">
-              ISO format — e.g. 2024-03-15. Day is required.
-            </p>
+            {fieldErrors['operationalSince'] ? (
+              <p className="mt-0.5 text-[11px] text-red-400">{fieldErrors['operationalSince']}</p>
+            ) : (
+              <p className="mt-0.5 text-[11px] text-text-tertiary">
+                ISO format — e.g. 2024-03-15. Day is required.
+              </p>
+            )}
           </div>
         </section>
 
         {/* ── Comparable fields ── */}
         <section
           id="section-comparable"
-          className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
+          className="scroll-mt-32 space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
         >
           <h2 className="text-sm font-semibold">Comparable fields</h2>
           <p className="text-[11px] text-text-tertiary">
@@ -536,7 +612,7 @@ export default function SubmitPage() {
         {/* ── Blueprint ── */}
         <section
           id="section-blueprint"
-          className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
+          className="scroll-mt-32 space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
         >
           <h2 className="text-sm font-semibold">Blueprint</h2>
           <p className="text-[11px] text-text-tertiary">
@@ -578,7 +654,7 @@ export default function SubmitPage() {
         {/* ── Owner ── */}
         <section
           id="section-owner"
-          className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
+          className="scroll-mt-32 space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
         >
           <h2 className="text-sm font-semibold">Owner</h2>
 

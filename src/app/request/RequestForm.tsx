@@ -96,8 +96,7 @@ export default function RequestForm({ refConfig }: RequestFormProps) {
                 .{' '}
               </>
             )}
-            No automated email yet — this is a registry, not a CRM. The owner will follow up
-            directly if there is a fit.
+            Every request is read by a person. Intronode replies directly — no automated funnel.
           </p>
         </div>
         <Link
@@ -236,7 +235,7 @@ export default function RequestForm({ refConfig }: RequestFormProps) {
           {state === 'submitting' ? 'Sending…' : 'Send request'}
         </button>
         <p className="text-xs text-text-tertiary">
-          No automated reply yet — Intronode reviews manually.
+          Every request is read by a person. Intronode replies directly — no automated funnel.
         </p>
       </div>
     </form>

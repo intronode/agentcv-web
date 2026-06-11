@@ -185,10 +185,10 @@ echo "       Stylesheet OK (HTTP ${STYLESHEET_STATUS}, content-type: $(echo "${S
 # BUILD_ID string appears in the served HTML — any mismatch means a stale
 # server is serving output from a different build.
 echo "    d3: Verifying served HTML contains .next/BUILD_ID (${BUILD_ID})..."
-if ! echo "${ROOT_HTML}" | grep -qF "${BUILD_ID}"; then
+if ! echo "${ROOT_HTML}" | grep -qF -- "${BUILD_ID}"; then
   # Also try fetching without streaming compression in case curl decoded it oddly
   ROOT_HTML_PLAIN="$(curl -s --max-time 10 -H 'Accept-Encoding: identity' "${BASE_URL}/")"
-  if ! echo "${ROOT_HTML_PLAIN}" | grep -qF "${BUILD_ID}"; then
+  if ! echo "${ROOT_HTML_PLAIN}" | grep -qF -- "${BUILD_ID}"; then
     echo "ABORT: buildId '${BUILD_ID}' not found in served HTML."
     echo "  This means a stale server is serving output from a different build."
     _cleanup

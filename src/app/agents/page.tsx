@@ -4,6 +4,7 @@ import { agentFilterOptions, listAgents } from '@/lib/db/queries';
 import type { TrustTier } from '@/lib/db/types';
 import AgentCard from '@/components/AgentCard';
 import FilterBar from '@/components/FilterBar';
+import BackToTop from '@/components/BackToTop';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,6 +72,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
           ))}
         </div>
       )}
+      <BackToTop />
     </div>
   );
 }

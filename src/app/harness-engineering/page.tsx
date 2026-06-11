@@ -38,6 +38,15 @@ const TIERS = [
   },
 ] as const;
 
+// In-page TOC anchor chips
+const TOC_ITEMS = [
+  { id: 'what-is-it', label: 'What is it?' },
+  { id: 'composition-problem', label: 'Composition problem' },
+  { id: 'how-agentcv-documents', label: 'Documentation schema' },
+  { id: 'trust-ladder', label: 'Trust ladder' },
+  { id: 'what-we-dont-verify', label: "What we don't verify" },
+] as const;
+
 export default function HarnessEngineeringPage() {
   const layerCounts = getLayerCounts();
 
@@ -45,9 +54,24 @@ export default function HarnessEngineeringPage() {
     <div className="mx-auto max-w-3xl px-6 py-12">
       {/* ── (a) What harness engineering is ─────────────────────────────── */}
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">Explainer</p>
-      <h1 className="mt-3 text-3xl font-bold tracking-tight">Harness engineering</h1>
+      <h1 id="what-is-it" className="mt-3 text-3xl font-bold tracking-tight">
+        Harness engineering
+      </h1>
 
-      <p className="mt-4 leading-relaxed text-text-secondary">
+      {/* ── TOC chip bar ──────────────────────────────────────────────────── */}
+      <nav aria-label="Page sections" className="mt-5 flex flex-wrap gap-1.5">
+        {TOC_ITEMS.map(({ id, label }) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className="rounded-full border border-border bg-surface-elevated px-3 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:border-accent/50 hover:bg-surface-hover hover:text-accent"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <p className="mt-6 leading-relaxed text-text-secondary">
         The field of AI agents has gone through three capability disciplines in rapid succession.
       </p>
 
@@ -118,7 +142,12 @@ export default function HarnessEngineeringPage() {
       </div>
 
       {/* ── (b) Why composition is the unsolved pain ─────────────────────── */}
-      <h2 className="mt-12 text-xl font-semibold tracking-tight">The composition problem</h2>
+      <h2
+        id="composition-problem"
+        className="mt-12 scroll-mt-24 text-xl font-semibold tracking-tight"
+      >
+        The composition problem
+      </h2>
       <p className="mt-3 text-sm leading-relaxed text-text-secondary">
         Once you accept the harness-engineering frame, a hard problem becomes visible. A
         configuration is a combinatorial choice: which roles (main / dev / watcher / ops?), how many
@@ -187,7 +216,10 @@ export default function HarnessEngineeringPage() {
       </p>
 
       {/* ── (c) How AgentCV documents configurations ──────────────────────── */}
-      <h2 className="mt-12 text-xl font-semibold tracking-tight">
+      <h2
+        id="how-agentcv-documents"
+        className="mt-12 scroll-mt-24 text-xl font-semibold tracking-tight"
+      >
         How AgentCV documents configurations
       </h2>
       <p className="mt-3 text-sm leading-relaxed text-text-secondary">
@@ -332,7 +364,9 @@ export default function HarnessEngineeringPage() {
       </div>
 
       {/* ── (d) The trust ladder ─────────────────────────────────────────── */}
-      <h2 className="mt-12 text-xl font-semibold tracking-tight">The trust ladder</h2>
+      <h2 id="trust-ladder" className="mt-12 scroll-mt-24 text-xl font-semibold tracking-tight">
+        The trust ladder
+      </h2>
       <p className="mt-2 text-sm text-text-secondary">
         The agent economy has an honesty problem — &ldquo;agent washing&rdquo; is now a named
         category of vendor behavior. AgentCV&apos;s answer is not a verification-theater badge; it
@@ -358,7 +392,12 @@ export default function HarnessEngineeringPage() {
       </div>
 
       {/* What AgentCV does not do */}
-      <h2 className="mt-10 text-xl font-semibold tracking-tight">What AgentCV does not verify</h2>
+      <h2
+        id="what-we-dont-verify"
+        className="mt-10 scroll-mt-24 text-xl font-semibold tracking-tight"
+      >
+        What AgentCV does not verify
+      </h2>
       <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-relaxed text-text-secondary">
         <li>
           We do not verify claims we cannot check. There is no &ldquo;verified&rdquo; badge on any
