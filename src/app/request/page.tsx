@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { getConfigurationProfile } from '@/lib/db/queries';
 import RequestForm from './RequestForm';
 
@@ -29,8 +30,14 @@ export default async function RequestPage({ searchParams }: PageProps) {
       </p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight">Request a configuration setup</h1>
       <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-        Found a configuration that works for your use case? Request a consultation or custom setup
-        from Intronode. Tell us what you need to build or run.
+        Found a configuration that works for your use case? Request a consultation or custom setup.
+        Tell us what you need to build or run.
+      </p>
+      <p className="mt-2 text-xs text-text-tertiary">
+        <Link href="/owners/intronode" className="text-accent hover:underline">
+          Intronode
+        </Link>{' '}
+        — the studio operating the Ari Collective — reviews every request.
       </p>
 
       <RequestForm refConfig={refConfig} />

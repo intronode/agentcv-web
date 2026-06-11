@@ -133,11 +133,23 @@ export default async function AgentProfilePage({ params }: PageProps) {
               {metrics.length > 0 ? (
                 <MetricGrid metrics={metrics} />
               ) : teams.length > 0 ? (
-                <div className="rounded-lg border border-dashed border-border p-5">
-                  <p className="text-sm text-text-secondary">
-                    Metrics for this agent are tracked at the configuration level.
+                <div className="rounded-lg border border-border bg-surface-elevated/50 p-5">
+                  <p className="text-sm leading-relaxed text-text-secondary">
+                    Performance is measured where the work happens — at the configuration level.{' '}
+                    {agent.name} runs inside{' '}
+                    {teams.length === 1 && teams[0] ? (
+                      <Link
+                        href={`/configurations/${teams[0].slug}`}
+                        className="font-medium text-accent hover:underline"
+                      >
+                        {teams[0].avatar} {teams[0].name}
+                      </Link>
+                    ) : (
+                      'the configurations below'
+                    )}
+                    , whose windowed metrics are the honest unit of account.
                   </p>
-                  <ul className="mt-3 space-y-2.5">
+                  <ul className="mt-4 space-y-2.5">
                     {teams.map((team) => {
                       const headline: ConfigHeadlineMetric | undefined = configHeadlineMetrics.get(
                         team.slug

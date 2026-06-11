@@ -304,7 +304,10 @@ export default function SubmitPage() {
       <h1 className="mt-2 text-3xl font-bold tracking-tight">Register a configuration</h1>
       <p className="mt-2 text-sm leading-relaxed text-text-secondary">
         Document a working agent harness — the role topology, platform, and evidence that makes it
-        real.
+        real.{' '}
+        <span className="text-text-tertiary">
+          ~6–8 minutes — most fields are short; the blueprint prose is the work.
+        </span>
       </p>
 
       {/* Honesty notice */}
@@ -318,10 +321,10 @@ export default function SubmitPage() {
         creation and the computed tier upgrades itself. Nothing is self-assignable.
       </div>
 
-      {/* Section navigator — shows form structure from the fold */}
+      {/* Section navigator — sticky under navbar, bg-blur */}
       <nav
         aria-label="Form sections"
-        className="mt-6 flex flex-wrap items-center gap-x-0 divide-x divide-border overflow-hidden rounded-lg border border-border bg-surface-elevated/50 text-xs"
+        className="sticky top-14 z-20 mt-6 flex flex-wrap items-center gap-x-0 divide-x divide-border overflow-hidden rounded-lg border border-border bg-surface-elevated/80 text-xs backdrop-blur-md"
       >
         {(
           [

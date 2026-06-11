@@ -128,4 +128,21 @@ count. All timestamps KST.
 
 - **Shot:** 2026-06-12 ~00:25 via qa-shoot.sh ·
   docs/evidence/cycles/cycle-07/ (44 files, 0 unexpected console errors)
+- **Examiner (fresh subagent):** scores — credibility 4 · density 4 ·
+  depth 4 · interaction 4 · honesty 5 · soundness 4 · copy 4 (min 4).
+  Report: cycle-07/examiner-report.md
+- **Weakest thing named:** flagship Ari agent card is the emptiest on
+  /agents (honest REAL data renders worse than labeled-illustrative
+  neighbors); logo placeholder flagged a third time.
+- **Fix:** via-config headline metrics on metric-less agent cards with
+  honest "via <config>" attribution (batched query); hub-and-spoke
+  logomark + wordmark replaces the "A" square; Intronode bio expanded
+  (repo-evidenced facts only); mobile card metric slots; submit
+  section navigator; mobile compare diff signaling.
+- **Fix commit:** e7bb4de (2026-06-12 ~01:00)
+
+## Cycle 08
+
+- **Shot:** 2026-06-12 ~01:05 via qa-shoot.sh ·
+  docs/evidence/cycles/cycle-08/ (44 files, 0 unexpected console errors)
 - **Examiner:** (pending)

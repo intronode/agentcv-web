@@ -337,9 +337,9 @@ export default async function ComparePage({ searchParams }: PageProps) {
           no horizontal scroll required at 390 px.
           ================================================================ */}
       <div className="block md:hidden">
-        {/* Config identity strip — shows all configs at a glance */}
+        {/* Config identity strip — sticky so column identity is always visible while scrolling */}
         <div
-          className="mb-4 grid gap-2 rounded-xl border border-border bg-surface-elevated p-3"
+          className="sticky top-14 z-10 mb-4 grid gap-2 rounded-xl border border-border bg-surface-elevated/95 p-3 backdrop-blur-sm"
           style={{ gridTemplateColumns: `repeat(${configs.length}, minmax(0, 1fr))` }}
         >
           {configs.map((c) => (

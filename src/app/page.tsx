@@ -28,60 +28,209 @@ export default function HomePage() {
     <div className="mx-auto max-w-6xl px-6">
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="border-b border-border-subtle pt-20 pb-12 md:pt-28 md:pb-14">
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
-          Harness Engineering Registry
-        </p>
-        <h1 className="mt-4 max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight md:text-[3.25rem]">
-          Agent = Model + Harness.{' '}
-          <span className="text-text-secondary">
-            The model is rented. The harness is the asset.
-          </span>
-        </h1>
-        <p className="mt-6 max-w-2xl text-base leading-relaxed text-text-secondary">
-          AgentCV is the registry of working agent configurations, published with evidence. Which
-          roles, which topology, which models — and proof that it shipped.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            href="/configurations"
-            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
-          >
-            Browse configurations
-          </Link>
-          <Link
-            href="/request"
-            className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
-          >
-            Request a setup
-          </Link>
-        </div>
+        <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-16">
+          {/* ── Left column: copy + CTAs + stats ── */}
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+              Harness Engineering Registry
+            </p>
+            <h1 className="mt-4 max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight md:text-[3.25rem]">
+              Agent = Model + Harness.{' '}
+              <span className="text-text-secondary">
+                The model is rented. The harness is the asset.
+              </span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-text-secondary">
+              AgentCV is the registry of working agent configurations, published with evidence.
+              Which roles, which topology, which models — and proof that it shipped.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/configurations"
+                className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+              >
+                Browse configurations
+              </Link>
+              <Link
+                href="/request"
+                className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
+              >
+                Request a setup
+              </Link>
+            </div>
 
-        {/* Live DB stats */}
-        <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
-            <div className="text-2xl font-bold tabular-nums tracking-tight">
-              {counts.configurations.toLocaleString('en-US')}
+            {/* Live DB stats */}
+            <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
+                <div className="text-2xl font-bold tabular-nums tracking-tight">
+                  {counts.configurations.toLocaleString('en-US')}
+                </div>
+                <div className="mt-1 text-xs text-text-tertiary">configurations</div>
+              </div>
+              <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
+                <div className="text-2xl font-bold tabular-nums tracking-tight">
+                  {counts.agents.toLocaleString('en-US')}
+                </div>
+                <div className="mt-1 text-xs text-text-tertiary">agent components</div>
+              </div>
+              <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
+                <div className="text-2xl font-bold tabular-nums tracking-tight">
+                  {counts.proofEntries.toLocaleString('en-US')}
+                </div>
+                <div className="mt-1 text-xs text-text-tertiary">proof entries</div>
+              </div>
+              <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
+                <div className="text-2xl font-bold tabular-nums tracking-tight">
+                  {evidenceLinkedPct}%
+                </div>
+                <div className="mt-1 text-xs text-text-tertiary">evidence-linked</div>
+              </div>
             </div>
-            <div className="mt-1 text-xs text-text-tertiary">configurations</div>
           </div>
-          <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
-            <div className="text-2xl font-bold tabular-nums tracking-tight">
-              {counts.agents.toLocaleString('en-US')}
+
+          {/* ── Right column: live registry preview — flagship card over topology glyph backdrop ── */}
+          {/* Hidden below lg to prevent layout collapse; stacks above on small screens if flagship exists */}
+          {featured.configurations[0] && (
+            <div className="hidden lg:flex lg:w-[360px] lg:shrink-0 lg:flex-col lg:items-stretch">
+              <div className="relative">
+                {/* Faint hub-and-spoke constellation backdrop */}
+                <svg
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 h-full w-full text-accent/[0.07]"
+                  viewBox="0 0 360 340"
+                  fill="none"
+                  preserveAspectRatio="xMidYMid meet"
+                >
+                  {/* Central hub */}
+                  <circle cx="180" cy="170" r="22" stroke="currentColor" strokeWidth="1.5" />
+                  <circle cx="180" cy="170" r="8" fill="currentColor" opacity="0.4" />
+                  {/* Spokes to satellite nodes */}
+                  <line x1="180" y1="148" x2="180" y2="68" stroke="currentColor" strokeWidth="1" />
+                  <line x1="199" y1="179" x2="292" y2="210" stroke="currentColor" strokeWidth="1" />
+                  <line x1="163" y1="182" x2="76" y2="240" stroke="currentColor" strokeWidth="1" />
+                  <line x1="175" y1="192" x2="148" y2="278" stroke="currentColor" strokeWidth="1" />
+                  <line x1="197" y1="162" x2="270" y2="90" stroke="currentColor" strokeWidth="1" />
+                  {/* Satellite nodes */}
+                  <circle cx="180" cy="58" r="10" stroke="currentColor" strokeWidth="1" />
+                  <circle cx="302" cy="216" r="10" stroke="currentColor" strokeWidth="1" />
+                  <circle cx="66" cy="248" r="10" stroke="currentColor" strokeWidth="1" />
+                  <circle
+                    cx="140"
+                    cy="288"
+                    r="8"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    opacity="0.7"
+                  />
+                  <circle
+                    cx="278"
+                    cy="80"
+                    r="8"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    opacity="0.7"
+                  />
+                  {/* Outer ring hints */}
+                  <circle
+                    cx="180"
+                    cy="170"
+                    r="90"
+                    stroke="currentColor"
+                    strokeWidth="0.5"
+                    strokeDasharray="3 6"
+                    opacity="0.5"
+                  />
+                </svg>
+
+                {/* Flagship config card — slightly elevated and rotated */}
+                <div
+                  className="relative z-10 -rotate-1 rounded-2xl border border-border bg-surface-elevated shadow-xl shadow-black/30"
+                  style={{ transform: 'rotate(-1.5deg) translateY(-2px)' }}
+                >
+                  {/* Card inner content — compact variant of ConfigurationCard */}
+                  <Link
+                    href={`/configurations/${featured.configurations[0].slug}`}
+                    className="block rounded-2xl p-5 transition-all hover:bg-surface-hover"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface text-2xl">
+                          {featured.configurations[0].avatar}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-text-primary">
+                            {featured.configurations[0].name}
+                          </h3>
+                          <p className="text-xs text-text-tertiary">
+                            {featured.configurations[0].ownerName}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1.5">
+                        <TrustBadge tier={featured.configurations[0].tier} size="sm" />
+                      </div>
+                    </div>
+
+                    <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-text-secondary">
+                      {featured.configurations[0].tagline}
+                    </p>
+
+                    {/* Spec row */}
+                    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border-subtle pt-3">
+                      {featured.configurations[0].topologyType && (
+                        <span className="inline-flex items-center gap-1 text-xs text-text-secondary">
+                          <TopologyGlyph
+                            topology={featured.configurations[0].topologyType}
+                            size={13}
+                            className="shrink-0 text-accent"
+                          />
+                          {TOPOLOGY_LABELS[featured.configurations[0].topologyType]}
+                        </span>
+                      )}
+                      {featured.configurations[0].agentCount !== null && (
+                        <span className="text-xs text-text-secondary">
+                          <span className="font-medium text-text-primary">
+                            {featured.configurations[0].agentCount}
+                          </span>{' '}
+                          agents
+                        </span>
+                      )}
+                      {featured.configurations[0].platform && (
+                        <span className="text-xs text-text-tertiary">
+                          {featured.configurations[0].platform}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Role pills */}
+                    {featured.configurations[0].members.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {featured.configurations[0].members.slice(0, 4).map((member) => (
+                          <span
+                            key={member.slug}
+                            className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-text-secondary"
+                          >
+                            <span className="font-medium text-text-primary">{member.role}</span>
+                            {member.model && (
+                              <span className="text-text-tertiary">· {member.model}</span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </Link>
+                </div>
+
+                {/* "live from the registry" caption */}
+                <p className="mt-3 text-center text-[11px] text-text-tertiary">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    live from the registry
+                  </span>
+                </p>
+              </div>
             </div>
-            <div className="mt-1 text-xs text-text-tertiary">agent components</div>
-          </div>
-          <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
-            <div className="text-2xl font-bold tabular-nums tracking-tight">
-              {counts.proofEntries.toLocaleString('en-US')}
-            </div>
-            <div className="mt-1 text-xs text-text-tertiary">proof entries</div>
-          </div>
-          <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
-            <div className="text-2xl font-bold tabular-nums tracking-tight">
-              {evidenceLinkedPct}%
-            </div>
-            <div className="mt-1 text-xs text-text-tertiary">evidence-linked</div>
-          </div>
+          )}
         </div>
       </section>
 
