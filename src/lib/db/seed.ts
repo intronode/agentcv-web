@@ -2737,6 +2737,331 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
 
+    // -- Additional curated metrics (QA cycle-02 additions, evidence_linked) --
+
+    // anthropic-swe-bench-agent: add previous SOTA baseline for context
+    {
+      subject: ['configuration', 'anthropic-swe-bench-agent'],
+      key: 'prior_sota_pct',
+      label: 'Prior SOTA at publication',
+      value: 45,
+      unit: 'pct',
+      asOf: '2024-10-22',
+      note: 'Previous best on SWE-bench Verified before Claude 3.5 Sonnet result. Source: https://www.anthropic.com/research/swe-bench-sonnet [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // magentic-one: AssistantBench accuracy
+    {
+      subject: ['configuration', 'magentic-one'],
+      key: 'assistantbench_score',
+      label: 'AssistantBench accuracy',
+      value: 25.3,
+      unit: 'pct',
+      asOf: '2024-11-07',
+      note: '±6.3; default GPT-4o-2024-05-13. Source: arXiv 2411.04468 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // metagpt-pipeline: executability score and MBPP
+    {
+      subject: ['configuration', 'metagpt-pipeline'],
+      key: 'executability_score',
+      label: 'Executability score (SoftwareDev)',
+      value: 3.75,
+      unit: 'count',
+      asOf: '2023-08-01',
+      note: '3.75/4; vs ChatDev 2.25. Source: arXiv 2308.00352 Table 3 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'metagpt-pipeline'],
+      key: 'mbpp_score',
+      label: 'MBPP Pass@1',
+      value: 87.7,
+      unit: 'pct',
+      asOf: '2023-08-01',
+      note: 'With executable feedback loop. Source: arXiv 2308.00352 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // chatdev-pipeline: executability and win rate
+    {
+      subject: ['configuration', 'chatdev-pipeline'],
+      key: 'executability_score',
+      label: 'Executability score',
+      value: 0.88,
+      unit: 'count',
+      asOf: '2023-07-14',
+      note: 'vs GPT-Engineer 0.36, MetaGPT 0.41. Source: arXiv 2307.07924 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'chatdev-pipeline'],
+      key: 'win_rate_pct',
+      label: 'Win rate vs GPT-Engineer',
+      value: 77,
+      unit: 'pct',
+      asOf: '2023-07-14',
+      note: 'Human evaluation: 77% of ChatDev tasks rated better than GPT-Engineer. Source: arXiv 2307.07924 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // aider-architect-editor: Claude 3.5 score alongside o1 score
+    {
+      subject: ['configuration', 'aider-architect-editor'],
+      key: 'claude_35_both_score',
+      label: 'SWE-bench (Claude 3.5, both roles)',
+      value: 80.5,
+      unit: 'pct',
+      asOf: '2024-09-26',
+      note: 'Claude 3.5 Sonnet as both architect and editor. Source: aider.chat/2024/09/26/architect.html [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // voyager-minecraft: distance multiplier
+    {
+      subject: ['configuration', 'voyager-minecraft'],
+      key: 'distance_multiplier',
+      label: 'Exploration distance vs SOTA',
+      value: 2.3,
+      unit: 'count',
+      asOf: '2023-05-25',
+      note: '2.3× longer distances explored vs DEPS (prior SOTA). Source: arXiv 2305.16291 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // malbo-optimized-team: heterogeneous cost reduction
+    {
+      subject: ['configuration', 'malbo-optimized-team'],
+      key: 'cost_reduction_heterogeneous',
+      label: 'Cost reduction (heterogeneous vs homogeneous)',
+      value: 65.8,
+      unit: 'pct',
+      asOf: '2024-11-18',
+      note: 'Heterogeneous MALBO team vs homogeneous GPT-4 team; comparable task performance. Source: arXiv 2511.11788 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // openhands-dev: SWE-Bench Lite (Claude 3.5 Sonnet)
+    {
+      subject: ['configuration', 'openhands-dev'],
+      key: 'success_rate',
+      label: 'SWE-bench Lite resolved',
+      value: 26,
+      unit: 'pct',
+      asOf: '2024-07-16',
+      note: 'CodeActAgent v1.8 with claude-3-5-sonnet@20240620 on SWE-bench Lite (300 instances). Source: arXiv 2407.16741 Table 1 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'openhands-dev'],
+      key: 'human_eval_fix',
+      label: 'HumanEvalFix score',
+      value: 79.3,
+      unit: 'pct',
+      asOf: '2024-07-16',
+      note: 'CodeActAgent v1.5, 0-shot, GPT-4o-2024-05-13. Source: arXiv 2407.16741 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // autogen-group-chat: MATH dataset and ALFWorld
+    {
+      subject: ['configuration', 'autogen-group-chat'],
+      key: 'success_rate',
+      label: 'MATH dataset accuracy',
+      value: 69.48,
+      unit: 'pct',
+      asOf: '2023-08-16',
+      note: 'Full MATH test set; GPT-4 alone: 55.18%. Source: arXiv 2308.08155 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'autogen-group-chat'],
+      key: 'alfworld_gain',
+      label: 'ALFWorld 3-agent gain vs 2-agent',
+      value: 15,
+      unit: 'pct',
+      asOf: '2023-08-16',
+      note: '3-agent grounding system: ~15% performance gain on 134 ALFWorld unseen tasks vs 2-agent baseline. Source: arXiv 2308.08155 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // agentverse-group: HumanEval and tool utilization
+    {
+      subject: ['configuration', 'agentverse-group'],
+      key: 'success_rate',
+      label: 'HumanEval Pass@1 (GPT-4, group)',
+      value: 89,
+      unit: 'pct',
+      asOf: '2023-08-29',
+      note: 'GPT-4 multi-agent group: 89.0% vs solo 87.2% vs CoT 83.5%. Source: arXiv 2308.10848 Table 2 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'agentverse-group'],
+      key: 'tool_tasks_completed',
+      label: 'Complex tool tasks completed',
+      value: 9,
+      unit: 'count',
+      asOf: '2023-08-29',
+      note: '9/10 complex tool-use tasks completed vs 3/10 for single ReAct agent. Source: arXiv 2308.10848 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // camel-two-agent: win rate vs single agent
+    {
+      subject: ['configuration', 'camel-two-agent'],
+      key: 'win_rate_pct',
+      label: 'Win rate vs single-shot GPT-3.5',
+      value: 76.3,
+      unit: 'pct',
+      asOf: '2023-03-31',
+      note: 'Human evaluation: CAMEL agents won 76.3%, draws 13.3%, GPT-3.5-turbo won 10.4% (AI Society tasks). Source: arXiv 2303.17760 Table 1 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'camel-two-agent'],
+      key: 'gpt4_eval_win_rate',
+      label: 'Win rate (GPT-4 evaluation)',
+      value: 73,
+      unit: 'pct',
+      asOf: '2023-03-31',
+      note: 'GPT-4 automated evaluation: CAMEL 73.0%, draws 4.0%, GPT-3.5-turbo 23.0%. Source: arXiv 2303.17760 Table 1 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // generative-agents-smallville: TrueSkill and hallucination rate
+    {
+      subject: ['configuration', 'generative-agents-smallville'],
+      key: 'trueskill_rating',
+      label: 'TrueSkill believability (full arch)',
+      value: 29.89,
+      unit: 'count',
+      asOf: '2023-04-07',
+      note: 'μ=29.89, σ=0.72; vs no-memory baseline μ=21.21; d=8.16 SDs. 100 Prolific evaluators. Source: arXiv 2304.03442 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'generative-agents-smallville'],
+      key: 'hallucination_rate',
+      label: 'Hallucination rate',
+      value: 1.3,
+      unit: 'pct',
+      asOf: '2023-04-07',
+      note: '6/453 agent responses hallucinated relationship facts (n=6). Source: arXiv 2304.03442 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // smolagents-code: code size (stated as ~1000 LOC)
+    {
+      subject: ['configuration', 'smolagents-code'],
+      key: 'codebase_loc',
+      label: 'Agent logic lines of code',
+      value: 1000,
+      unit: 'count',
+      asOf: '2025-01-01',
+      note: '~1000 lines: "The logic for agents fits in ~thousand lines of code." Source: huggingface.co/docs/smolagents [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    // smolagents: no benchmark scores published on main docs page; null metric as honest label
+    {
+      subject: ['configuration', 'smolagents-code'],
+      key: 'success_rate',
+      label: 'Benchmark task success rate',
+      value: null,
+      unit: 'pct',
+      asOf: '2025-01-01',
+      note: 'No standardized benchmark figures stated on HuggingFace smolagents docs at time of indexing.',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // anthropic-orchestrator-workers: no quantitative figures in source
+    {
+      subject: ['configuration', 'anthropic-orchestrator-workers'],
+      key: 'success_rate',
+      label: 'Task success rate',
+      value: null,
+      unit: 'pct',
+      asOf: '2024-12-19',
+      note: 'Anthropic "Building effective agents" guide is a pattern reference; no benchmark figures stated. Source: anthropic.com/research/building-effective-agents',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // claude-code-subagents: no external benchmark figures
+    {
+      subject: ['configuration', 'claude-code-subagents'],
+      key: 'success_rate',
+      label: 'Task success rate',
+      value: null,
+      unit: 'pct',
+      asOf: '2025-01-01',
+      note: 'Claude Code subagent patterns — no published benchmark figures at time of indexing.',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // claude-code-agent-teams: no external benchmark figures
+    {
+      subject: ['configuration', 'claude-code-agent-teams'],
+      key: 'success_rate',
+      label: 'Task success rate',
+      value: null,
+      unit: 'pct',
+      asOf: '2025-01-01',
+      note: 'Claude Code multi-agent team patterns — no published benchmark figures at time of indexing.',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // crewai-research-crew: no benchmark figures in tutorial source
+    {
+      subject: ['configuration', 'crewai-research-crew'],
+      key: 'success_rate',
+      label: 'Task success rate',
+      value: null,
+      unit: 'pct',
+      asOf: '2024-01-01',
+      note: 'CrewAI first-crew guide is a tutorial; no empirical benchmark data stated. Source: docs.crewai.com/guides/crews/first-crew',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // openai-swarm-triage: no benchmark figures in source
+    {
+      subject: ['configuration', 'openai-swarm-triage'],
+      key: 'success_rate',
+      label: 'Task success rate',
+      value: null,
+      unit: 'pct',
+      asOf: '2024-10-01',
+      note: 'OpenAI Swarm is an educational/experimental framework; no benchmark figures in repository. Source: github.com/openai/swarm',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
     // -- Illustrative metrics (all invented; clearly flagged) --
     m(['agent', 'codepilot-cr'], 'tasks_completed', 'PRs reviewed', 10240, 'count'),
     m(['agent', 'codepilot-cr'], 'success_rate', 'Accepted findings', 96.1, 'pct'),

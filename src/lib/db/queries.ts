@@ -79,7 +79,7 @@ function cardMetricsFor(subjectType: SubjectType, ids: number[]): Map<number, Me
   const rows = getDb()
     .prepare(
       `SELECT * FROM metrics WHERE subject_type=? AND subject_id IN (${placeholders}) AND key IN (${keyPlaceholders})
-       ORDER BY CASE key WHEN 'window_reconciliation_pct' THEN 0 WHEN 'uptime_pct' THEN 1 WHEN 'tasks_completed' THEN 2 ELSE 3 END`
+       ORDER BY CASE WHEN value IS NULL THEN 1 ELSE 0 END, CASE key WHEN 'window_reconciliation_pct' THEN 0 WHEN 'uptime_pct' THEN 1 WHEN 'tasks_completed' THEN 2 ELSE 3 END`
     )
     .all(subjectType, ...ids, ...CARD_METRIC_KEYS) as MetricRow[];
   for (const row of rows) {
@@ -313,7 +313,9 @@ export function configurationFilterOptions(): { platforms: string[]; topologyTyp
 function subjectExtras(subjectType: SubjectType, id: number) {
   const db = getDb();
   const metrics = db
-    .prepare('SELECT * FROM metrics WHERE subject_type=? AND subject_id=? ORDER BY id')
+    .prepare(
+      'SELECT * FROM metrics WHERE subject_type=? AND subject_id=? ORDER BY CASE WHEN value IS NULL THEN 1 ELSE 0 END, id'
+    )
     .all(subjectType, id) as MetricRow[];
   const proof = db
     .prepare(

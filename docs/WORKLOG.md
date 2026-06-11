@@ -30,5 +30,8 @@ count. All timestamps KST.
   boundary — hub_and_spoke filter returns 3 cards, "no empty rooms"
   floor UNMET on filtered views; illustrative detail pages near-empty
   spec sheets; agent directory cards carry no metrics.
-- **Fix:** (pending — recorded on completion)
-- **Fix commit:** (pending)
+- **Fix:** catalog densified — 11 new source-verified CURATED
+  configurations (25 total; no topology bucket <4), illustrative spec
+  sheets fully populated, agent cards gain model + configuration-count
+  chips, designed thin-slice notice on sparse filters.
+- **Fix commit:** bb40237 (2026-06-11 ~21:40)
