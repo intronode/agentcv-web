@@ -4,7 +4,16 @@ import TrustBadge from '@/components/TrustBadge';
 import { IllustrativeMark, ProvenanceTag } from '@/components/ProvenanceTag';
 import { formatMetricValue } from '@/lib/format';
 
-export default function AgentCard({ agent }: { agent: AgentCardData }) {
+interface AgentCardProps {
+  agent: AgentCardData;
+  /**
+   * When true (owner profile page): suppress the via-config metric from each card.
+   * The owner page renders a shared team-metric block above the grid instead.
+   */
+  hideViaConfigMetric?: boolean;
+}
+
+export default function AgentCard({ agent, hideViaConfigMetric = false }: AgentCardProps) {
   return (
     <Link href={`/agents/${agent.slug}`}>
       <div className="group h-full rounded-xl border border-border bg-surface-elevated p-6 transition-all duration-200 hover:bg-surface-hover hover:shadow-lg hover:shadow-accent/5">
@@ -66,7 +75,7 @@ export default function AgentCard({ agent }: { agent: AgentCardData }) {
                 </span>
               </div>
             ))}
-            {agent.metrics.length === 0 && agent.viaConfigMetric && (
+            {agent.metrics.length === 0 && agent.viaConfigMetric && !hideViaConfigMetric && (
               <div className="flex flex-col items-end gap-0.5">
                 <span className="text-[10px] text-text-tertiary">
                   {agent.viaConfigMetric.label}
@@ -78,9 +87,9 @@ export default function AgentCard({ agent }: { agent: AgentCardData }) {
                   <ProvenanceTag provenance={agent.viaConfigMetric.provenance} />
                   <span
                     className="text-[9px] text-text-tertiary"
-                    title={`Metric from configuration: ${agent.viaConfigMetric.configName}`}
+                    title={`Team metric from configuration: ${agent.viaConfigMetric.configName}`}
                   >
-                    via {agent.viaConfigMetric.configName}
+                    team metric · via {agent.viaConfigMetric.configName}
                   </span>
                 </div>
               </div>

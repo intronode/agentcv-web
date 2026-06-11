@@ -174,42 +174,84 @@ interface MobileFieldRowProps {
   children: (c: ConfigurationCompareData, idx: number) => React.ReactNode;
 }
 
+/**
+ * Mobile field row.
+ *
+ * 2 configs → side-by-side 2-column grid (fits fine at 390 px).
+ * 3 configs → full-width stacked rows (config micro-header left, value right)
+ *             so each config gets the full width rather than a ~90 px column.
+ */
 function MobileFieldRow({ label, configs, differingIndices, children }: MobileFieldRowProps) {
+  const stacked = configs.length >= 3;
+
   return (
     <div className="border-b border-border-subtle py-3">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">
         {label}
       </div>
-      <div
-        className="grid gap-x-2 gap-y-1"
-        style={{ gridTemplateColumns: `repeat(${configs.length}, minmax(0, 1fr))` }}
-      >
-        {configs.map((c, idx) => {
-          const differs = differingIndices?.has(idx) ?? false;
-          return (
-            <div
-              key={c.configuration.slug}
-              className={`min-w-0 ${differs ? 'border-l-2 border-accent pl-1.5' : ''}`}
-            >
-              {/* Micro-header: avatar + truncated name */}
-              <div className="mb-1 flex items-center gap-1">
-                <span className="shrink-0 text-base leading-none">{c.configuration.avatar}</span>
-                <span className="truncate text-[10px] font-medium text-text-tertiary">
-                  {c.configuration.name.length > 16
-                    ? c.configuration.name.slice(0, 15) + '…'
-                    : c.configuration.name}
-                </span>
-              </div>
-              {/* Value */}
+
+      {stacked ? (
+        /* Stacked layout: one full-width row per config */
+        <div className="space-y-2">
+          {configs.map((c, idx) => {
+            const differs = differingIndices?.has(idx) ?? false;
+            return (
               <div
-                className={`text-sm ${differs ? 'font-medium text-text-primary' : 'text-text-secondary'}`}
+                key={c.configuration.slug}
+                className={`flex items-start gap-3 ${differs ? 'border-l-2 border-accent pl-2' : ''}`}
               >
-                {children(c, idx)}
+                {/* Micro-header: fixed-width left side */}
+                <div className="flex w-28 shrink-0 items-center gap-1 pt-0.5">
+                  <span className="shrink-0 text-sm leading-none">{c.configuration.avatar}</span>
+                  <span className="truncate text-[10px] font-medium text-text-tertiary">
+                    {c.configuration.name.length > 14
+                      ? c.configuration.name.slice(0, 13) + '…'
+                      : c.configuration.name}
+                  </span>
+                </div>
+                {/* Value: takes remaining width */}
+                <div
+                  className={`min-w-0 flex-1 text-sm ${differs ? 'font-medium text-text-primary' : 'text-text-secondary'}`}
+                >
+                  {children(c, idx)}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* Grid layout for 2 configs */
+        <div
+          className="grid gap-x-2 gap-y-1"
+          style={{ gridTemplateColumns: `repeat(${configs.length}, minmax(0, 1fr))` }}
+        >
+          {configs.map((c, idx) => {
+            const differs = differingIndices?.has(idx) ?? false;
+            return (
+              <div
+                key={c.configuration.slug}
+                className={`min-w-0 ${differs ? 'border-l-2 border-accent pl-1.5' : ''}`}
+              >
+                {/* Micro-header: avatar + truncated name */}
+                <div className="mb-1 flex items-center gap-1">
+                  <span className="shrink-0 text-base leading-none">{c.configuration.avatar}</span>
+                  <span className="truncate text-[10px] font-medium text-text-tertiary">
+                    {c.configuration.name.length > 16
+                      ? c.configuration.name.slice(0, 15) + '…'
+                      : c.configuration.name}
+                  </span>
+                </div>
+                {/* Value */}
+                <div
+                  className={`text-sm ${differs ? 'font-medium text-text-primary' : 'text-text-secondary'}`}
+                >
+                  {children(c, idx)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

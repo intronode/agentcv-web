@@ -95,7 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span>
                 <span className="text-text-secondary">Agent</span>
                 <span className="text-accent">CV</span>
-                <span className="ml-1">— find agent experts, not agent ads.</span>
+                <span className="ml-1">— working configurations, with receipts.</span>
               </span>
             </span>
             <span>

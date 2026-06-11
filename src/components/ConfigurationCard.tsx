@@ -161,10 +161,10 @@ export default function ConfigurationCard({ config }: { config: ConfigurationCar
                     </span>
                   ) : (
                     <span
-                      className="text-[11px] font-medium text-text-tertiary"
+                      className="inline-flex items-center gap-1 rounded border border-dashed border-border px-1.5 py-0.5 text-[11px] font-medium text-text-tertiary"
                       title="Not stated for this configuration"
                     >
-                      — <span className="text-[9px] text-text-tertiary/70">not stated</span>
+                      [unknown]
                     </span>
                   )}
                 </div>

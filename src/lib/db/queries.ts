@@ -642,6 +642,42 @@ export function getFeatured(): {
   };
 }
 
+// ---- owners strip ---------------------------------------------------------
+
+export interface OwnerStripEntry {
+  handle: string;
+  displayName: string;
+  configCount: number;
+  /** Comma-separated distinct seed_layer values, e.g. "real,curated" */
+  layerMix: string;
+}
+
+/**
+ * Compact owner list for the "Owners on the registry" strip shown on every
+ * owner profile page.  Returns all owners that have at least one configuration,
+ * ordered by config count descending, then name.
+ */
+export function getOwnersStrip(): OwnerStripEntry[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT o.handle, o.display_name,
+              COUNT(c.id) AS config_count,
+              GROUP_CONCAT(DISTINCT c.seed_layer) AS layer_mix
+       FROM owners o
+       JOIN configurations c ON c.owner_id = o.id
+       GROUP BY o.id
+       ORDER BY config_count DESC, o.display_name COLLATE NOCASE ASC`
+    )
+    .all() as { handle: string; display_name: string; config_count: number; layer_mix: string }[];
+  return rows.map((r) => ({
+    handle: r.handle,
+    displayName: r.display_name,
+    configCount: r.config_count,
+    layerMix: r.layer_mix ?? '',
+  }));
+}
+
 // ---- writes ---------------------------------------------------------------
 
 function slugify(name: string): string {

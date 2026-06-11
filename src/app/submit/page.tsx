@@ -386,7 +386,7 @@ export default function SubmitPage() {
 
       {/* Section navigator — sticky under navbar (navbar is fixed h-16 = 64px, z-50) */}
       <nav
-        aria-label="Form sections"
+        aria-label="Form sections (jump links — click to scroll)"
         className="sticky top-16 z-30 mt-6 flex flex-wrap items-center gap-x-0 divide-x divide-border overflow-hidden rounded-lg border border-border bg-surface-elevated/95 text-xs shadow-sm backdrop-blur-md"
       >
         {SECTIONS.map(({ id, label }, i) => {
@@ -396,6 +396,7 @@ export default function SubmitPage() {
               key={id}
               type="button"
               onClick={() => scrollToSection(id)}
+              title={`Jump to ${label} section`}
               className={`flex items-center gap-1.5 px-3 py-2 transition-colors ${
                 isActive
                   ? 'bg-accent/10 text-accent'
@@ -410,6 +411,20 @@ export default function SubmitPage() {
                 {i + 1}
               </span>
               {label}
+              <svg
+                width="9"
+                height="9"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="shrink-0 opacity-50"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </button>
           );
         })}

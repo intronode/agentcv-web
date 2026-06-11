@@ -60,7 +60,11 @@ export default function HomePage() {
             </div>
 
             {/* Live DB stats — 2×2 at mobile fold, 4-col on larger viewports */}
-            <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-8 flex items-center gap-1.5 text-[11px] text-text-tertiary">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              live from the registry
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-xl border border-border bg-surface-elevated px-4 py-4 sm:px-5">
                 <div className="text-3xl font-bold tabular-nums tracking-tight sm:text-2xl">
                   {counts.configurations.toLocaleString('en-US')}

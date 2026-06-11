@@ -1,11 +1,11 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getOwnerProfile } from '@/lib/db/queries';
+import { getOwnerProfile, getOwnersStrip, getCounts } from '@/lib/db/queries';
 import AgentCard from '@/components/AgentCard';
 import ConfigurationCard from '@/components/ConfigurationCard';
 import ContactForm from '@/components/ContactForm';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatMetricValue } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +34,10 @@ export default async function OwnerProfilePage({ params }: PageProps) {
   if (!profile) notFound();
   const { owner, agents, configurations, proofFeed } = profile;
 
+  // Owners strip — all owners with configurations, for cross-owner discoverability
+  const ownersStrip = getOwnersStrip();
+  const totalConfigs = getCounts().configurations;
+
   const totalProof =
     agents.reduce((s, a) => s + a.proofCount, 0) +
     configurations.reduce((s, c) => s + c.proofCount, 0);
@@ -45,6 +49,22 @@ export default async function OwnerProfilePage({ params }: PageProps) {
     !!owner.bio &&
     (owner.bio.includes('curated from public sources') ||
       owner.bio.includes('not claimed by the organization'));
+
+  // Detect shared team metric: when multiple agents all point to the same
+  // viaConfigMetric key+value, surface it once as a team block and suppress
+  // per-card repetition.
+  const agentsWithViaMetric = agents.filter(
+    (a) => (a.metrics ?? []).length === 0 && a.viaConfigMetric
+  );
+  const firstVia = agentsWithViaMetric[0]?.viaConfigMetric ?? null;
+  const sharedTeamMetric =
+    agentsWithViaMetric.length >= 2 &&
+    firstVia !== null &&
+    agentsWithViaMetric.every(
+      (a) => a.viaConfigMetric!.key === firstVia.key && a.viaConfigMetric!.value === firstVia.value
+    )
+      ? firstVia
+      : null;
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
@@ -162,6 +182,26 @@ export default async function OwnerProfilePage({ params }: PageProps) {
             </Link>
           )}
         </div>
+
+        {/* Shared team metric block — rendered once instead of repeating on every card */}
+        {sharedTeamMetric && (
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-border bg-surface-elevated px-4 py-3 text-sm">
+            <span className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-text-tertiary">
+              Team metric
+            </span>
+            <span className="text-text-tertiary">—</span>
+            <span className="text-xs text-text-secondary">
+              shared by all {agentsWithViaMetric.length} members via{' '}
+              <span className="font-medium text-text-primary">{sharedTeamMetric.configName}</span>
+            </span>
+            <span className="text-border">·</span>
+            <span className="text-xs text-text-secondary">{sharedTeamMetric.label}</span>
+            <span className="font-semibold text-text-primary">
+              {formatMetricValue(sharedTeamMetric.value, sharedTeamMetric.unit)}
+            </span>
+          </div>
+        )}
+
         {agents.length === 0 ? (
           <p className="mt-5 rounded-lg border border-dashed border-border p-6 text-sm text-text-tertiary">
             No agent components on record.
@@ -169,7 +209,11 @@ export default async function OwnerProfilePage({ params }: PageProps) {
         ) : (
           <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {agents.map((agent) => (
-              <AgentCard key={agent.slug} agent={agent} />
+              <AgentCard
+                key={agent.slug}
+                agent={agent}
+                hideViaConfigMetric={sharedTeamMetric !== null}
+              />
             ))}
           </div>
         )}
@@ -178,12 +222,24 @@ export default async function OwnerProfilePage({ params }: PageProps) {
       {/* ── Configurations ────────────────────────────────────────────────── */}
       {configurations.length > 0 && (
         <section className="mt-12">
-          <h2 className="text-xl font-semibold tracking-tight">
-            Configurations{' '}
-            <span className="text-sm font-normal text-text-tertiary">
-              ({configurations.length})
-            </span>
-          </h2>
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h2 className="text-xl font-semibold tracking-tight">
+              Configurations{' '}
+              <span className="text-sm font-normal text-text-tertiary">
+                ({configurations.length})
+              </span>
+            </h2>
+            {configurations.length < totalConfigs && (
+              <span className="text-xs text-text-tertiary">
+                {configurations.length === 1
+                  ? `1 configuration · one of ${totalConfigs} on the registry —`
+                  : `${configurations.length} configurations · out of ${totalConfigs} on the registry —`}{' '}
+                <Link href="/configurations" className="text-accent hover:underline">
+                  browse all
+                </Link>
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-sm text-text-secondary">
             Agent harnesses published by this owner — topology, roster, and evidence.
           </p>
@@ -301,6 +357,45 @@ export default async function OwnerProfilePage({ params }: PageProps) {
                 </div>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {/* ── Owners on the registry strip ───────────────────────────────────── */}
+      {ownersStrip.length > 1 && (
+        <section className="mt-16 border-t border-border pt-8">
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-text-tertiary">
+              Owners on the registry
+            </h2>
+            <span className="text-xs text-text-tertiary">{ownersStrip.length} total</span>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {ownersStrip.map((entry) => (
+              <Link
+                key={entry.handle}
+                href={`/owners/${entry.handle}`}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors hover:bg-surface-hover ${
+                  entry.handle === owner.handle
+                    ? 'border-accent/40 bg-accent/5 text-accent'
+                    : 'border-border bg-surface-elevated text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                <span className="font-medium">{entry.displayName}</span>
+                <span className="text-text-tertiary">
+                  {entry.configCount} config{entry.configCount !== 1 ? 's' : ''}
+                </span>
+                {entry.layerMix && (
+                  <span className="hidden text-text-tertiary sm:inline">
+                    ·{' '}
+                    {entry.layerMix
+                      .split(',')
+                      .map((l: string) => l.trim())
+                      .join(' / ')}
+                  </span>
+                )}
+              </Link>
+            ))}
           </div>
         </section>
       )}
