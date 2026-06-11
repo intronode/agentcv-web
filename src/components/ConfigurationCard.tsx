@@ -95,18 +95,33 @@ export default function ConfigurationCard({ config }: { config: ConfigurationCar
         {/* Metrics footer */}
         <div className="mt-auto pt-4">
           <div className="flex items-center gap-4 border-t border-border-subtle pt-3">
-            {config.metrics.slice(0, 2).map((metric) => (
-              <div key={metric.key} className="flex flex-col">
-                <span className="text-[10px] text-text-tertiary">{metric.label}</span>
-                <span
-                  className={`text-sm font-semibold ${
-                    metric.value === null ? 'text-text-tertiary' : 'text-text-primary'
-                  }`}
-                >
-                  {formatMetricValue(metric.value, metric.unit)}
-                </span>
-              </div>
-            ))}
+            {config.metrics.slice(0, 2).map((metric) => {
+              const isUnknown = metric.value === null;
+              // For null metrics on cards: show a compact qualifier if the note is short
+              // enough to fit inline (≤40 chars), otherwise use a generic "windowed data" hint.
+              const noteShort = metric.note && metric.note.length <= 40 ? metric.note : null;
+              const unknownSubtext = noteShort ?? 'windowed data · see detail';
+              return (
+                <div key={metric.key} className="flex flex-col">
+                  <span className="text-[10px] text-text-tertiary">{metric.label}</span>
+                  {isUnknown ? (
+                    <span
+                      className="text-[11px] font-medium text-text-tertiary"
+                      title={metric.note ?? 'Not on record — an honest gap.'}
+                    >
+                      <span className="font-mono text-[10px]">[unknown]</span>
+                      <span className="ml-1 text-[9px] text-text-tertiary/70">
+                        {unknownSubtext}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-sm font-semibold text-text-primary">
+                      {formatMetricValue(metric.value, metric.unit)}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
             <div className="ml-auto flex items-center gap-1 text-xs text-accent">
               <svg
                 width="13"

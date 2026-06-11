@@ -70,7 +70,7 @@ export default async function ConfigurationsPage({ searchParams }: PageProps) {
   const hasFilters = !!(q || topology || platform || industry || tier || layer || agentBand);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12">
+    <div className="mx-auto max-w-6xl px-6 py-12 pb-28">
       {/* Page header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Configurations</h1>

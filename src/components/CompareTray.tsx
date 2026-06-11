@@ -64,52 +64,110 @@ export function useCompareState() {
   return { selected, toggle, clear };
 }
 
+/**
+ * Chip representing one selected configuration in the tray.
+ * Displays the slug (or name if available) and an × remove button.
+ */
+function SelectionChip({ slug, onRemove }: { slug: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
+      <span className="max-w-[120px] truncate">{slug}</span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${slug} from comparison`}
+        className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-accent/60 transition-colors hover:text-accent"
+      >
+        <svg
+          width="8"
+          height="8"
+          viewBox="0 0 8 8"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <path d="M1 1l6 6M7 1L1 7" />
+        </svg>
+      </button>
+    </span>
+  );
+}
+
 /** The floating tray that appears when ≥1 configuration is selected */
 export function CompareTray() {
-  const { selected, clear } = useCompareState();
+  const { selected, toggle, clear } = useCompareState();
 
   if (selected.length === 0) return null;
 
+  const canCompare = selected.length >= 2;
   const compareUrl = `/compare?ids=${selected.join(',')}`;
 
   return (
     <div
-      className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 px-4"
+      className="fixed bottom-0 left-0 right-0 z-50 flex justify-center px-4 pb-5 pointer-events-none"
       role="status"
       aria-live="polite"
+      style={{ animation: 'slideUpTray 0.2s ease-out both' }}
     >
-      <div className="flex items-center gap-3 rounded-xl border border-border bg-surface shadow-xl shadow-black/30 px-4 py-3 backdrop-blur-md">
-        <span className="text-sm text-text-secondary">
-          <span className="font-semibold text-text-primary">{selected.length}</span> selected
-          {selected.length < MAX && (
-            <span className="ml-1 text-text-tertiary">
-              (add {MAX - selected.length} more to compare up to {MAX})
+      <style>{`
+        @keyframes slideUpTray {
+          from { transform: translateY(100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+      <div
+        className="pointer-events-auto w-full max-w-2xl rounded-2xl border border-accent/30 bg-surface shadow-2xl shadow-black/60 backdrop-blur-md"
+        style={{ borderTopColor: 'var(--color-accent)', borderTopWidth: '2px' }}
+      >
+        {/* Top accent stripe is handled via border-top above */}
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap">
+          {/* Count badge */}
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
+              {selected.length}
             </span>
-          )}
-        </span>
+            <span className="text-xs font-semibold text-text-primary">
+              {selected.length === 1 ? 'configuration' : 'configurations'} selected
+            </span>
+          </div>
 
-        <button
-          onClick={clear}
-          className="text-xs text-text-tertiary hover:text-text-secondary"
-          aria-label="Clear selection"
-        >
-          Clear
-        </button>
+          {/* Chips */}
+          <div className="flex flex-1 flex-wrap items-center gap-1.5">
+            {selected.map((slug) => (
+              <SelectionChip key={slug} slug={slug} onRemove={() => toggle(slug)} />
+            ))}
+          </div>
 
-        <Link
-          href={compareUrl}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-            selected.length >= 2
-              ? 'bg-accent text-white hover:bg-accent-hover'
-              : 'cursor-not-allowed bg-surface-elevated text-text-tertiary'
-          }`}
-          aria-disabled={selected.length < 2}
-          onClick={(e) => {
-            if (selected.length < 2) e.preventDefault();
-          }}
-        >
-          Compare {selected.length}
-        </Link>
+          {/* Actions */}
+          <div className="flex shrink-0 items-center gap-2 ml-auto">
+            <button
+              onClick={clear}
+              className="rounded-md border border-border px-3 py-1.5 text-xs text-text-tertiary transition-colors hover:border-border-subtle hover:text-text-secondary"
+              aria-label="Clear all selections"
+            >
+              Clear all
+            </button>
+
+            {canCompare ? (
+              <Link
+                href={compareUrl}
+                className="rounded-lg bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+              >
+                Compare {selected.length} →
+              </Link>
+            ) : (
+              <div className="flex flex-col items-end">
+                <span className="cursor-not-allowed rounded-lg bg-surface-elevated px-4 py-1.5 text-sm font-semibold text-text-tertiary opacity-60 select-none">
+                  Compare {selected.length}
+                </span>
+                <span className="mt-0.5 text-[10px] text-text-tertiary">
+                  add one more to compare
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

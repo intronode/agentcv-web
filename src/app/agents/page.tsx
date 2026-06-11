@@ -46,8 +46,11 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
       <h1 className="text-3xl font-bold tracking-tight">Agent Components</h1>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
         Agents are the components configurations are built from — each with its own role, model,
-        platform, and track record. {agents.length} component{agents.length === 1 ? '' : 's'} on
-        record. Tiers are computed from evidence, not self-assigned.
+        platform, and track record.{' '}
+        <span className="text-text-tertiary">
+          {agents.length} component{agents.length === 1 ? '' : 's'} on record.
+        </span>{' '}
+        Tiers are computed from evidence, not self-assigned.
       </p>
       <div className="mt-6">
         <Suspense>

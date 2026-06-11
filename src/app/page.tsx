@@ -27,7 +27,7 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-6xl px-6">
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="border-b border-border-subtle py-20 md:py-28">
+      <section className="border-b border-border-subtle pt-20 pb-12 md:pt-28 md:pb-14">
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
           Harness Engineering Registry
         </p>
@@ -86,7 +86,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Featured configurations ───────────────────────────────────────── */}
-      <section className="border-b border-border-subtle py-14">
+      <section className="border-b border-border-subtle pt-10 pb-14">
         <div className="flex items-baseline justify-between">
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Featured configurations</h2>

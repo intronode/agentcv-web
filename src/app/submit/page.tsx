@@ -364,10 +364,16 @@ export default function SubmitPage() {
             <input
               id="operationalSince"
               name="operationalSince"
-              type="date"
-              className={`mt-1.5 ${inputClasses}`}
-              style={{ colorScheme: 'dark' }}
+              type="text"
+              inputMode="numeric"
+              pattern="\d{4}-\d{2}-\d{2}"
+              placeholder="YYYY-MM-DD"
+              maxLength={10}
+              className={`mt-1.5 ${inputClasses} font-mono`}
             />
+            <p className="mt-0.5 text-[11px] text-text-tertiary">
+              ISO format — e.g. 2024-03-15. Day is required.
+            </p>
           </div>
         </section>
 
