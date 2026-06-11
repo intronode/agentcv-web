@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
         destination: '/configurations/:slug',
         permanent: true,
       },
+      {
+        source: '/trust',
+        destination: '/harness-engineering',
+        permanent: true,
+      },
     ];
   },
 };

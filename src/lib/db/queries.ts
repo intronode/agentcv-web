@@ -396,6 +396,55 @@ export function getOwnerProfile(handle: string): OwnerProfile | null {
   };
 }
 
+// ---- compare --------------------------------------------------------------
+
+export interface ConfigurationCompareData {
+  configuration: ConfigurationRow;
+  owner: OwnerRow;
+  tier: TrustTier;
+  members: ConfigurationMemberData[];
+  metrics: MetricRow[];
+  proofCount: number;
+  evidenceCount: number;
+}
+
+/**
+ * Fetch 2–3 configurations by slug for the /compare page.
+ * Returns only found slugs (invalid slugs are silently dropped).
+ * Order preserves the input slug order.
+ */
+export function getConfigurationsForCompare(slugs: string[]): ConfigurationCompareData[] {
+  const db = getDb();
+  const results: ConfigurationCompareData[] = [];
+  const memberStmt = db.prepare(
+    `SELECT a.slug, a.name, a.avatar, a.tagline, a.model, m.role, m.role_detail AS roleDetail, m.ordinal
+     FROM configuration_members m JOIN agents a ON a.id = m.agent_id
+     WHERE m.configuration_id=? ORDER BY m.ordinal`
+  );
+  for (const slug of slugs) {
+    const configuration = db.prepare('SELECT * FROM configurations WHERE slug=?').get(slug) as
+      | ConfigurationRow
+      | undefined;
+    if (!configuration) continue;
+    const owner = db
+      .prepare('SELECT * FROM owners WHERE id=?')
+      .get(configuration.owner_id) as OwnerRow;
+    const { metrics, proof, attestations, tier } = subjectExtras('configuration', configuration.id);
+    const evidenceCount = proof.filter((p) => p.evidence_url !== null).length;
+    const members = memberStmt.all(configuration.id) as ConfigurationMemberData[];
+    results.push({
+      configuration,
+      owner,
+      tier,
+      members,
+      metrics,
+      proofCount: proof.length,
+      evidenceCount,
+    });
+  }
+  return results;
+}
+
 // ---- landing --------------------------------------------------------------
 
 export function getCounts(): SiteCounts {

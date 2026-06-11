@@ -116,7 +116,7 @@ export default function TrustPage() {
           know how it fails and what its team learned, not just what it claims on a good day.
         </p>
         <Link
-          href="/teams/ari-collective"
+          href="/configurations/ari-collective"
           className="mt-3 inline-block text-sm text-accent hover:underline"
         >
           See it in practice: The Ari Collective →

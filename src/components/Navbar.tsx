@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 const LINKS = [
   { href: '/configurations', label: 'Configurations' },
   { href: '/agents', label: 'Components' },
-  { href: '/trust', label: 'Trust Model' },
+  { href: '/harness-engineering', label: 'Harness Engineering' },
 ];
 
 export default function Navbar() {

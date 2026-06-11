@@ -4,6 +4,7 @@ import { configurationFilterOptions, listConfigurations } from '@/lib/db/queries
 import type { TrustTier } from '@/lib/db/types';
 import ConfigurationCard from '@/components/ConfigurationCard';
 import ConfigurationFilterBar from '@/components/ConfigurationFilterBar';
+import { CompareTray } from '@/components/CompareTray';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,6 +92,11 @@ export default async function ConfigurationsPage({ searchParams }: PageProps) {
           />
         </Suspense>
       </div>
+
+      {/* Compare tray — floats over the page when selections are active */}
+      <Suspense>
+        <CompareTray />
+      </Suspense>
 
       {/* Results */}
       {configurations.length === 0 ? (

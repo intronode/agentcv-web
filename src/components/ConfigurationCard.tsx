@@ -3,6 +3,7 @@ import type { ConfigurationCardData } from '@/lib/db/types';
 import TrustBadge from '@/components/TrustBadge';
 import LayerLabel from '@/components/LayerLabel';
 import TopologyGlyph, { TOPOLOGY_LABELS } from '@/components/TopologyGlyph';
+import { CompareToggle } from '@/components/CompareTray';
 import { formatMetricValue } from '@/lib/format';
 
 function IndustryTag({ label }: { label: string }) {
@@ -120,6 +121,10 @@ export default function ConfigurationCard({ config }: { config: ConfigurationCar
               </svg>
               {config.proofCount} proof
             </div>
+          </div>
+          {/* Compare toggle — client state, does not navigate the card link */}
+          <div className="mt-2.5">
+            <CompareToggle slug={config.slug} name={config.name} />
           </div>
         </div>
       </article>
