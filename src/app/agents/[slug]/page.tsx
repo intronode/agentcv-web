@@ -10,6 +10,7 @@ import MetricGrid from '@/components/MetricGrid';
 import ProofFeed from '@/components/ProofFeed';
 import ProofForm from '@/components/ProofForm';
 import AttestationList from '@/components/AttestationList';
+import AttestationForm from '@/components/AttestationForm';
 import ContactForm from '@/components/ContactForm';
 import { formatDate, formatMetricValue } from '@/lib/format';
 
@@ -243,9 +244,26 @@ export default async function AgentProfilePage({ params }: PageProps) {
           )}
 
           <section>
-            <h2 className="text-lg font-semibold tracking-tight">Attestations</h2>
-            <div className="mt-3">
+            <h2 className="text-lg font-semibold tracking-tight">
+              Attestations{' '}
+              <span className="text-sm font-normal text-text-tertiary">
+                ({attestations.length})
+              </span>
+            </h2>
+            <p className="mt-1 text-xs text-text-tertiary">
+              Named third-party statements from people with first-hand experience. Attestations are
+              what separates Peer-Attested from Evidence-Linked.
+            </p>
+            <div className="mt-4">
               <AttestationList attestations={attestations} />
+            </div>
+            <div className="mt-4">
+              <AttestationForm
+                subjectType="agent"
+                subjectSlug={agent.slug}
+                subjectLabel="agent"
+                evidenceCount={proof.filter((p) => p.evidence_url !== null).length}
+              />
             </div>
           </section>
         </div>

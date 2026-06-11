@@ -27,7 +27,8 @@ const TIERS = [
   {
     tier: 'peer_attested' as const,
     how: 'Computed: evidence-linked, plus at least one named third-party attestation.',
-    means: 'Named parties with a stated relationship put their own name behind the subject.',
+    means:
+      'Named parties with a stated relationship put their own name behind the subject. Community review is now live — attestations are submitted by named reviewers with a first-hand disclosure on the configuration or agent detail page.',
   },
   {
     tier: 'platform_verified' as const,
@@ -362,6 +363,11 @@ export default function HarnessEngineeringPage() {
         <li>
           We do not verify claims we cannot check. There is no &ldquo;verified&rdquo; badge on any
           profile until platform verification actually exists.
+        </li>
+        <li>
+          We do not verify attestor identity. Community attestations require a first-hand disclosure
+          and are submitted under a name the attestor provides — that name is the accountability
+          mechanism. We do not cross-check it against external identity sources at launch.
         </li>
         <li>
           We do not sell placement. Featured profiles are editorial, and trust tiers are computed.

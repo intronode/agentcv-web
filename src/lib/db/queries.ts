@@ -665,6 +665,39 @@ export function addProofEntry(input: AddProofInput): { id: number; tier: TrustTi
   return { id: Number(res.lastInsertRowid), tier };
 }
 
+export interface AddAttestationInput {
+  subjectType: SubjectType;
+  subjectSlug: string;
+  authorName: string;
+  authorUrl?: string;
+  relationship: string;
+  statement: string;
+}
+
+export function addAttestation(input: AddAttestationInput): { id: number; tier: TrustTier } {
+  const db = getDb();
+  const table = input.subjectType === 'agent' ? 'agents' : 'configurations';
+  const subject = db.prepare(`SELECT id FROM ${table} WHERE slug=?`).get(input.subjectSlug) as
+    | { id: number }
+    | undefined;
+  if (!subject) throw new Error(`Unknown ${input.subjectType}: ${input.subjectSlug}`);
+  const res = db
+    .prepare(
+      `INSERT INTO attestations (subject_type, subject_id, author_name, author_url, relationship, statement, illustrative)
+       VALUES (?, ?, ?, ?, ?, ?, 0)`
+    )
+    .run(
+      input.subjectType,
+      subject.id,
+      input.authorName,
+      input.authorUrl ?? null,
+      input.relationship,
+      input.statement
+    );
+  const { tier } = subjectExtras(input.subjectType, subject.id);
+  return { id: Number(res.lastInsertRowid), tier };
+}
+
 export interface ContactInput {
   subjectType?: ContactSubjectType;
   subjectSlug?: string; // owner handle when subjectType === 'owner'

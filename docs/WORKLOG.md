@@ -74,4 +74,29 @@ count. All timestamps KST.
 
 - **Shot:** 2026-06-11 ~22:40 via qa-shoot.sh · docs/evidence/cycles/cycle-04/
   (44 files, 0 unexpected console errors)
-- **Examiner:** (pending)
+- **Examiner (fresh subagent):** scores — credibility 4 · density 4 ·
+  depth 4 · interaction 4 · honesty 5 · soundness 4 · copy 4.
+  **First valid all-≥4 pass.** Report: cycle-04/examiner-report.md
+- **Weakest thing named:** flagship Ari component page blank metrics
+  state ("No metrics on record yet." with no explanation).
+- **Fix:** agents without own metrics now explain metrics live at the
+  configuration level and surface the configuration's headline metric
+  inline (live-fetched, provenance-tagged); inline "(Fictional demo
+  data.)" removed from illustrative taglines; dark date input; compare
+  header clamp; card title wrap; owner summary strip.
+- **Fix commit:** e3cd70c (2026-06-11 ~23:05)
+
+## Cycle 05
+
+- **Shot:** 2026-06-11 ~23:10 via qa-shoot.sh ·
+  docs/evidence/cycles/cycle-05/ (44 files, 0 unexpected console errors)
+- **Examiner (fresh subagent):** scores — credibility 4 · density 4 ·
+  depth 4 · interaction 4 · honesty 5 · soundness 4 · copy 4 (min 4).
+  Report: cycle-05/examiner-report.md
+- **Weakest thing named:** compare tray affordance nearly invisible —
+  the browse→insight conversion moment reads as a footer.
+- **Fix:** floating compare action bar (count badge, removable chips,
+  primary CTA, clear-all, slide-up); mobile compare sticky label column
+  - swipe hint + edge fade; hero dead band closed; agents live count;
+    card [unknown] qualifier; ISO date text input.
+- **Fix commit:** c50b8b7 (2026-06-11 ~23:30)

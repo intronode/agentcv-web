@@ -9,6 +9,7 @@ import MetricGrid from '@/components/MetricGrid';
 import ProofFeed from '@/components/ProofFeed';
 import ProofForm from '@/components/ProofForm';
 import AttestationList from '@/components/AttestationList';
+import AttestationForm from '@/components/AttestationForm';
 import ContactForm from '@/components/ContactForm';
 import { formatDate, formatMetricValue } from '@/lib/format';
 import type { TopologyType, MetricRow } from '@/lib/db/types';
@@ -349,9 +350,26 @@ export default async function ConfigurationProfilePage({ params }: PageProps) {
 
           {/* 7. Attestations */}
           <section>
-            <SectionHeading>Attestations</SectionHeading>
-            <div className="mt-3">
+            <SectionHeading>
+              Attestations{' '}
+              <span className="text-sm font-normal text-text-tertiary">
+                ({attestations.length})
+              </span>
+            </SectionHeading>
+            <p className="mt-1 text-xs text-text-tertiary">
+              Named third-party statements from people with first-hand experience. Attestations are
+              what separates Peer-Attested from Evidence-Linked.
+            </p>
+            <div className="mt-4">
               <AttestationList attestations={attestations} />
+            </div>
+            <div className="mt-4">
+              <AttestationForm
+                subjectType="configuration"
+                subjectSlug={cfg.slug}
+                subjectLabel="configuration"
+                evidenceCount={proof.filter((p) => p.evidence_url !== null).length}
+              />
             </div>
           </section>
         </div>
