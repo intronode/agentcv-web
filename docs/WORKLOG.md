@@ -54,3 +54,24 @@ count. All timestamps KST.
   compare-tray interaction shots, and annotates the deliberate 404
   console entry as expected.
 - **Fix commit:** 2c9fcc6 (2026-06-11 ~22:10)
+
+## Cycle 03 — VOID (does not count toward the floor)
+
+- **Shot:** 2026-06-11 ~22:20 · docs/evidence/cycles/cycle-03/
+- **Examiner scored 2/2/3/3/4/1/3 — but the capture was invalid:** a
+  stale next-server orphaned during inter-cycle diagnostics served old
+  HTML referencing CSS deleted by the fresh build; every page captured
+  unstyled with 51 phantom resource errors. See cycle-03/VOID.md.
+- **Structural fix:** scripts/qa-shoot.sh gated pipeline (port-free →
+  fresh build → buildId match → stylesheet 200 → shoot → PID kill →
+  port-free); shoot.mjs logs failing URLs. Real defects confirmed
+  independently and fixed: sitewide favicon 404 (new icon.svg
+  hub-and-spoke mark), runtime Google-Fonts dependency (next/font).
+  Lesson recorded in ~/.claude/memo/lessons-claude-code.md.
+- **Remediation commit:** 45f6383 (2026-06-11 ~22:45)
+
+## Cycle 04
+
+- **Shot:** 2026-06-11 ~22:40 via qa-shoot.sh · docs/evidence/cycles/cycle-04/
+  (44 files, 0 unexpected console errors)
+- **Examiner:** (pending)
