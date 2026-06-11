@@ -147,13 +147,13 @@ export default function ConfigurationCard({ config }: { config: ConfigurationCar
         {/* Metrics footer — two deterministic labeled slots: Outcome + Economics.
             Slot assignment rule: see OUTCOME_KEYS / ECONOMICS_KEYS comment above. */}
         <div className="mt-auto pt-4">
-          <div className="flex items-center gap-4 border-t border-border-subtle pt-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border-subtle pt-3">
             {(['Outcome', 'Economics'] as const).map((slotLabel) => {
               const keySet = slotLabel === 'Outcome' ? OUTCOME_KEYS : ECONOMICS_KEYS;
               const metric = pickSlot(config.metrics, keySet);
               const isUnknown = metric === null || metric.value === null;
               return (
-                <div key={slotLabel} className="flex flex-col">
+                <div key={slotLabel} className="flex shrink-0 flex-col">
                   <span className="text-[10px] text-text-tertiary">{slotLabel}</span>
                   {metric && !isUnknown ? (
                     <span className="text-sm font-semibold text-text-primary" title={metric.label}>
@@ -170,7 +170,7 @@ export default function ConfigurationCard({ config }: { config: ConfigurationCar
                 </div>
               );
             })}
-            <div className="ml-auto flex items-center gap-1 text-xs text-accent">
+            <div className="ml-auto flex shrink-0 items-center gap-1 text-xs text-accent">
               <svg
                 width="13"
                 height="13"

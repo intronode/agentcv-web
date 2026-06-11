@@ -137,8 +137,46 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
     'agent',
     rows.map((r) => r.id)
   );
-  const cards = rows.map(
-    (r): AgentCardData => ({
+
+  // For agents with no own card metrics, surface a headline metric from one of
+  // their parent configurations (batched — not N+1).  We collect the config slugs
+  // for metric-less agents in a single pass, call getConfigurationHeadlineMetrics
+  // once, then stitch the result back by agent slug.
+  const agentSlugToConfigSlug = new Map<string, string>();
+  const configSlugsNeeded = new Set<string>();
+  for (const r of rows) {
+    if ((metrics.get(r.id) ?? []).length === 0 && r.config_count > 0) {
+      const firstConfig = getDb()
+        .prepare(
+          `SELECT c.slug FROM configurations c
+           JOIN configuration_members cm ON cm.configuration_id = c.id
+           JOIN agents a ON a.id = cm.agent_id
+           WHERE a.id = ?
+           ORDER BY c.featured DESC, c.id ASC
+           LIMIT 1`
+        )
+        .get(r.id) as { slug: string } | undefined;
+      if (firstConfig) {
+        agentSlugToConfigSlug.set(r.slug, firstConfig.slug);
+        configSlugsNeeded.add(firstConfig.slug);
+      }
+    }
+  }
+  const configHeadlines = getConfigurationHeadlineMetrics([...configSlugsNeeded]);
+
+  const cards = rows.map((r): AgentCardData => {
+    const ownMetrics = metrics.get(r.id) ?? [];
+    let viaConfigMetric: AgentCardData['viaConfigMetric'] = null;
+    if (ownMetrics.length === 0) {
+      const configSlug = agentSlugToConfigSlug.get(r.slug);
+      if (configSlug) {
+        const headline = configHeadlines.get(configSlug);
+        if (headline) {
+          viaConfigMetric = { ...headline, configSlug };
+        }
+      }
+    }
+    return {
       slug: r.slug,
       name: r.name,
       avatar: r.avatar,
@@ -153,9 +191,10 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
       proofCount: r.proof_count,
       configurationCount: r.config_count,
       seedLayer: r.seed_layer,
-      metrics: metrics.get(r.id) ?? [],
-    })
-  );
+      metrics: ownMetrics,
+      viaConfigMetric,
+    };
+  });
   return filters.tier ? cards.filter((c) => c.tier === filters.tier) : cards;
 }
 

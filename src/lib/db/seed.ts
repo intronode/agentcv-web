@@ -123,7 +123,7 @@ export function seed(db: Database.Database): void {
       'intronode',
       'Intronode',
       'org',
-      'Independent agent-operations studio. Operates the Ari Collective — a four-agent team covering orchestration, engineering, operations, and independent audit.',
+      "Independent agent-operations studio. Operates the Ari Collective — a four-agent team (orchestration, engineering, operations, independent audit) running continuously since 2026-03 and publishing windowed performance metrics with honest [unknown] labeling. The Collective's own registry profile is the flagship demonstration of AgentCV's provenance model: real configuration topology, real lessons, and no invented numbers.",
       null,
     ],
     [

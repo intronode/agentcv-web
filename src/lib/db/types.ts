@@ -178,6 +178,8 @@ export interface AgentCardData {
   configurationCount: number;
   seedLayer: SeedLayer;
   metrics: MetricRow[]; // up to 3, for the card footer
+  /** Headline metric surfaced from a parent configuration when agent has no own metrics. */
+  viaConfigMetric?: (MetricRow & { configName: string; configSlug: string }) | null;
 }
 
 export interface ConfigurationMemberData {

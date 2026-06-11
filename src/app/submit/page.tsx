@@ -318,9 +318,38 @@ export default function SubmitPage() {
         creation and the computed tier upgrades itself. Nothing is self-assignable.
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6" noValidate>
+      {/* Section navigator — shows form structure from the fold */}
+      <nav
+        aria-label="Form sections"
+        className="mt-6 flex flex-wrap items-center gap-x-0 divide-x divide-border overflow-hidden rounded-lg border border-border bg-surface-elevated/50 text-xs"
+      >
+        {(
+          [
+            { id: 'section-identity', label: 'Identity' },
+            { id: 'section-comparable', label: 'Comparable fields' },
+            { id: 'section-blueprint', label: 'Blueprint' },
+            { id: 'section-owner', label: 'Owner' },
+          ] as const
+        ).map(({ id, label }, i) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className="flex items-center gap-1.5 px-3 py-2 text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+          >
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-surface text-[9px] font-semibold text-text-tertiary">
+              {i + 1}
+            </span>
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <form onSubmit={handleSubmit} className="mt-6 space-y-6" noValidate>
         {/* ── Identity ── */}
-        <section className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5">
+        <section
+          id="section-identity"
+          className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
+        >
           <h2 className="text-sm font-semibold">Identity</h2>
 
           <div>
@@ -378,7 +407,10 @@ export default function SubmitPage() {
         </section>
 
         {/* ── Comparable fields ── */}
-        <section className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5">
+        <section
+          id="section-comparable"
+          className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
+        >
           <h2 className="text-sm font-semibold">Comparable fields</h2>
           <p className="text-[11px] text-text-tertiary">
             These are the benchmark fields — structured so configurations can be compared across
@@ -499,7 +531,10 @@ export default function SubmitPage() {
         </section>
 
         {/* ── Blueprint ── */}
-        <section className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5">
+        <section
+          id="section-blueprint"
+          className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
+        >
           <h2 className="text-sm font-semibold">Blueprint</h2>
           <p className="text-[11px] text-text-tertiary">
             Operational DNA: why this configuration works, how it was built, and how it is overseen.
@@ -538,7 +573,10 @@ export default function SubmitPage() {
         </section>
 
         {/* ── Owner ── */}
-        <section className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5">
+        <section
+          id="section-owner"
+          className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
+        >
           <h2 className="text-sm font-semibold">Owner</h2>
 
           <div className="grid gap-4 sm:grid-cols-2">

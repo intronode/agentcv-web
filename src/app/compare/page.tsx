@@ -169,10 +169,12 @@ const SUGGESTED_PAIRS = [
 interface MobileFieldRowProps {
   label: string;
   configs: ConfigurationCompareData[];
+  /** Indices of configs whose value differs from at least one other — gets accent left-border */
+  differingIndices?: Set<number>;
   children: (c: ConfigurationCompareData, idx: number) => React.ReactNode;
 }
 
-function MobileFieldRow({ label, configs, children }: MobileFieldRowProps) {
+function MobileFieldRow({ label, configs, differingIndices, children }: MobileFieldRowProps) {
   return (
     <div className="border-b border-border-subtle py-3">
       <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">
@@ -182,24 +184,49 @@ function MobileFieldRow({ label, configs, children }: MobileFieldRowProps) {
         className="grid gap-x-2 gap-y-1"
         style={{ gridTemplateColumns: `repeat(${configs.length}, minmax(0, 1fr))` }}
       >
-        {configs.map((c, idx) => (
-          <div key={c.configuration.slug} className="min-w-0">
-            {/* Micro-header: avatar + truncated name */}
-            <div className="mb-1 flex items-center gap-1">
-              <span className="shrink-0 text-base leading-none">{c.configuration.avatar}</span>
-              <span className="truncate text-[10px] font-medium text-text-tertiary">
-                {c.configuration.name.length > 16
-                  ? c.configuration.name.slice(0, 15) + '…'
-                  : c.configuration.name}
-              </span>
+        {configs.map((c, idx) => {
+          const differs = differingIndices?.has(idx) ?? false;
+          return (
+            <div
+              key={c.configuration.slug}
+              className={`min-w-0 ${differs ? 'border-l-2 border-accent pl-1.5' : ''}`}
+            >
+              {/* Micro-header: avatar + truncated name */}
+              <div className="mb-1 flex items-center gap-1">
+                <span className="shrink-0 text-base leading-none">{c.configuration.avatar}</span>
+                <span className="truncate text-[10px] font-medium text-text-tertiary">
+                  {c.configuration.name.length > 16
+                    ? c.configuration.name.slice(0, 15) + '…'
+                    : c.configuration.name}
+                </span>
+              </div>
+              {/* Value */}
+              <div
+                className={`text-sm ${differs ? 'font-medium text-text-primary' : 'text-text-secondary'}`}
+              >
+                {children(c, idx)}
+              </div>
             </div>
-            {/* Value */}
-            <div className="text-sm text-text-secondary">{children(c, idx)}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
+}
+
+/** Compute which column indices have a value that differs from at least one other. */
+function diffIndices(values: (string | null)[]): Set<number> {
+  const hasDiff = values.some((v, i) =>
+    values.some((w, j) => i !== j && v !== null && w !== null && v !== w)
+  );
+  if (!hasDiff) return new Set();
+  const result = new Set<number>();
+  for (let i = 0; i < values.length; i++) {
+    if (values[i] !== null && values.some((w, j) => j !== i && w !== null && w !== values[i])) {
+      result.add(i);
+    }
+  }
+  return result;
 }
 
 export default async function ComparePage({ searchParams }: PageProps) {
@@ -339,7 +366,17 @@ export default async function ComparePage({ searchParams }: PageProps) {
         {/* Field groups */}
         <div className="rounded-xl border border-border bg-surface px-4">
           {/* Topology */}
-          <MobileFieldRow label="Topology" configs={configs}>
+          <MobileFieldRow
+            label="Topology"
+            configs={configs}
+            differingIndices={diffIndices(
+              configs.map((c) =>
+                c.configuration.topology_type
+                  ? TOPOLOGY_LABELS[c.configuration.topology_type]
+                  : null
+              )
+            )}
+          >
             {(c) =>
               c.configuration.topology_type ? (
                 <span className="inline-flex items-center gap-1">
@@ -357,7 +394,15 @@ export default async function ComparePage({ searchParams }: PageProps) {
           </MobileFieldRow>
 
           {/* Agents */}
-          <MobileFieldRow label="Agents" configs={configs}>
+          <MobileFieldRow
+            label="Agents"
+            configs={configs}
+            differingIndices={diffIndices(
+              configs.map((c) =>
+                c.configuration.agent_count !== null ? String(c.configuration.agent_count) : null
+              )
+            )}
+          >
             {(c) =>
               c.configuration.agent_count !== null ? (
                 <span className="text-xs">
@@ -373,7 +418,11 @@ export default async function ComparePage({ searchParams }: PageProps) {
           </MobileFieldRow>
 
           {/* Platform */}
-          <MobileFieldRow label="Platform" configs={configs}>
+          <MobileFieldRow
+            label="Platform"
+            configs={configs}
+            differingIndices={diffIndices(configs.map((c) => c.configuration.platform ?? null))}
+          >
             {(c) =>
               c.configuration.platform ? (
                 <span className="text-xs">{c.configuration.platform}</span>
@@ -456,7 +505,13 @@ export default async function ComparePage({ searchParams }: PageProps) {
           </MobileFieldRow>
 
           {/* Operating since */}
-          <MobileFieldRow label="Operating since" configs={configs}>
+          <MobileFieldRow
+            label="Operating since"
+            configs={configs}
+            differingIndices={diffIndices(
+              configs.map((c) => c.configuration.operational_since ?? null)
+            )}
+          >
             {(c) =>
               c.configuration.operational_since ? (
                 <span className="text-xs">{formatDate(c.configuration.operational_since)}</span>
@@ -467,12 +522,20 @@ export default async function ComparePage({ searchParams }: PageProps) {
           </MobileFieldRow>
 
           {/* Trust tier */}
-          <MobileFieldRow label="Trust tier" configs={configs}>
+          <MobileFieldRow
+            label="Trust tier"
+            configs={configs}
+            differingIndices={diffIndices(configs.map((c) => c.tier))}
+          >
             {(c) => <TrustBadge tier={c.tier} size="sm" />}
           </MobileFieldRow>
 
           {/* Proof entries */}
-          <MobileFieldRow label="Proof entries" configs={configs}>
+          <MobileFieldRow
+            label="Proof entries"
+            configs={configs}
+            differingIndices={diffIndices(configs.map((c) => String(c.proofCount)))}
+          >
             {(c) =>
               c.proofCount === 0 ? (
                 <UnknownCell reason="No proof entries on record." />
@@ -524,7 +587,17 @@ export default async function ComparePage({ searchParams }: PageProps) {
             const label =
               configs.flatMap((c) => c.metrics).find((m) => m.key === key)?.label ?? key;
             return (
-              <MobileFieldRow key={key} label={label} configs={configs}>
+              <MobileFieldRow
+                key={key}
+                label={label}
+                configs={configs}
+                differingIndices={diffIndices(
+                  configs.map((c) => {
+                    const m = getMetric(c.metrics, key);
+                    return m ? formatMetricValue(m.value, m.unit) : null;
+                  })
+                )}
+              >
                 {(c) => {
                   const metric = getMetric(c.metrics, key);
                   return <MetricCellMobile metric={metric} />;

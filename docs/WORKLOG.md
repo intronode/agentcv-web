@@ -100,3 +100,32 @@ count. All timestamps KST.
   - swipe hint + edge fade; hero dead band closed; agents live count;
     card [unknown] qualifier; ISO date text input.
 - **Fix commit:** c50b8b7 (2026-06-11 ~23:30)
+
+## ROADMAP item 1 (between cycles 05 and 06)
+
+- 2026-06-11 ~23:45 — Community review shipped per SPEC-V4 recorded
+  priority: POST /api/attestations with first-hand disclosure gate,
+  named-author accountability, AttestationForm on detail pages with
+  honest tier math; explainer states attestor identity is NOT verified
+  at launch. Commit 4d14486.
+
+## Cycle 06
+
+- **Shot:** 2026-06-11 ~23:55 via qa-shoot.sh ·
+  docs/evidence/cycles/cycle-06/ (44 files, 0 unexpected console errors)
+- **Examiner (fresh subagent):** scores — credibility 4 · density 4 ·
+  depth 4 · interaction 4 · honesty 5 · soundness 4 · copy 4 (min 4).
+  Report: cycle-06/examiner-report.md
+- **Weakest thing named:** mobile /compare shows one visible column —
+  share-link arrivals on mobile can't see a comparison.
+- **Fix:** per-field stacked mobile compare (all columns visible at
+  390px, no horizontal scroll); uniform Outcome/Economics card slots;
+  owner pages gain aggregated proof feed + prominent component cards;
+  legible clipped validation/tray evidence captures.
+- **Fix commit:** 650ab45 (2026-06-12 ~00:20)
+
+## Cycle 07
+
+- **Shot:** 2026-06-12 ~00:25 via qa-shoot.sh ·
+  docs/evidence/cycles/cycle-07/ (44 files, 0 unexpected console errors)
+- **Examiner:** (pending)

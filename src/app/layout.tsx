@@ -40,7 +40,64 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="pt-16">{children}</main>
         <footer className="border-t border-border-subtle py-8">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-6 text-xs text-text-tertiary">
-            <span>AgentCV — find agent experts, not agent ads.</span>
+            <span className="flex items-center gap-2">
+              {/* Hub-and-spoke mark — consistent with Navbar */}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 28 28"
+                fill="none"
+                aria-hidden="true"
+                className="shrink-0 text-accent"
+              >
+                <line
+                  x1="14"
+                  y1="14"
+                  x2="14"
+                  y2="4"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="14"
+                  y1="14"
+                  x2="24"
+                  y2="14"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="14"
+                  y1="14"
+                  x2="14"
+                  y2="24"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="14"
+                  y1="14"
+                  x2="4"
+                  y2="14"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+                <circle cx="14" cy="4" r="1.8" fill="currentColor" opacity="0.55" />
+                <circle cx="24" cy="14" r="1.8" fill="currentColor" opacity="0.55" />
+                <circle cx="14" cy="24" r="1.8" fill="currentColor" opacity="0.55" />
+                <circle cx="4" cy="14" r="1.8" fill="currentColor" opacity="0.55" />
+                <circle cx="14" cy="14" r="3.5" fill="currentColor" />
+              </svg>
+              <span>
+                <span className="text-text-secondary">Agent</span>
+                <span className="text-accent">CV</span>
+                <span className="ml-1">— find agent experts, not agent ads.</span>
+              </span>
+            </span>
             <span>
               Tiers are computed from evidence, never self-assigned. Demo data is labeled{' '}
               <span className="text-orange-300">illustrative</span>.

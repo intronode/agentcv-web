@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { AgentCardData } from '@/lib/db/types';
 import TrustBadge from '@/components/TrustBadge';
-import { IllustrativeMark } from '@/components/ProvenanceTag';
+import { IllustrativeMark, ProvenanceTag } from '@/components/ProvenanceTag';
 import { formatMetricValue } from '@/lib/format';
 
 export default function AgentCard({ agent }: { agent: AgentCardData }) {
@@ -51,6 +51,23 @@ export default function AgentCard({ agent }: { agent: AgentCardData }) {
               </span>
             </div>
           ))}
+          {agent.metrics.length === 0 && agent.viaConfigMetric && (
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] text-text-tertiary">{agent.viaConfigMetric.label}</span>
+              <span className="text-sm font-medium text-text-primary">
+                {formatMetricValue(agent.viaConfigMetric.value, agent.viaConfigMetric.unit)}
+              </span>
+              <div className="flex items-center gap-1">
+                <ProvenanceTag provenance={agent.viaConfigMetric.provenance} />
+                <span
+                  className="text-[9px] text-text-tertiary"
+                  title={`Metric from configuration: ${agent.viaConfigMetric.configName}`}
+                >
+                  via {agent.viaConfigMetric.configName}
+                </span>
+              </div>
+            </div>
+          )}
           <div className="ml-auto flex items-center gap-2 text-xs">
             {agent.configurationCount > 0 && (
               <span className="flex items-center gap-1 text-text-tertiary">

@@ -4,6 +4,65 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 
+/** Compact hub-and-spoke logomark — inline SVG so it renders server-side too. */
+function LogoMark({ size = 28 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 28 28"
+      fill="none"
+      aria-hidden="true"
+      className="shrink-0 text-accent"
+    >
+      {/* spokes */}
+      <line
+        x1="14"
+        y1="14"
+        x2="14"
+        y2="4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <line
+        x1="14"
+        y1="14"
+        x2="24"
+        y2="14"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <line
+        x1="14"
+        y1="14"
+        x2="14"
+        y2="24"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <line
+        x1="14"
+        y1="14"
+        x2="4"
+        y2="14"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      {/* satellite nodes */}
+      <circle cx="14" cy="4" r="1.8" fill="currentColor" opacity="0.55" />
+      <circle cx="24" cy="14" r="1.8" fill="currentColor" opacity="0.55" />
+      <circle cx="14" cy="24" r="1.8" fill="currentColor" opacity="0.55" />
+      <circle cx="4" cy="14" r="1.8" fill="currentColor" opacity="0.55" />
+      {/* hub */}
+      <circle cx="14" cy="14" r="3.5" fill="currentColor" />
+    </svg>
+  );
+}
+
 const LINKS = [
   { href: '/configurations', label: 'Configurations' },
   { href: '/agents', label: 'Components' },
@@ -109,10 +168,11 @@ export default function Navbar() {
     <nav className="fixed left-0 right-0 top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-sm font-bold text-white">
-            A
-          </div>
-          <span className="text-lg font-semibold tracking-tight">AgentCV</span>
+          <LogoMark size={28} />
+          <span className="text-base font-semibold tracking-tight">
+            <span className="text-text-primary">Agent</span>
+            <span className="text-accent">CV</span>
+          </span>
         </Link>
 
         <div className="flex items-center gap-4 sm:gap-6">
