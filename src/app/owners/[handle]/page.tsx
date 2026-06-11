@@ -21,7 +21,7 @@ export default async function OwnerProfilePage({ params }: PageProps) {
   const { handle } = await params;
   const profile = getOwnerProfile(handle);
   if (!profile) notFound();
-  const { owner, agents, teams } = profile;
+  const { owner, agents, configurations: teams } = profile;
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">

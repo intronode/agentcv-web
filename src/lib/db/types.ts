@@ -1,15 +1,26 @@
-// Row types mirror schema.ts exactly. SQLite has no booleans: `featured` and
-// `illustrative` are 0/1 integers at the row level and converted at the edge.
+// Row types mirror schema.ts exactly. SQLite has no booleans: `featured` is a
+// 0/1 integer at the row level and converted at the edge.
+// v4: `illustrative` on agents/configurations replaced by `seed_layer` enum.
+// proof_entries/metrics/attestations keep their per-claim `illustrative` flag.
 
 export type Provenance = 'self_reported' | 'evidence_linked' | 'attested';
 export type TrustTier = 'self_reported' | 'evidence_linked' | 'peer_attested' | 'platform_verified';
-export type SubjectType = 'agent' | 'team';
-export type ContactSubjectType = 'agent' | 'team' | 'owner';
+export type SubjectType = 'agent' | 'configuration';
+export type ContactSubjectType = 'agent' | 'configuration' | 'owner';
 export type ProofType = 'task' | 'incident' | 'lesson' | 'milestone' | 'artifact';
 export type MetricUnit = 'pct' | 'count' | 'ms' | 'usd' | 'days';
 export type SubjectStatus = 'active' | 'paused' | 'retired';
 export type LineageKind = 'original' | 'fork' | 'instance';
-export type TeamKind = 'team' | 'swarm';
+export type ConfigKind = 'team' | 'swarm';
+export type SeedLayer = 'real' | 'curated' | 'illustrative';
+export type TopologyType =
+  | 'hub_and_spoke'
+  | 'pipeline'
+  | 'peer'
+  | 'hierarchical'
+  | 'solo_plus_tools'
+  | 'other';
+export type ContactKind = 'request_setup' | 'claim' | 'general';
 
 export interface OwnerRow {
   id: number;
@@ -40,16 +51,18 @@ export interface AgentRow {
   status: SubjectStatus;
   operational_since: string | null;
   featured: number;
-  illustrative: number;
+  seed_layer: SeedLayer;
+  source_url: string | null;
+  source_name: string | null;
   created_at: string;
 }
 
-export interface TeamRow {
+export interface ConfigurationRow {
   id: number;
   slug: string;
   name: string;
   avatar: string;
-  kind: TeamKind;
+  kind: ConfigKind;
   tagline: string;
   about: string | null;
   topology: string | null;
@@ -59,9 +72,21 @@ export interface TeamRow {
   status: SubjectStatus;
   operational_since: string | null;
   featured: number;
-  illustrative: number;
+  topology_type: TopologyType | null;
+  agent_count: number | null;
+  platform: string | null;
+  industries: string | null;
+  task_kinds: string | null;
+  why_it_works: string | null;
+  seed_layer: SeedLayer;
+  source_url: string | null;
+  source_name: string | null;
   created_at: string;
 }
+
+// Keep TeamRow as a type alias for backward compat with any internal usage,
+// pointing to ConfigurationRow.
+export type TeamRow = ConfigurationRow;
 
 export interface ProofEntryRow {
   id: number;
@@ -120,16 +145,20 @@ export interface ContactRequestRow {
   requester_email: string;
   message: string;
   status: 'pending' | 'contacted' | 'closed';
+  kind: ContactKind;
   created_at: string;
 }
 
-export interface TeamMemberRow {
-  team_id: number;
+export interface ConfigurationMemberRow {
+  configuration_id: number;
   agent_id: number;
   role: string;
   role_detail: string | null;
   ordinal: number;
 }
+
+// Keep TeamMemberRow as alias for ConfigurationMemberRow.
+export type TeamMemberRow = ConfigurationMemberRow;
 
 // ---- composed shapes the UI consumes ----
 
@@ -145,11 +174,11 @@ export interface AgentCardData {
   ownerName: string;
   tier: TrustTier;
   proofCount: number;
-  illustrative: boolean;
+  seedLayer: SeedLayer;
   metrics: MetricRow[]; // up to 3, for the card footer
 }
 
-export interface TeamMemberData {
+export interface ConfigurationMemberData {
   slug: string;
   name: string;
   avatar: string;
@@ -157,22 +186,30 @@ export interface TeamMemberData {
   role: string;
   roleDetail: string | null;
   ordinal: number;
+  model: string | null;
 }
 
-export interface TeamCardData {
+// Keep TeamMemberData as alias for UI code still using old name
+export type TeamMemberData = ConfigurationMemberData;
+
+export interface ConfigurationCardData {
   slug: string;
   name: string;
   avatar: string;
-  kind: TeamKind;
+  kind: ConfigKind;
   tagline: string;
   ownerHandle: string;
   ownerName: string;
   tier: TrustTier;
   proofCount: number;
-  illustrative: boolean;
-  members: Pick<TeamMemberData, 'slug' | 'name' | 'avatar' | 'role'>[];
+  seedLayer: SeedLayer;
+  topologyType: TopologyType | null;
+  members: Pick<ConfigurationMemberData, 'slug' | 'name' | 'avatar' | 'role'>[];
   metrics: MetricRow[];
 }
+
+// Keep TeamCardData as alias for UI code still using old name
+export type TeamCardData = ConfigurationCardData;
 
 export interface AgentProfile {
   agent: AgentRow;
@@ -182,30 +219,39 @@ export interface AgentProfile {
   proof: ProofEntryRow[];
   capabilities: CapabilityRow[];
   attestations: AttestationRow[];
-  teams: { slug: string; name: string; avatar: string; kind: TeamKind; role: string }[];
+  configurations: {
+    slug: string;
+    name: string;
+    avatar: string;
+    kind: ConfigKind;
+    role: string;
+  }[];
   lineageParent: { slug: string; name: string } | null;
   lineageChildren: { slug: string; name: string; lineage_kind: LineageKind }[];
 }
 
-export interface TeamProfile {
-  team: TeamRow;
+export interface ConfigurationProfile {
+  configuration: ConfigurationRow;
   owner: OwnerRow;
   tier: TrustTier;
-  members: TeamMemberData[];
+  members: ConfigurationMemberData[];
   metrics: MetricRow[];
   proof: ProofEntryRow[];
   attestations: AttestationRow[];
 }
 
+// Keep TeamProfile as alias
+export type TeamProfile = ConfigurationProfile;
+
 export interface OwnerProfile {
   owner: OwnerRow;
   agents: AgentCardData[];
-  teams: TeamCardData[];
+  configurations: ConfigurationCardData[];
 }
 
 export interface SiteCounts {
   agents: number;
-  teams: number;
+  configurations: number;
   owners: number;
   proofEntries: number;
 }

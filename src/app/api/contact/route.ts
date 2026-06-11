@@ -5,7 +5,7 @@ import { ValidationError, readJsonBody, reqStr, EMAIL_PATTERN } from '@/lib/vali
 
 export const dynamic = 'force-dynamic';
 
-const SUBJECT_TYPES = ['agent', 'team', 'owner'] as const;
+const SUBJECT_TYPES = ['agent', 'configuration', 'owner'] as const;
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {

@@ -5,6 +5,11 @@ import type {
   AgentRow,
   AttestationRow,
   CapabilityRow,
+  ConfigKind,
+  ConfigurationCardData,
+  ConfigurationMemberData,
+  ConfigurationProfile,
+  ConfigurationRow,
   ContactSubjectType,
   MetricRow,
   OwnerProfile,
@@ -13,13 +18,14 @@ import type {
   ProofType,
   SiteCounts,
   SubjectType,
-  TeamCardData,
-  TeamKind,
-  TeamMemberData,
-  TeamProfile,
-  TeamRow,
   TrustTier,
 } from './types';
+
+// Re-export aliases so existing call-sites using the old names keep compiling.
+export type TeamCardData = ConfigurationCardData;
+export type TeamProfile = ConfigurationProfile;
+export type TeamMemberData = ConfigurationMemberData;
+export type TeamKind = ConfigKind;
 
 // ---- trust tier -----------------------------------------------------------
 
@@ -140,7 +146,7 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
       ownerName: r.owner_name,
       tier: computeTier(r.evidence_count, r.attestation_count),
       proofCount: r.proof_count,
-      illustrative: r.illustrative === 1,
+      seedLayer: r.seed_layer,
       metrics: metrics.get(r.id) ?? [],
     })
   );
@@ -162,31 +168,32 @@ export function agentFilterOptions(): { categories: string[]; platforms: string[
   return { categories, platforms };
 }
 
-// ---- list: teams ----------------------------------------------------------
+// ---- list: configurations (v3: teams) ------------------------------------
 
-type TeamListRow = TeamRow & SubjectCounts & { owner_handle: string; owner_name: string };
+type ConfigListRow = ConfigurationRow &
+  SubjectCounts & { owner_handle: string; owner_name: string };
 
-export function listTeams(ownerId?: number): TeamCardData[] {
+export function listConfigurations(ownerId?: number): ConfigurationCardData[] {
   const rows = getDb()
     .prepare(
-      `SELECT tm.*, o.handle AS owner_handle, o.display_name AS owner_name, ${COUNT_SELECTS('team', 'tm')}
-       FROM teams tm JOIN owners o ON o.id = tm.owner_id
-       ${ownerId !== undefined ? 'WHERE tm.owner_id = ?' : ''}
-       ORDER BY tm.featured DESC, proof_count DESC, tm.name COLLATE NOCASE ASC
+      `SELECT c.*, o.handle AS owner_handle, o.display_name AS owner_name, ${COUNT_SELECTS('configuration', 'c')}
+       FROM configurations c JOIN owners o ON o.id = c.owner_id
+       ${ownerId !== undefined ? 'WHERE c.owner_id = ?' : ''}
+       ORDER BY c.featured DESC, proof_count DESC, c.name COLLATE NOCASE ASC
        LIMIT 100`
     )
-    .all(...(ownerId !== undefined ? [ownerId] : [])) as TeamListRow[];
+    .all(...(ownerId !== undefined ? [ownerId] : [])) as ConfigListRow[];
 
   const metrics = cardMetricsFor(
-    'team',
+    'configuration',
     rows.map((r) => r.id)
   );
   const memberStmt = getDb().prepare(
-    `SELECT a.slug, a.name, a.avatar, m.role FROM team_members m
-     JOIN agents a ON a.id = m.agent_id WHERE m.team_id = ? ORDER BY m.ordinal`
+    `SELECT a.slug, a.name, a.avatar, m.role FROM configuration_members m
+     JOIN agents a ON a.id = m.agent_id WHERE m.configuration_id = ? ORDER BY m.ordinal`
   );
   return rows.map(
-    (r): TeamCardData => ({
+    (r): ConfigurationCardData => ({
       slug: r.slug,
       name: r.name,
       avatar: r.avatar,
@@ -196,12 +203,16 @@ export function listTeams(ownerId?: number): TeamCardData[] {
       ownerName: r.owner_name,
       tier: computeTier(r.evidence_count, r.attestation_count),
       proofCount: r.proof_count,
-      illustrative: r.illustrative === 1,
-      members: memberStmt.all(r.id) as TeamCardData['members'],
+      seedLayer: r.seed_layer,
+      topologyType: r.topology_type,
+      members: memberStmt.all(r.id) as ConfigurationCardData['members'],
       metrics: metrics.get(r.id) ?? [],
     })
   );
 }
+
+/** Alias so /teams page keeps working without rename */
+export const listTeams = listConfigurations;
 
 // ---- profiles -------------------------------------------------------------
 
@@ -231,12 +242,12 @@ export function getAgentProfile(slug: string): AgentProfile | null {
   const capabilities = db
     .prepare('SELECT * FROM capabilities WHERE agent_id=? ORDER BY level DESC')
     .all(agent.id) as CapabilityRow[];
-  const teams = db
+  const configurations = db
     .prepare(
-      `SELECT t.slug, t.name, t.avatar, t.kind, m.role FROM team_members m
-       JOIN teams t ON t.id = m.team_id WHERE m.agent_id=? ORDER BY t.name`
+      `SELECT c.slug, c.name, c.avatar, c.kind, m.role FROM configuration_members m
+       JOIN configurations c ON c.id = m.configuration_id WHERE m.agent_id=? ORDER BY c.name`
     )
-    .all(agent.id) as AgentProfile['teams'];
+    .all(agent.id) as AgentProfile['configurations'];
   const lineageParent = agent.lineage_of
     ? ((db.prepare('SELECT slug, name FROM agents WHERE id=?').get(agent.lineage_of) as
         | { slug: string; name: string }
@@ -253,26 +264,35 @@ export function getAgentProfile(slug: string): AgentProfile | null {
     proof,
     capabilities,
     attestations,
-    teams,
+    configurations,
     lineageParent,
     lineageChildren,
   };
 }
 
-export function getTeamProfile(slug: string): TeamProfile | null {
+export function getConfigurationProfile(slug: string): ConfigurationProfile | null {
   const db = getDb();
-  const team = db.prepare('SELECT * FROM teams WHERE slug=?').get(slug) as TeamRow | undefined;
-  if (!team) return null;
-  const owner = db.prepare('SELECT * FROM owners WHERE id=?').get(team.owner_id) as OwnerRow;
-  const { metrics, proof, attestations, tier } = subjectExtras('team', team.id);
+  const configuration = db.prepare('SELECT * FROM configurations WHERE slug=?').get(slug) as
+    | ConfigurationRow
+    | undefined;
+  if (!configuration) return null;
+  const owner = db
+    .prepare('SELECT * FROM owners WHERE id=?')
+    .get(configuration.owner_id) as OwnerRow;
+  const { metrics, proof, attestations, tier } = subjectExtras('configuration', configuration.id);
   const members = db
     .prepare(
-      `SELECT a.slug, a.name, a.avatar, a.tagline, m.role, m.role_detail AS roleDetail, m.ordinal
-       FROM team_members m JOIN agents a ON a.id = m.agent_id
-       WHERE m.team_id=? ORDER BY m.ordinal`
+      `SELECT a.slug, a.name, a.avatar, a.tagline, a.model, m.role, m.role_detail AS roleDetail, m.ordinal
+       FROM configuration_members m JOIN agents a ON a.id = m.agent_id
+       WHERE m.configuration_id=? ORDER BY m.ordinal`
     )
-    .all(team.id) as TeamMemberData[];
-  return { team, owner, tier, members, metrics, proof, attestations };
+    .all(configuration.id) as ConfigurationMemberData[];
+  return { configuration, owner, tier, members, metrics, proof, attestations };
+}
+
+/** Alias so /teams/[slug] page keeps working without rename */
+export function getTeamProfile(slug: string): ConfigurationProfile | null {
+  return getConfigurationProfile(slug);
 }
 
 export function getOwnerProfile(handle: string): OwnerProfile | null {
@@ -280,7 +300,11 @@ export function getOwnerProfile(handle: string): OwnerProfile | null {
     | OwnerRow
     | undefined;
   if (!owner) return null;
-  return { owner, agents: listAgents({ ownerId: owner.id }), teams: listTeams(owner.id) };
+  return {
+    owner,
+    agents: listAgents({ ownerId: owner.id }),
+    configurations: listConfigurations(owner.id),
+  };
 }
 
 // ---- landing --------------------------------------------------------------
@@ -290,24 +314,31 @@ export function getCounts(): SiteCounts {
   const one = (sql: string): number => (db.prepare(sql).get() as { n: number }).n;
   return {
     agents: one('SELECT COUNT(*) AS n FROM agents'),
-    teams: one('SELECT COUNT(*) AS n FROM teams'),
+    configurations: one('SELECT COUNT(*) AS n FROM configurations'),
     owners: one('SELECT COUNT(*) AS n FROM owners'),
     proofEntries: one('SELECT COUNT(*) AS n FROM proof_entries'),
   };
 }
 
-export function getFeatured(): { agents: AgentCardData[]; teams: TeamCardData[] } {
+export function getFeatured(): {
+  agents: AgentCardData[];
+  configurations: ConfigurationCardData[];
+  /** @deprecated use configurations */
+  teams: ConfigurationCardData[];
+} {
   const slugsOf = (sql: string): Set<string> =>
     new Set((getDb().prepare(sql).all() as { slug: string }[]).map((r) => r.slug));
   const featuredAgents = slugsOf('SELECT slug FROM agents WHERE featured=1');
-  const featuredTeams = slugsOf('SELECT slug FROM teams WHERE featured=1');
+  const featuredConfigs = slugsOf('SELECT slug FROM configurations WHERE featured=1');
+  const configs = listConfigurations()
+    .filter((c) => featuredConfigs.has(c.slug))
+    .slice(0, 2);
   return {
     agents: listAgents({ limit: 100 })
       .filter((a) => featuredAgents.has(a.slug))
       .slice(0, 6),
-    teams: listTeams()
-      .filter((t) => featuredTeams.has(t.slug))
-      .slice(0, 2),
+    configurations: configs,
+    teams: configs, // backward-compat alias
   };
 }
 
@@ -321,7 +352,7 @@ function slugify(name: string): string {
     .slice(0, 60);
 }
 
-function uniqueSlug(table: 'agents' | 'teams', base: string): string {
+function uniqueSlug(table: 'agents' | 'configurations', base: string): string {
   const db = getDb();
   const stmt = db.prepare(`SELECT 1 FROM ${table} WHERE slug=?`);
   let slug = base || 'agent';
@@ -395,7 +426,7 @@ export interface AddProofInput {
 
 export function addProofEntry(input: AddProofInput): { id: number; tier: TrustTier } {
   const db = getDb();
-  const table = input.subjectType === 'agent' ? 'agents' : 'teams';
+  const table = input.subjectType === 'agent' ? 'agents' : 'configurations';
   const subject = db.prepare(`SELECT id FROM ${table} WHERE slug=?`).get(input.subjectSlug) as
     | { id: number }
     | undefined;
@@ -431,7 +462,11 @@ export interface ContactInput {
 export function createContactRequest(input: ContactInput): { id: number } {
   const db = getDb();
   const table =
-    input.subjectType === 'agent' ? 'agents' : input.subjectType === 'team' ? 'teams' : 'owners';
+    input.subjectType === 'agent'
+      ? 'agents'
+      : input.subjectType === 'configuration'
+        ? 'configurations'
+        : 'owners';
   const column = input.subjectType === 'owner' ? 'handle' : 'slug';
   const subject = db.prepare(`SELECT id FROM ${table} WHERE ${column}=?`).get(input.subjectSlug) as
     | { id: number }
@@ -445,5 +480,3 @@ export function createContactRequest(input: ContactInput): { id: number } {
     .run(input.subjectType, subject.id, input.requesterName, input.requesterEmail, input.message);
   return { id: Number(res.lastInsertRowid) };
 }
-
-export type { TeamKind };

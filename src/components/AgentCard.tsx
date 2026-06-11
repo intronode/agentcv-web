@@ -34,7 +34,7 @@ export default function AgentCard({ agent }: { agent: AgentCardData }) {
           <span className="rounded-md bg-surface px-2 py-0.5 text-xs text-text-tertiary">
             {agent.platform}
           </span>
-          {agent.illustrative && <IllustrativeMark />}
+          {agent.seedLayer === 'illustrative' && <IllustrativeMark />}
         </div>
 
         <div className="mt-4 flex items-center gap-4 border-t border-border-subtle pt-4">

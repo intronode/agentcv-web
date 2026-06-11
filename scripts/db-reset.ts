@@ -8,8 +8,8 @@ console.log(`AgentCV database reset at ${DB_PATH}`);
 for (const table of [
   'owners',
   'agents',
-  'teams',
-  'team_members',
+  'configurations',
+  'configuration_members',
   'proof_entries',
   'metrics',
   'capabilities',

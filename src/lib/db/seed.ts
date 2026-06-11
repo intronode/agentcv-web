@@ -4,23 +4,26 @@ import type {
   MetricUnit,
   ProofType,
   Provenance,
+  SeedLayer,
   SubjectType,
-  TeamKind,
+  TopologyType,
+  ConfigKind,
 } from './types';
 
 /**
- * Seed policy (SPEC-V3 §8):
- * - The Ari Collective flagship uses the REAL team topology and real lessons.
+ * Seed policy (SPEC-V4 §4):
+ * - The Ari Collective flagship uses the REAL configuration topology and real lessons.
  *   Operating dates, attribution, and the windowed reconciliation metric come
  *   from the flagship real-data packet (#ari-agentcv, 2026-06-11); lifetime
  *   metrics are stored as NULL ("[unknown]") rather than invented.
  *   Entries whose content or date is invented/approximate carry illustrative=1.
  *   Evidence URLs on flagship entries point at the real public repo
  *   (github.com/intronode/agentcv-web; commit c70e14a verified on origin).
- * - All other subjects are fictional demo data: illustrative=1 everywhere,
+ * - All other subjects are fictional demo data: seed_layer='illustrative',
  *   evidence URLs use example.com so they cannot be mistaken for real proof.
  * - No subject is seeded at platform_verified — the platform has verified
  *   nothing, and the seed must not lie about that. (Tier is computed anyway.)
+ * - subject_type: 'configuration' is used throughout (v3 'team' is gone).
  */
 
 const REPO = 'https://github.com/intronode/agentcv-web';
@@ -42,7 +45,35 @@ interface SeedAgent {
   howBuilt?: string;
   operationalSince?: string;
   featured?: boolean;
-  illustrative?: boolean;
+  seedLayer?: SeedLayer;
+  sourceUrl?: string;
+  sourceName?: string;
+}
+
+interface SeedConfiguration {
+  slug: string;
+  name: string;
+  avatar: string;
+  kind: ConfigKind;
+  tagline: string;
+  about?: string;
+  topology?: string;
+  oversight?: string;
+  howBuilt?: string;
+  owner: string;
+  operationalSince?: string;
+  featured?: boolean;
+  seedLayer?: SeedLayer;
+  sourceUrl?: string;
+  sourceName?: string;
+  // v4 comparable fields
+  topologyType?: TopologyType;
+  agentCount?: number;
+  platform?: string;
+  industries?: string[];
+  taskKinds?: string[];
+  whyItWorks?: string;
+  members: [string, string, string][]; // agent slug, role, role detail
 }
 
 interface SeedProof {
@@ -71,9 +102,9 @@ interface SeedMetric {
 export function seed(db: Database.Database): void {
   const ownerIds = new Map<string, number>();
   const agentIds = new Map<string, number>();
-  const teamIds = new Map<string, number>();
+  const configIds = new Map<string, number>();
   const subjectId = ([type, slug]: [SubjectType, string]): number => {
-    const id = type === 'agent' ? agentIds.get(slug) : teamIds.get(slug);
+    const id = type === 'agent' ? agentIds.get(slug) : configIds.get(slug);
     if (id === undefined) throw new Error(`seed: unknown ${type} ${slug}`);
     return id;
   };
@@ -119,8 +150,9 @@ export function seed(db: Database.Database): void {
   // ---- agents ----
   const insAgent = db.prepare(
     `INSERT INTO agents (slug, name, avatar, tagline, about, category, platform, model, owner_id,
-       lineage_kind, lineage_of, lineage_note, oversight, how_built, operational_since, featured, illustrative)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+       lineage_kind, lineage_of, lineage_note, oversight, how_built, operational_since, featured,
+       seed_layer, source_url, source_name)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   );
   const agents: SeedAgent[] = [
     {
@@ -139,7 +171,7 @@ export function seed(db: Database.Database): void {
       howBuilt:
         'OpenClaw runtime with file-based memory and lesson capture. Hub-and-spoke delegation; failures are interrupts, not footnotes; every claim needs evidence before it ships.',
       featured: true,
-      illustrative: true,
+      seedLayer: 'real',
     },
     {
       slug: 'stanley',
@@ -154,7 +186,7 @@ export function seed(db: Database.Database): void {
       operationalSince: '2026-03-31',
       oversight: 'Reports to the team hub; no direct external sends.',
       featured: false,
-      illustrative: true,
+      seedLayer: 'real',
     },
     {
       slug: 'arthur',
@@ -169,7 +201,7 @@ export function seed(db: Database.Database): void {
       operationalSince: '2026-03-25',
       oversight: 'Read-only on production code; cron changes require owner approval.',
       featured: false,
-      illustrative: true,
+      seedLayer: 'real',
     },
     {
       slug: 'laplace',
@@ -184,7 +216,7 @@ export function seed(db: Database.Database): void {
       operationalSince: '2026-04-16',
       oversight: 'Independent by design — never audits its own output.',
       featured: false,
-      illustrative: true,
+      seedLayer: 'real',
     },
     {
       slug: 'codepilot-cr',
@@ -199,7 +231,7 @@ export function seed(db: Database.Database): void {
       howBuilt:
         'LangGraph state machine: diff triage → rule-based filters → model review → comment synthesis. (Fictional.)',
       featured: true,
-      illustrative: true,
+      seedLayer: 'illustrative',
     },
     {
       slug: 'haven-support',
@@ -212,7 +244,7 @@ export function seed(db: Database.Database): void {
       owner: 'mira-systems',
       oversight: 'Escalates refunds and account changes to a human queue. (Fictional.)',
       featured: true,
-      illustrative: true,
+      seedLayer: 'illustrative',
     },
     {
       slug: 'ledgerline',
@@ -222,7 +254,7 @@ export function seed(db: Database.Database): void {
       category: 'Finance Ops',
       platform: 'Custom',
       owner: 'dkraft',
-      illustrative: true,
+      seedLayer: 'illustrative',
     },
     {
       slug: 'research-rabbit',
@@ -233,7 +265,7 @@ export function seed(db: Database.Database): void {
       platform: 'Claude Code',
       owner: 'helios-labs',
       featured: true,
-      illustrative: true,
+      seedLayer: 'illustrative',
     },
     {
       slug: 'helios-extractor',
@@ -247,7 +279,7 @@ export function seed(db: Database.Database): void {
       owner: 'helios-labs',
       howBuilt:
         'Queue-fed extraction pipeline; schema-validated outputs; per-domain adapters. (Fictional.)',
-      illustrative: true,
+      seedLayer: 'illustrative',
     },
     {
       slug: 'helios-extractor-eu',
@@ -260,7 +292,7 @@ export function seed(db: Database.Database): void {
       lineageKind: 'instance',
       lineageOf: 'helios-extractor',
       lineageNote: 'Regional deployment from the same blueprint; isolated data plane.',
-      illustrative: true,
+      seedLayer: 'illustrative',
     },
     {
       slug: 'helios-extractor-us',
@@ -273,7 +305,7 @@ export function seed(db: Database.Database): void {
       lineageKind: 'instance',
       lineageOf: 'helios-extractor',
       lineageNote: 'Regional deployment from the same blueprint; isolated data plane.',
-      illustrative: true,
+      seedLayer: 'illustrative',
     },
     {
       slug: 'translate-flow',
@@ -283,7 +315,7 @@ export function seed(db: Database.Database): void {
       category: 'Localization',
       platform: 'LangGraph',
       owner: 'mira-systems',
-      illustrative: true,
+      seedLayer: 'illustrative',
     },
   ];
   for (const a of agents) {
@@ -307,33 +339,21 @@ export function seed(db: Database.Database): void {
       a.howBuilt ?? null,
       a.operationalSince ?? null,
       a.featured ? 1 : 0,
-      a.illustrative ? 1 : 0
+      a.seedLayer ?? 'illustrative',
+      a.sourceUrl ?? null,
+      a.sourceName ?? null
     );
     agentIds.set(a.slug, Number(res.lastInsertRowid));
   }
 
-  // ---- teams ----
-  const insTeam = db.prepare(
-    `INSERT INTO teams (slug, name, avatar, kind, tagline, about, topology, oversight, how_built,
-       owner_id, operational_since, featured, illustrative)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  // ---- configurations (renamed from teams) ----
+  const insConfig = db.prepare(
+    `INSERT INTO configurations (slug, name, avatar, kind, tagline, about, topology, oversight, how_built,
+       owner_id, operational_since, featured, topology_type, agent_count, platform, industries,
+       task_kinds, why_it_works, seed_layer, source_url, source_name)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   );
-  const teams: {
-    slug: string;
-    name: string;
-    avatar: string;
-    kind: TeamKind;
-    tagline: string;
-    about?: string;
-    topology?: string;
-    oversight?: string;
-    howBuilt?: string;
-    owner: string;
-    operationalSince?: string;
-    featured?: boolean;
-    illustrative?: boolean;
-    members: [string, string, string][]; // agent slug, role, role detail
-  }[] = [
+  const configurations: SeedConfiguration[] = [
     {
       slug: 'ari-collective',
       name: 'The Ari Collective',
@@ -342,7 +362,7 @@ export function seed(db: Database.Database): void {
       tagline:
         'Four-agent operating team: orchestration, engineering, operations, independent audit.',
       about:
-        'A real, operating agent team. Topology, role boundaries, lessons, and operating dates are real [verified-from-logs/rules]. Lifetime metrics are shown as [unknown] rather than invented; the windowed reconciliation metric is derived from the task registry. Entries with approximate dates are marked illustrative.',
+        'A real, operating agent configuration. Topology, role boundaries, lessons, and operating dates are real [verified-from-logs/rules]. Lifetime metrics are shown as [unknown] rather than invented; the windowed reconciliation metric is derived from the task registry. Entries with approximate dates are marked illustrative.',
       topology:
         'Hub-and-spoke. Ari (hub) scopes and routes work; Stanley executes engineering; Arthur runs operations; Laplace audits independently. Acceptance flows through Laplace or the human owner — never through the agent that did the work.',
       oversight:
@@ -352,7 +372,14 @@ export function seed(db: Database.Database): void {
       owner: 'intronode',
       operationalSince: '2026-03-22',
       featured: true,
-      illustrative: true,
+      seedLayer: 'real',
+      topologyType: 'hub_and_spoke',
+      agentCount: 4,
+      platform: 'OpenClaw',
+      industries: ['software-delivery', 'ops'],
+      taskKinds: ['product-engineering', 'deploy-verification', 'independent-qa', 'ops-monitoring'],
+      whyItWorks:
+        'Role boundaries enforced by per-agent permissions make failures traceable. The hub-and-spoke topology keeps orchestration separate from execution. Independent audit (Laplace never QAs its own work) breaks the self-certification failure mode common in single-agent loops.',
       members: [
         ['ari', 'Orchestrator', 'Scoping, routing, exception drill-down, final synthesis'],
         ['stanley', 'Engineer', 'Implementation, refactors, build and test'],
@@ -371,7 +398,12 @@ export function seed(db: Database.Database): void {
         'Frontline/specialist split: Haven Support resolves; TranslateFlow localizes inbound and outbound. (Fictional.)',
       owner: 'mira-systems',
       featured: true,
-      illustrative: true,
+      seedLayer: 'illustrative',
+      topologyType: 'pipeline',
+      agentCount: 2,
+      platform: 'CrewAI',
+      industries: ['customer-support', 'e-commerce'],
+      taskKinds: ['tier-1-resolution', 'localization'],
       members: [
         ['haven-support', 'Frontline', 'Tier-1 resolution and triage'],
         ['translate-flow', 'Localization', 'Inbound/outbound translation'],
@@ -387,7 +419,12 @@ export function seed(db: Database.Database): void {
       topology:
         'Coordinator-less pool. Workers are instances of the Helios Extractor blueprint, fed from a shared job queue with state in a job ledger. (Fictional.)',
       owner: 'helios-labs',
-      illustrative: true,
+      seedLayer: 'illustrative',
+      topologyType: 'peer',
+      agentCount: 3,
+      platform: 'Custom',
+      industries: ['data-extraction', 'research'],
+      taskKinds: ['structured-extraction', 'schema-validation'],
       members: [
         ['helios-extractor', 'Blueprint origin', 'Source configuration for all workers'],
         ['helios-extractor-eu', 'Worker', 'EU region instance'],
@@ -396,30 +433,38 @@ export function seed(db: Database.Database): void {
     },
   ];
   const insMember = db.prepare(
-    'INSERT INTO team_members (team_id, agent_id, role, role_detail, ordinal) VALUES (?,?,?,?,?)'
+    'INSERT INTO configuration_members (configuration_id, agent_id, role, role_detail, ordinal) VALUES (?,?,?,?,?)'
   );
-  for (const t of teams) {
-    const ownerId = ownerIds.get(t.owner);
-    if (ownerId === undefined) throw new Error(`seed: unknown owner ${t.owner}`);
-    const res = insTeam.run(
-      t.slug,
-      t.name,
-      t.avatar,
-      t.kind,
-      t.tagline,
-      t.about ?? null,
-      t.topology ?? null,
-      t.oversight ?? null,
-      t.howBuilt ?? null,
+  for (const c of configurations) {
+    const ownerId = ownerIds.get(c.owner);
+    if (ownerId === undefined) throw new Error(`seed: unknown owner ${c.owner}`);
+    const res = insConfig.run(
+      c.slug,
+      c.name,
+      c.avatar,
+      c.kind,
+      c.tagline,
+      c.about ?? null,
+      c.topology ?? null,
+      c.oversight ?? null,
+      c.howBuilt ?? null,
       ownerId,
-      t.operationalSince ?? null,
-      t.featured ? 1 : 0,
-      t.illustrative ? 1 : 0
+      c.operationalSince ?? null,
+      c.featured ? 1 : 0,
+      c.topologyType ?? null,
+      c.agentCount ?? null,
+      c.platform ?? null,
+      c.industries ? JSON.stringify(c.industries) : null,
+      c.taskKinds ? JSON.stringify(c.taskKinds) : null,
+      c.whyItWorks ?? null,
+      c.seedLayer ?? 'illustrative',
+      c.sourceUrl ?? null,
+      c.sourceName ?? null
     );
-    const teamId = Number(res.lastInsertRowid);
-    teamIds.set(t.slug, teamId);
-    t.members.forEach(([slug, role, detail], i) => {
-      insMember.run(teamId, subjectId(['agent', slug]), role, detail, i);
+    const configId = Number(res.lastInsertRowid);
+    configIds.set(c.slug, configId);
+    c.members.forEach(([slug, role, detail], i) => {
+      insMember.run(configId, subjectId(['agent', slug]), role, detail, i);
     });
   }
 
@@ -431,7 +476,7 @@ export function seed(db: Database.Database): void {
   const proofs: SeedProof[] = [
     // -- The Ari Collective (real content; illustrative flag marks approximations) --
     {
-      subject: ['team', 'ari-collective'],
+      subject: ['configuration', 'ari-collective'],
       date: '2026-06-08',
       type: 'milestone',
       title: 'Shipped AgentCV v2 (Sprints 1–5)',
@@ -440,7 +485,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['team', 'ari-collective'],
+      subject: ['configuration', 'ari-collective'],
       date: '2026-06-09',
       type: 'incident',
       title: 'Vercel CI builds broken by husky prepare script',
@@ -450,7 +495,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['team', 'ari-collective'],
+      subject: ['configuration', 'ari-collective'],
       date: '2026-04-02',
       type: 'lesson',
       title: 'Supabase SSR cookies vs browser-client localStorage',
@@ -459,7 +504,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['team', 'ari-collective'],
+      subject: ['configuration', 'ari-collective'],
       date: '2026-05-20',
       type: 'lesson',
       title: 'Measure multi-byte files in chars (wc -m), not bytes (wc -c)',
@@ -468,7 +513,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['team', 'ari-collective'],
+      subject: ['configuration', 'ari-collective'],
       date: '2026-06-11',
       type: 'task',
       title: 'AgentCV v3 rebuild — local-first, teams first-class',
@@ -629,9 +674,9 @@ export function seed(db: Database.Database): void {
       provenance: 'self_reported',
       illustrative: true,
     },
-    // -- Fictional teams --
+    // -- Fictional configurations --
     {
-      subject: ['team', 'mira-support-desk'],
+      subject: ['configuration', 'mira-support-desk'],
       date: '2026-05-29',
       type: 'task',
       title: 'Bilingual launch for EU customer',
@@ -640,7 +685,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['team', 'mira-support-desk'],
+      subject: ['configuration', 'mira-support-desk'],
       date: '2026-05-02',
       type: 'milestone',
       title: 'Sub-2-minute median first response, 60 days',
@@ -649,7 +694,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['team', 'mira-support-desk'],
+      subject: ['configuration', 'mira-support-desk'],
       date: '2026-04-11',
       type: 'incident',
       title: 'Escalation queue overflow during outage spike',
@@ -659,7 +704,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['team', 'helios-swarm'],
+      subject: ['configuration', 'helios-swarm'],
       date: '2026-05-20',
       type: 'task',
       title: 'Scaled to 2 regional workers from one blueprint',
@@ -700,7 +745,7 @@ export function seed(db: Database.Database): void {
     //    Per-agent registry counts deliberately not shown: the current window
     //    is control-plane biased and would misrepresent member history.
     {
-      subject: ['team', 'ari-collective'],
+      subject: ['configuration', 'ari-collective'],
       key: 'window_reconciliation_pct',
       label: 'Windowed reconciliation',
       value: 90.8,
@@ -710,7 +755,7 @@ export function seed(db: Database.Database): void {
       illustrative: false,
     },
     {
-      subject: ['team', 'ari-collective'],
+      subject: ['configuration', 'ari-collective'],
       key: 'tasks_completed',
       label: 'Lifetime tasks',
       value: null,
@@ -720,7 +765,7 @@ export function seed(db: Database.Database): void {
       illustrative: false,
     },
     {
-      subject: ['team', 'ari-collective'],
+      subject: ['configuration', 'ari-collective'],
       key: 'success_rate',
       label: 'Lifetime success rate',
       value: null,
@@ -730,7 +775,7 @@ export function seed(db: Database.Database): void {
       illustrative: false,
     },
     {
-      subject: ['team', 'ari-collective'],
+      subject: ['configuration', 'ari-collective'],
       key: 'cost_per_task_usd',
       label: 'Cost per task',
       value: null,
@@ -750,10 +795,10 @@ export function seed(db: Database.Database): void {
     m(['agent', 'helios-extractor-eu'], 'tasks_completed', 'Records extracted', 1200000, 'count'),
     m(['agent', 'helios-extractor-us'], 'tasks_completed', 'Records extracted', 940000, 'count'),
     m(['agent', 'translate-flow'], 'tasks_completed', 'Messages localized', 84000, 'count'),
-    m(['team', 'mira-support-desk'], 'tasks_completed', 'Tickets handled', 23800, 'count'),
-    m(['team', 'mira-support-desk'], 'success_rate', 'Resolution rate', 91.3, 'pct'),
-    m(['team', 'helios-swarm'], 'tasks_completed', 'Records extracted', 2140000, 'count'),
-    m(['team', 'helios-swarm'], 'cost_per_task_usd', 'Cost per 1k records', 0.31, 'usd'),
+    m(['configuration', 'mira-support-desk'], 'tasks_completed', 'Tickets handled', 23800, 'count'),
+    m(['configuration', 'mira-support-desk'], 'success_rate', 'Resolution rate', 91.3, 'pct'),
+    m(['configuration', 'helios-swarm'], 'tasks_completed', 'Records extracted', 2140000, 'count'),
+    m(['configuration', 'helios-swarm'], 'cost_per_task_usd', 'Cost per 1k records', 0.31, 'usd'),
   ];
   for (const x of metrics) {
     insMetric.run(
@@ -798,8 +843,8 @@ export function seed(db: Database.Database): void {
      VALUES (?,?,?,?,?,?,?)`
   );
   insAtt.run(
-    'team',
-    subjectId(['team', 'mira-support-desk']),
+    'configuration',
+    subjectId(['configuration', 'mira-support-desk']),
     'Nordwind GmbH (fictional)',
     'https://example.com/nordwind',
     'Customer, 6 months',

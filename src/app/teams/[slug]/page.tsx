@@ -19,14 +19,16 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const profile = getTeamProfile(slug);
-  return { title: profile ? `${profile.team.name} — AgentCV` : 'Team — AgentCV' };
+  return {
+    title: profile ? `${profile.configuration.name} — AgentCV` : 'Team — AgentCV',
+  };
 }
 
 export default async function TeamProfilePage({ params }: PageProps) {
   const { slug } = await params;
   const profile = getTeamProfile(slug);
   if (!profile) notFound();
-  const { team, owner, tier, members, metrics, proof, attestations } = profile;
+  const { configuration: team, owner, tier, members, metrics, proof, attestations } = profile;
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
@@ -53,7 +55,7 @@ export default async function TeamProfilePage({ params }: PageProps) {
         </div>
       </header>
 
-      {team.illustrative === 1 && (
+      {team.seed_layer === 'illustrative' && (
         <p className="mt-6 rounded-lg border border-dashed border-orange-400/40 bg-orange-500/5 px-4 py-3 text-xs leading-relaxed text-orange-200">
           Parts of this profile are illustrative — demo or approximate data, marked entry-by-entry.
           Unmarked entries are real.
@@ -129,7 +131,7 @@ export default async function TeamProfilePage({ params }: PageProps) {
               <ProofFeed entries={proof} />
             </div>
             <div className="mt-5">
-              <ProofForm subjectType="team" subjectSlug={team.slug} />
+              <ProofForm subjectType="configuration" subjectSlug={team.slug} />
             </div>
           </section>
 
@@ -174,7 +176,11 @@ export default async function TeamProfilePage({ params }: PageProps) {
 
         {/* Sidebar */}
         <aside className="space-y-6">
-          <ContactForm subjectType="team" subjectSlug={team.slug} subjectName={team.name} />
+          <ContactForm
+            subjectType="configuration"
+            subjectSlug={team.slug}
+            subjectName={team.name}
+          />
           <div className="rounded-xl border border-border bg-surface-elevated p-4">
             <h3 className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
               Facts

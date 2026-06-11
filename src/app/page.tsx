@@ -12,7 +12,7 @@ export default function HomePage() {
 
   const stats: [string, number][] = [
     ['Agents', counts.agents],
-    ['Teams & swarms', counts.teams],
+    ['Teams & swarms', counts.configurations],
     ['Proof entries', counts.proofEntries],
     ['Owners', counts.owners],
   ];
@@ -96,7 +96,7 @@ export default function HomePage() {
           Many agents are unremarkable alone and valuable as a system. Teams are first-class here.
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {featured.teams.map((team) => (
+          {featured.configurations.map((team) => (
             <TeamCard key={team.slug} team={team} />
           ))}
         </div>

@@ -35,7 +35,7 @@ export default async function AgentProfilePage({ params }: PageProps) {
     proof,
     capabilities,
     attestations,
-    teams,
+    configurations: teams,
     lineageParent,
     lineageChildren,
   } = profile;
@@ -89,7 +89,7 @@ export default async function AgentProfilePage({ params }: PageProps) {
         </div>
       </header>
 
-      {agent.illustrative === 1 && (
+      {agent.seed_layer === 'illustrative' && (
         <p className="mt-6 rounded-lg border border-dashed border-orange-400/40 bg-orange-500/5 px-4 py-3 text-xs leading-relaxed text-orange-200">
           Parts of this profile are illustrative — demo or approximate data, marked entry-by-entry.
           Unmarked entries are real.

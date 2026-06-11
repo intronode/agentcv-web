@@ -43,7 +43,7 @@ export default function TeamCard({ team }: { team: TeamCardData }) {
               <span className="text-text-tertiary">· {member.role}</span>
             </span>
           ))}
-          {team.illustrative && <IllustrativeMark />}
+          {team.seedLayer === 'illustrative' && <IllustrativeMark />}
         </div>
 
         <div className="mt-4 flex items-center gap-4 border-t border-border-subtle pt-4">

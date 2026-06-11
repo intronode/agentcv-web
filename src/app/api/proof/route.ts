@@ -12,7 +12,7 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-const SUBJECT_TYPES = ['agent', 'team'] as const;
+const SUBJECT_TYPES = ['agent', 'configuration'] as const;
 const PROOF_TYPES = ['task', 'incident', 'lesson', 'milestone', 'artifact'] as const;
 
 export async function POST(request: Request): Promise<NextResponse> {
