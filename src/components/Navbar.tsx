@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const LINKS = [
-  { href: '/agents', label: 'Agents' },
   { href: '/configurations', label: 'Configurations' },
+  { href: '/agents', label: 'Components' },
   { href: '/trust', label: 'Trust Model' },
 ];
 

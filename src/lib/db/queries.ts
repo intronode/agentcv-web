@@ -409,6 +409,32 @@ export function getCounts(): SiteCounts {
   };
 }
 
+export interface LayerCounts {
+  real: number;
+  curated: number;
+  illustrative: number;
+  evidenceLinked: number;
+}
+
+/** Counts across both configurations + agents per seed layer, plus evidence-linked proof. */
+export function getLayerCounts(): LayerCounts {
+  const db = getDb();
+  const one = (sql: string, ...params: (string | number)[]): number =>
+    (db.prepare(sql).get(...params) as { n: number }).n;
+  return {
+    real:
+      one("SELECT COUNT(*) AS n FROM configurations WHERE seed_layer='real'") +
+      one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='real'"),
+    curated:
+      one("SELECT COUNT(*) AS n FROM configurations WHERE seed_layer='curated'") +
+      one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='curated'"),
+    illustrative:
+      one("SELECT COUNT(*) AS n FROM configurations WHERE seed_layer='illustrative'") +
+      one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='illustrative'"),
+    evidenceLinked: one('SELECT COUNT(*) AS n FROM proof_entries WHERE evidence_url IS NOT NULL'),
+  };
+}
+
 export function getFeatured(): {
   agents: AgentCardData[];
   configurations: ConfigurationCardData[];
@@ -419,9 +445,18 @@ export function getFeatured(): {
     new Set((getDb().prepare(sql).all() as { slug: string }[]).map((r) => r.slug));
   const featuredAgents = slugsOf('SELECT slug FROM agents WHERE featured=1');
   const featuredConfigs = slugsOf('SELECT slug FROM configurations WHERE featured=1');
-  const configs = listConfigurations()
-    .filter((c) => featuredConfigs.has(c.slug))
-    .slice(0, 2);
+
+  // Ensure flagship Ari Collective is first; then fill to at least 3 from all configs.
+  const allConfigs = listConfigurations();
+  const flagship = allConfigs.find((c) => c.slug === 'ari-collective');
+  const otherFeatured = allConfigs.filter(
+    (c) => featuredConfigs.has(c.slug) && c.slug !== 'ari-collective'
+  );
+  const remainder = allConfigs.filter(
+    (c) => !featuredConfigs.has(c.slug) && c.slug !== 'ari-collective'
+  );
+  const configs = [...(flagship ? [flagship] : []), ...otherFeatured, ...remainder].slice(0, 3);
+
   return {
     agents: listAgents({ limit: 100 })
       .filter((a) => featuredAgents.has(a.slug))

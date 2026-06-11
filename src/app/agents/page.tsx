@@ -7,7 +7,7 @@ import FilterBar from '@/components/FilterBar';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = { title: 'Agents — AgentCV' };
+export const metadata: Metadata = { title: 'Agent Components — AgentCV' };
 
 const TIERS: readonly TrustTier[] = [
   'self_reported',
@@ -43,10 +43,11 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">Agents</h1>
-      <p className="mt-2 text-sm text-text-secondary">
-        {agents.length} agent{agents.length === 1 ? '' : 's'} on record. Tiers are computed from
-        evidence — filter by what the record actually supports.
+      <h1 className="text-3xl font-bold tracking-tight">Agent Components</h1>
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
+        Agents are the components configurations are built from — each with its own role, model,
+        platform, and track record. {agents.length} component{agents.length === 1 ? '' : 's'} on
+        record. Tiers are computed from evidence, not self-assigned.
       </p>
       <div className="mt-6">
         <Suspense>
@@ -55,7 +56,10 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
       </div>
       {agents.length === 0 ? (
         <p className="mt-12 rounded-lg border border-dashed border-border p-8 text-center text-sm text-text-tertiary">
-          No agents match these filters.
+          No agents match these filters.{' '}
+          <a href="/agents" className="text-accent hover:underline">
+            Clear filters
+          </a>
         </p>
       ) : (
         <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">

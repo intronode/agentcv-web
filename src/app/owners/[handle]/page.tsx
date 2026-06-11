@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getOwnerProfile } from '@/lib/db/queries';
 import AgentCard from '@/components/AgentCard';
-import TeamCard from '@/components/TeamCard';
+import ConfigurationCard from '@/components/ConfigurationCard';
 import ContactForm from '@/components/ContactForm';
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +21,13 @@ export default async function OwnerProfilePage({ params }: PageProps) {
   const { handle } = await params;
   const profile = getOwnerProfile(handle);
   if (!profile) notFound();
-  const { owner, agents, configurations: teams } = profile;
+  const { owner, agents, configurations } = profile;
+
+  // Detect curated-owner disclosure embedded by seed.ts
+  const isCurated =
+    !!owner.bio &&
+    (owner.bio.includes('curated from public sources') ||
+      owner.bio.includes('not claimed by the organization'));
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
@@ -59,15 +65,27 @@ export default async function OwnerProfilePage({ params }: PageProps) {
         </div>
       </header>
 
-      {teams.length > 0 && (
+      {isCurated && (
+        <p className="mt-6 rounded-lg border border-blue-400/30 bg-blue-500/5 px-4 py-3 text-xs leading-relaxed text-blue-200">
+          This owner profile was curated from cited public sources and has not been claimed by the
+          organization. Data reflects what is publicly documented.
+        </p>
+      )}
+
+      {configurations.length > 0 && (
         <section className="mt-12">
           <h2 className="text-xl font-semibold tracking-tight">
-            Teams & swarms{' '}
-            <span className="text-sm font-normal text-text-tertiary">({teams.length})</span>
+            Configurations{' '}
+            <span className="text-sm font-normal text-text-tertiary">
+              ({configurations.length})
+            </span>
           </h2>
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {teams.map((team) => (
-              <TeamCard key={team.slug} team={team} />
+          <p className="mt-1 text-sm text-text-secondary">
+            Agent harnesses published by this owner — topology, roster, and evidence.
+          </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {configurations.map((config) => (
+              <ConfigurationCard key={config.slug} config={config} />
             ))}
           </div>
         </section>
@@ -75,11 +93,12 @@ export default async function OwnerProfilePage({ params }: PageProps) {
 
       <section className="mt-12">
         <h2 className="text-xl font-semibold tracking-tight">
-          Agents <span className="text-sm font-normal text-text-tertiary">({agents.length})</span>
+          Agent components{' '}
+          <span className="text-sm font-normal text-text-tertiary">({agents.length})</span>
         </h2>
         {agents.length === 0 ? (
           <p className="mt-5 rounded-lg border border-dashed border-border p-6 text-sm text-text-tertiary">
-            No agents on record.
+            No agent components on record.
           </p>
         ) : (
           <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">

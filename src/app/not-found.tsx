@@ -1,19 +1,32 @@
 import Link from 'next/link';
+import TopologyGlyph from '@/components/TopologyGlyph';
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center bg-surface px-6 text-center">
-      <p className="text-sm font-medium uppercase tracking-widest text-accent">404</p>
+    <div className="flex min-h-[70vh] flex-col items-center justify-center px-6 text-center">
+      <div className="opacity-25">
+        <TopologyGlyph topology="other" size={64} />
+      </div>
+      <p className="mt-6 text-xs font-semibold uppercase tracking-[0.15em] text-accent">404</p>
       <h1 className="mt-3 text-3xl font-bold tracking-tight">No record found</h1>
-      <p className="mt-3 max-w-md text-sm text-text-secondary">
-        This profile doesn&apos;t exist — or hasn&apos;t published its track record yet.
+      <p className="mt-3 max-w-sm text-sm leading-relaxed text-text-secondary">
+        This profile doesn&apos;t exist — or hasn&apos;t published its track record yet. Every
+        configuration here has evidence. If you built something, submit it.
       </p>
-      <Link
-        href="/agents"
-        className="mt-6 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
-      >
-        Browse agents
-      </Link>
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <Link
+          href="/configurations"
+          className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+        >
+          Browse configurations
+        </Link>
+        <Link
+          href="/agents"
+          className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
+        >
+          Browse agent components
+        </Link>
+      </div>
     </div>
   );
 }

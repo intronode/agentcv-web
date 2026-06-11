@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getAgentProfile } from '@/lib/db/queries';
 import TrustBadge from '@/components/TrustBadge';
+import LayerLabel from '@/components/LayerLabel';
 import { IllustrativeMark } from '@/components/ProvenanceTag';
 import MetricGrid from '@/components/MetricGrid';
 import ProofFeed from '@/components/ProofFeed';
@@ -51,6 +52,11 @@ export default async function AgentProfilePage({ params }: PageProps) {
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight">{agent.name}</h1>
             <TrustBadge tier={tier} size="md" />
+            <LayerLabel
+              layer={agent.seed_layer}
+              sourceUrl={agent.source_url ?? undefined}
+              size="md"
+            />
             {agent.status !== 'active' && (
               <span className="rounded border border-border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-text-tertiary">
                 {agent.status}
@@ -241,13 +247,13 @@ export default async function AgentProfilePage({ params }: PageProps) {
           {teams.length > 0 && (
             <div className="rounded-xl border border-border bg-surface-elevated p-4">
               <h3 className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
-                Member of
+                Member of configurations
               </h3>
               <ul className="mt-3 space-y-2">
                 {teams.map((team) => (
                   <li key={team.slug}>
                     <Link
-                      href={`/teams/${team.slug}`}
+                      href={`/configurations/${team.slug}`}
                       className="flex items-center gap-2 rounded-lg p-2 text-sm transition-colors hover:bg-surface-hover"
                     >
                       <span className="text-lg">{team.avatar}</span>
