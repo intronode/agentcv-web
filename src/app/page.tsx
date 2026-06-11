@@ -59,28 +59,28 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Live DB stats */}
+            {/* Live DB stats — 2×2 at mobile fold, 4-col on larger viewports */}
             <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
-                <div className="text-2xl font-bold tabular-nums tracking-tight">
+              <div className="rounded-xl border border-border bg-surface-elevated px-4 py-4 sm:px-5">
+                <div className="text-3xl font-bold tabular-nums tracking-tight sm:text-2xl">
                   {counts.configurations.toLocaleString('en-US')}
                 </div>
                 <div className="mt-1 text-xs text-text-tertiary">configurations</div>
               </div>
-              <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
-                <div className="text-2xl font-bold tabular-nums tracking-tight">
+              <div className="rounded-xl border border-border bg-surface-elevated px-4 py-4 sm:px-5">
+                <div className="text-3xl font-bold tabular-nums tracking-tight sm:text-2xl">
                   {counts.agents.toLocaleString('en-US')}
                 </div>
                 <div className="mt-1 text-xs text-text-tertiary">agent components</div>
               </div>
-              <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
-                <div className="text-2xl font-bold tabular-nums tracking-tight">
+              <div className="rounded-xl border border-border bg-surface-elevated px-4 py-4 sm:px-5">
+                <div className="text-3xl font-bold tabular-nums tracking-tight sm:text-2xl">
                   {counts.proofEntries.toLocaleString('en-US')}
                 </div>
                 <div className="mt-1 text-xs text-text-tertiary">proof entries</div>
               </div>
-              <div className="rounded-xl border border-border bg-surface-elevated px-5 py-4">
-                <div className="text-2xl font-bold tabular-nums tracking-tight">
+              <div className="rounded-xl border border-border bg-surface-elevated px-4 py-4 sm:px-5">
+                <div className="text-3xl font-bold tabular-nums tracking-tight sm:text-2xl">
                   {evidenceLinkedPct}%
                 </div>
                 <div className="mt-1 text-xs text-text-tertiary">evidence-linked</div>

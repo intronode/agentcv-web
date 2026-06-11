@@ -145,4 +145,38 @@ count. All timestamps KST.
 
 - **Shot:** 2026-06-12 ~01:05 via qa-shoot.sh ·
   docs/evidence/cycles/cycle-08/ (44 files, 0 unexpected console errors)
+- **Examiner (fresh subagent):** scores — credibility 4 · density 4 ·
+  depth 4 · interaction 4 · honesty 5 · soundness 4 · copy 4 (min 4).
+  Report: cycle-08/examiner-report.md
+- **Weakest thing named:** 1440px hero fold half-empty (right column
+  dead black).
+- **Fix:** live-registry hero artifact (real flagship card over a
+  low-opacity topology constellation); agent metric absence reframed
+  as a product statement; sticky submit section nav + time estimate;
+  Intronode context on /request; sticky mobile compare identity;
+  mobile filter disclosure chips.
+- **Fix commit:** 3e85851 (2026-06-12 ~01:40). First cycle-09 capture
+  attempt aborted by the qa-shoot gate (stale-server detection fired
+  correctly); clean retry passed.
+
+## Cycle 09
+
+- **Shot:** 2026-06-12 ~01:50 via qa-shoot.sh ·
+  docs/evidence/cycles/cycle-09/ (44 files, 0 unexpected console errors)
+- **Examiner (fresh subagent):** scores — credibility 4 · density 4 ·
+  depth 4 · interaction 4 · honesty 5 · soundness 5 · copy 4 (min 4).
+  Report: cycle-09/examiner-report.md
+- **Weakest thing named:** /submit step tabs cosmetic — no active
+  state; misleading wayfinding on the conversion surface.
+- **Fix:** scroll-spy tabs with smooth jumps; hero top tightened;
+  operating-since "(optional)" + inline format error (matches API);
+  disclaimer copy de-apologized; explainer anchor TOC; back-to-top on
+  directories; compact one-liner proof rows; qa-shoot.sh grep flag
+  hardening.
+- **Fix commit:** 05ad31b (2026-06-12 ~02:20)
+
+## Cycle 10
+
+- **Shot:** 2026-06-12 ~02:25 via qa-shoot.sh ·
+  docs/evidence/cycles/cycle-10/ (44 files, 0 unexpected console errors)
 - **Examiner:** (pending)

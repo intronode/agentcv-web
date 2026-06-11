@@ -384,10 +384,10 @@ export default function SubmitPage() {
         creation and the computed tier upgrades itself. Nothing is self-assignable.
       </div>
 
-      {/* Section navigator — sticky under navbar */}
+      {/* Section navigator — sticky under navbar (navbar is fixed h-16 = 64px, z-50) */}
       <nav
         aria-label="Form sections"
-        className="sticky top-16 z-20 mt-6 flex flex-wrap items-center gap-x-0 divide-x divide-border overflow-hidden rounded-lg border border-border bg-surface-elevated/80 text-xs backdrop-blur-md"
+        className="sticky top-16 z-30 mt-6 flex flex-wrap items-center gap-x-0 divide-x divide-border overflow-hidden rounded-lg border border-border bg-surface-elevated/95 text-xs shadow-sm backdrop-blur-md"
       >
         {SECTIONS.map(({ id, label }, i) => {
           const isActive = activeSection === id;

@@ -175,6 +175,8 @@ export interface AgentCardData {
   ownerName: string;
   tier: TrustTier;
   proofCount: number;
+  /** Number of proof entries that carry a public evidence URL. */
+  evidenceCount: number;
   configurationCount: number;
   seedLayer: SeedLayer;
   metrics: MetricRow[]; // up to 3, for the card footer

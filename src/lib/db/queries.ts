@@ -189,6 +189,7 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
       ownerName: r.owner_name,
       tier: computeTier(r.evidence_count, r.attestation_count),
       proofCount: r.proof_count,
+      evidenceCount: r.evidence_count,
       configurationCount: r.config_count,
       seedLayer: r.seed_layer,
       metrics: ownMetrics,

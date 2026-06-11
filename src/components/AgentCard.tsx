@@ -42,65 +42,70 @@ export default function AgentCard({ agent }: { agent: AgentCardData }) {
           {agent.seedLayer === 'illustrative' && <IllustrativeMark />}
         </div>
 
-        <div className="mt-4 flex items-center gap-4 border-t border-border-subtle pt-4">
-          {agent.metrics.slice(0, 3).map((metric) => (
-            <div key={metric.key} className="flex flex-col">
-              <span className="text-xs text-text-tertiary">{metric.label}</span>
-              <span className="text-sm font-medium">
-                {formatMetricValue(metric.value, metric.unit)}
-              </span>
-            </div>
-          ))}
-          {agent.metrics.length === 0 && agent.viaConfigMetric && (
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] text-text-tertiary">{agent.viaConfigMetric.label}</span>
-              <span className="text-sm font-medium text-text-primary">
-                {formatMetricValue(agent.viaConfigMetric.value, agent.viaConfigMetric.unit)}
-              </span>
-              <div className="flex items-center gap-1">
-                <ProvenanceTag provenance={agent.viaConfigMetric.provenance} />
-                <span
-                  className="text-[9px] text-text-tertiary"
-                  title={`Metric from configuration: ${agent.viaConfigMetric.configName}`}
-                >
-                  via {agent.viaConfigMetric.configName}
+        {/* Common evidence anchor — shared axis for cross-card scanning */}
+        <div className="mt-4 flex items-center justify-between border-t border-border-subtle pt-3">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-text-tertiary">Evidence</span>
+            <span className="text-sm font-medium text-text-primary">
+              {agent.proofCount} proof
+              {agent.evidenceCount > 0 && (
+                <span className="ml-1 text-xs font-normal text-text-tertiary">
+                  · {agent.evidenceCount} linked
+                </span>
+              )}
+            </span>
+          </div>
+
+          {/* Distinctive agent metric (own or via-config) */}
+          <div className="flex items-end gap-3">
+            {agent.metrics.slice(0, 2).map((metric) => (
+              <div key={metric.key} className="flex flex-col items-end">
+                <span className="text-[10px] text-text-tertiary">{metric.label}</span>
+                <span className="text-sm font-medium">
+                  {formatMetricValue(metric.value, metric.unit)}
                 </span>
               </div>
-            </div>
-          )}
-          <div className="ml-auto flex items-center gap-2 text-xs">
-            {agent.configurationCount > 0 && (
-              <span className="flex items-center gap-1 text-text-tertiary">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <rect x="3" y="3" width="7" height="7" />
-                  <rect x="14" y="3" width="7" height="7" />
-                  <rect x="14" y="14" width="7" height="7" />
-                  <rect x="3" y="14" width="7" height="7" />
-                </svg>
-                {agent.configurationCount}
-              </span>
+            ))}
+            {agent.metrics.length === 0 && agent.viaConfigMetric && (
+              <div className="flex flex-col items-end gap-0.5">
+                <span className="text-[10px] text-text-tertiary">
+                  {agent.viaConfigMetric.label}
+                </span>
+                <span className="text-sm font-medium text-text-primary">
+                  {formatMetricValue(agent.viaConfigMetric.value, agent.viaConfigMetric.unit)}
+                </span>
+                <div className="flex items-center gap-1">
+                  <ProvenanceTag provenance={agent.viaConfigMetric.provenance} />
+                  <span
+                    className="text-[9px] text-text-tertiary"
+                    title={`Metric from configuration: ${agent.viaConfigMetric.configName}`}
+                  >
+                    via {agent.viaConfigMetric.configName}
+                  </span>
+                </div>
+              </div>
             )}
-            <span className="flex items-center gap-1 text-accent">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-              {agent.proofCount} proof
-            </span>
+            {agent.configurationCount > 0 && (
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] text-text-tertiary">configs</span>
+                <span className="flex items-center gap-1 text-sm font-medium text-text-secondary">
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                  </svg>
+                  {agent.configurationCount}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
