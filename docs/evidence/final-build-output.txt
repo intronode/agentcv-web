@@ -1,0 +1,51 @@
+
+> agentcv@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.19
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 1015ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/8) ...
+   Generating static pages (2/8) 
+   Generating static pages (4/8) 
+   Generating static pages (6/8) 
+ ✓ Generating static pages (8/8)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ƒ /                                    2.03 kB         108 kB
+├ ○ /_not-found                            145 B         103 kB
+├ ƒ /agents                               1.8 kB         108 kB
+├ ƒ /agents/[slug]                         124 B         109 kB
+├ ƒ /api/agents                            145 B         103 kB
+├ ƒ /api/attestations                      145 B         103 kB
+├ ƒ /api/configurations                    145 B         103 kB
+├ ƒ /api/contact                           145 B         103 kB
+├ ƒ /api/proof                             145 B         103 kB
+├ ƒ /compare                               172 B         106 kB
+├ ƒ /configurations                      4.27 kB         110 kB
+├ ƒ /configurations/[slug]                 124 B         109 kB
+├ ○ /harness-engineering                   172 B         106 kB
+├ ○ /icon.svg                                0 B            0 B
+├ ƒ /owners/[handle]                      2.8 kB         109 kB
+├ ○ /register                            1.94 kB         104 kB
+├ ƒ /request                             2.24 kB         108 kB
+├ ○ /submit                              6.01 kB         108 kB
+├ ƒ /teams                                 172 B         106 kB
+├ ƒ /teams/[slug]                        1.96 kB         108 kB
+└ ○ /trust                                 172 B         106 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/255-98a0bdaa30757bda.js       46.2 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          1.92 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+build exit: 0

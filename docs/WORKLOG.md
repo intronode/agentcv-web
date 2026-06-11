@@ -179,4 +179,51 @@ count. All timestamps KST.
 
 - **Shot:** 2026-06-12 ~02:25 via qa-shoot.sh ·
   docs/evidence/cycles/cycle-10/ (44 files, 0 unexpected console errors)
-- **Examiner:** (pending)
+- **Examiner (fresh subagent):** scores — credibility 4 · density 4 ·
+  depth 4 · interaction 4 · honesty 5 · soundness 5 · copy 4 (min 4).
+  Report: cycle-10/examiner-report.md
+- **Weakest thing named:** flagship's [unknown] metric slots read as
+  missing data at the trust moment. (REAL data is preservation-
+  mandated and honest [unknown] IS the thesis — fix was presentation.)
+- **Fix:** deliberate-rigor [unknown] rendering (NOT ESTIMATED badge,
+  promoted note, why-link); common Evidence axis on agent cards;
+  submit step-nav stacking fix; owner-voice Intronode bio; legible
+  mobile stat grid.
+- **Fix commit:** 44e0cd6 (2026-06-12 ~03:00)
+
+## Cycle 11
+
+- **Shot:** 2026-06-12 ~03:05 via qa-shoot.sh ·
+  docs/evidence/cycles/cycle-11/ (44 files, 0 unexpected console
+  errors; one aborted attempt — gate caught a leftover QA server,
+  killed by exact PID, clean rerun)
+- **Examiner (fresh subagent):** scores — credibility 4 · density 4 ·
+  depth 4 · interaction 4 · honesty 5 · soundness 4 · copy 4 (min 4).
+  Report: cycle-11/examiner-report.md
+- **Weakest thing named:** ownership graph reads as a one-team demo.
+  Fact-checked: 21 owners exist — discoverability gap, not data gap.
+- **Fix:** owners strip on every owner page (21 owners, config counts,
+  layer mix); shared team metrics as one designed block (kills the
+  copy-paste look); 3-way mobile compare as full-width stacked rows;
+  [unknown] unified on cards; thesis-consistent footer ("working
+  configurations, with receipts"); live-registry stats qualifier.
+- **Fix commit:** c181a8b (2026-06-12 ~03:35)
+- **Protocol re-shoot:** docs/evidence/final-sweep/ (44 files, 0
+  unexpected console errors).
+
+## Summary (Goal 2 exit, 2026-06-12 ~03:50)
+
+- **10 valid cycles** (01, 02, 04, 05, 06, 07, 08, 09, 10, 11);
+  cycle 03 VOID (invalid capture, documented, not counted).
+- **Score trajectory (min/dimension):** C01 3 → C02 3 → C04 4 → C05 4
+  → C06 4 → C07 4 → C08 4 → C09 4 → C10 4 → C11 4. Honesty held 5
+  from C04 onward; soundness reached 5 in C09–C10.
+- **Latest examiner pass (C11): 4·4·4·4·5·4·4 — no dimension below 4.**
+- Final verification: tsc exit 0, build exit 0
+  (docs/evidence/final-\*.txt); prod-mode chromium sweep of all CORE
+  routes clean (docs/evidence/final-sweep/).
+- ROADMAP shipped within Goal 2: community review (attestations).
+  Full ledger: docs/BUILD-REPORT.md.
+- Constraint compliance: no deploys; no pushes to vercel-fork; nothing
+  AgentLab-related touched; port 3000 untouched (all QA on 3190 via
+  PID-file discipline).
