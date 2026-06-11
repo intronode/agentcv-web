@@ -1,0 +1,38 @@
+=== POST-FIX FULL SWEEP — HEAD, prod mode (next start -p 3210), 2026-06-11 09:26:00 ===
+--- 12 routes (html / RSC-nav / prefetch):
+/ html=200 rsc=200 prefetch=200
+/agents html=200 rsc=200 prefetch=200
+/agents?tier=peer_attested html=200 rsc=200 prefetch=200
+/agents/ari html=200 rsc=200 prefetch=200
+/agents/codepilot-cr html=200 rsc=200 prefetch=200
+/agents/helios-extractor html=200 rsc=200 prefetch=200
+/teams html=200 rsc=200 prefetch=200
+/teams/ari-collective html=200 rsc=200 prefetch=200
+/teams/helios-swarm html=200 rsc=200 prefetch=200
+/owners/intronode html=200 rsc=200 prefetch=200
+/register html=200 rsc=200 prefetch=200
+/trust html=200 rsc=200 prefetch=200
+--- 404 path:
+/agents/nonexistent -> 404
+--- write flow 1: register
+{"slug":"sweep-probe","id":13} http=201
+13|sweep-probe|5
+--- write flow 2: proof x3 (tier ladder)
+{"id":27,"tier":"self_reported"} http=201
+{"id":28,"tier":"self_reported"} http=201
+{"id":29,"tier":"evidence_linked"} http=201
+--- write flow 3: contact
+{"id":1} http=201
+1 contact rows
+--- real-browser navigation (the crash path):
+OK  load landing -> http://localhost:3210/
+OK  click Browse agents -> http://localhost:3210/agents
+OK  open first agent card -> http://localhost:3210/agents/ari
+OK  nav Teams & Swarms -> http://localhost:3210/teams
+OK  open ari-collective -> http://localhost:3210/teams/ari-collective
+OK  member link to /agents/ari -> http://localhost:3210/agents/ari
+OK  nav Trust Model -> http://localhost:3210/trust
+OK  nav Register -> http://localhost:3210/register
+NAV SEQUENCE COMPLETE
+--- server liveness after everything:
+server pid 70760 ALIVE

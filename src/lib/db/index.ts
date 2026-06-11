@@ -40,6 +40,16 @@ function init(): Database.Database {
 export function getDb(): Database.Database {
   if (!globalForDb.agentcvDb) {
     globalForDb.agentcvDb = init();
+    // Close cleanly on process exit so the WAL is checkpointed and removed.
+    // Forensic invariant: an orphaned -wal/-shm pair after the process is
+    // gone means the process was killed (SIGKILL/jetsam), not shut down.
+    process.once('exit', () => {
+      try {
+        globalForDb.agentcvDb?.close();
+      } catch {
+        // closing is best-effort during shutdown
+      }
+    });
   }
   return globalForDb.agentcvDb;
 }

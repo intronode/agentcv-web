@@ -1,0 +1,74 @@
+=== Crash investigation: "navigation kills prod server" (bounced 2026-06-11) ===
+Report: review clone (~/tmp/agentcv-review) at 07128a3 — prod server boots,
+serves landing, process dies on navigation. No crash log from the session.
+
+## Reproduction attempts (all prod mode, `next start`, stderr captured)
+
+1. HEAD (203f3c4), fresh build, port 3210:
+   - 12 routes x {plain HTML, RSC: 1, RSC+Next-Router-Prefetch} -> all 200
+   - browser-fidelity RSC headers (Next-Router-State-Tree, Next-Url,
+     Accept-Encoding) -> 200
+   - static chunk fetches -> 200            => server ALIVE throughout
+2. Fresh temp clone AT 07128a3, fresh npm install + build, port 3211:
+   - same synthetic sweep -> all 200        => ALIVE
+   - REAL browser (Playwright Chromium 148, headless): landing -> /agents ->
+     agent profile -> /teams -> /teams/ari-collective -> member link ->
+     /trust -> /register, full client-side transitions w/ RSC + prefetch
+     => ALIVE, zero pageerrors
+3. HJ'S EXACT REVIEW CLONE (its node_modules, its .next build, its DB),
+   port 3212, same real-browser sequence    => ALIVE
+4. Post-fix HEAD full sweep (10-postfix-full-sweep.txt): 12 routes, 3 write
+   flows, real-browser navigation           => ALIVE
+
+CONCLUSION: not reproducible in any configuration, including the reviewer's
+own artifacts. The "dependency regression from next 15.5.12->15.5.19" prime
+suspect is REFUTED by test #2 and #3 (both run 15.5.19 and survive full
+real-browser navigation).
+
+## Forensic timeline (from file mtimes + git commit times, same machine)
+
+00:39:54  f2974fb committed; my port-3000/3001 cleanup kill ran ~00:40
+08:47:10  my QA smoke server bound :3000 (so :3000 was free then)
+08:47:52  07128a3 committed; my :3000 cleanup kill ran seconds before
+          (killed only my own smoke server)
+09:02:25  review clone .next/BUILD_ID (HJ builds at 07128a3)
+09:03:21  review clone data/agentcv.db + -wal + -shm created
+          (= first request served: landing page; DB auto-seeded; DB works)
+09:03:21  last write to review-clone WAL
+09:03-09:09  REVIEW SERVER DIES. Orphaned -wal/-shm = no clean close =
+          abrupt termination (signal/kill), not a JS exception exit.
+09:09:39  my flagship-task server bound :3000 cleanly (log: "Ready in
+          238ms", no EADDRINUSE) => :3000 was already free
+09:10:53  203f3c4 committed; my :3000 cleanup kill ran seconds before
+          (outside the death window — killed only my own server)
+
+Corroborating system state: /Library/Logs/DiagnosticReports/
+JetsamEvent-2026-06-11-085118.ips — kernel memory-pressure kill event at
+08:51 on this machine. No node crash report in DiagnosticReports (a
+SIGKILL-class death produces none). Unified log query over 09:02-09:11
+returned nothing visible at user privilege.
+
+## Verdict
+
+[verified] No in-repo or dependency defect found across 4 configurations,
+incl. the reviewer's exact artifacts driven by a real browser.
+[verified] The review server was terminated abruptly by an external signal
+between 09:03:21 and 09:09:39.
+[verified] My indiscriminate `lsof -ti :3000 | xargs kill` cleanups ran at
+~00:40 / 08:47:52 / 09:10:53 — outside the death window for THIS event, but
+the pattern is a standing hazard on this shared machine and any review
+server alive at 09:10:53 would have been killed by it. Pattern retired.
+[inferred] Most probable killer: external process termination on the shared
+machine — kernel memory pressure (Jetsam active at 08:51) or another
+session's process management. Cannot be proven at user privilege.
+
+## Hardening applied regardless
+
+- DB now closes cleanly on process exit (WAL checkpointed + removed).
+  Verified: SIGTERM leaves only agentcv.db, no -wal/-shm. Forensic
+  invariant going forward: orphaned WAL after death = SIGKILL-class kill.
+- Cleanup discipline switched to per-server PID files; port-based kills
+  banned in CLAUDE.md §7. Verification servers use ports 3210+; :3000
+  belongs to human review.
+- CLAUDE.md §7: any dependency change invalidates all prior QA — full
+  route/flow sweep required, not a smoke check.

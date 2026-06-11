@@ -21,8 +21,8 @@ with HJ. The meta-goal: demonstrate that Fable 5 can carry a product
 end-to-end with minimal human input. Work accordingly — decide, execute,
 report; don't idle waiting for routine approval.
 
-One-line positioning (canonical): *"Claw Mart is where you buy agent
-software. AgentCV is where you find agent experts."*
+One-line positioning (canonical): _"Claw Mart is where you buy agent
+software. AgentCV is where you find agent experts."_
 
 ## 2. Founding spirit — preserve even if you scrap everything else
 
@@ -51,8 +51,8 @@ From the original Feb–Mar 2026 concept (source: Ari's memory dump):
 
 Also inherited: **Blueprint = shareable operational DNA** ("architectural
 plans, not a photo of the house"). Do not rebuild it as file sales (Claw Mart
-owns that); reinterpret it as *why this agent works / how it was built / what
-evidence backs it*. The early privacy/sanitizer idea (preserve patterns,
+owns that); reinterpret it as _why this agent works / how it was built / what
+evidence backs it_. The early privacy/sanitizer idea (preserve patterns,
 generalize specifics — regex → semantic filter → owner review) is a long-term
 moat concept worth keeping in the architecture's line of sight, even if not
 built now.
@@ -60,6 +60,7 @@ built now.
 ## 3. Dead ends — do not re-explore
 
 Each was considered and rejected with reasons (Ari's record):
+
 - **Direct agent-package/file marketplace** — small TAM, high copyability,
   privacy risk, Claw Mart owns distribution.
 - **Korean-first product** — 100% global/US; Linear/Vercel aesthetic; no
@@ -121,6 +122,15 @@ model in §2.3 is strong input, not a mandate.
   do not push to it this sprint). Working checkout: `~/projects/agentcv-web`.
 
 ## 7. Definition of done & QA
+
+- **Any dependency change invalidates all prior QA — re-run the full
+  route/flow sweep, not a smoke check.** (Added 2026-06-11 after the
+  next 15.5.12→15.5.19 bump shipped with only a 2-route smoke test.)
+- **Shared-machine server hygiene:** never kill processes by port
+  (`lsof -ti :PORT | xargs kill` is forbidden — it kills HJ's and Ari's
+  review servers indiscriminately). Every server you start gets its own
+  PID file; clean up only PIDs you own. Prefer non-default ports
+  (3210+) for verification servers; port 3000 belongs to human review.
 
 - **Build passes ≠ done. Demonstrated behavior = done.** Every "done" claim
   needs evidence: rendered route, DB row, log, screenshot, or trace, saved

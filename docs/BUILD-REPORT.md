@@ -161,3 +161,32 @@ commits of reachable history: **no leaks found** (exit 0). Output:
 `docs/evidence/07-gitleaks-history.txt`. This also confirms the sprint-era
 `.env.local` (Known issues #4) was never committed; it remains an untracked
 local file for HJ to delete/rotate.
+
+### Finding 3 — bounced crash report: "navigation kills the prod server" (2026-06-11)
+
+HJ observed the review-clone prod server (07128a3) die while navigating.
+Investigation (full trace: `docs/evidence/09-crash-investigation.txt`):
+
+- **Not reproducible in 4 configurations**, including HJ's exact review
+  clone (its node_modules, its build, its DB) driven by a real Chromium
+  browser through full client-side navigation. The prime suspect — a
+  next 15.5.12→15.5.19 regression — was **tested and refuted**: 15.5.19
+  survives the complete route/flow/browser sweep everywhere.
+- **Forensics**: the review server died abruptly between 09:03:21 and
+  09:09:39 (orphaned SQLite WAL = no clean shutdown). My port-3000 cleanup
+  kills ran at 08:47:52 and 09:10:53 — outside that window — but the
+  indiscriminate-kill pattern was a standing hazard on this shared machine
+  and is now banned (CLAUDE.md §7); cleanup is per-PID-file only.
+  A kernel memory-pressure (Jetsam) event at 08:51 is the most probable
+  class of killer; unprovable at user privilege. Labeled [inferred].
+- **Hardening shipped**: DB closes cleanly on process exit (verified:
+  SIGTERM no longer orphans the WAL), so any future abrupt death is
+  unambiguously an external kill; dependency-change QA rule added to
+  CLAUDE.md §7; full post-investigation sweep (12 routes × 3 request
+  modes, 3 write flows, real-browser navigation) passed in prod mode —
+  `docs/evidence/10-postfix-full-sweep.txt`.
+
+If the crash recurs on HJ's side: run the server with
+`next start > server.log 2>&1` and note the exact wall-clock time — with
+the clean-shutdown invariant in place, WAL state + timestamp will identify
+the killer class immediately.
