@@ -1,6 +1,13 @@
 // SQLite schema for AgentCV v3. Kept as a TS constant so the Next.js server
 // bundle never needs filesystem access to a .sql file.
+
+// Bump on any schema change: a seeded demo DB with an older version is
+// dropped and rebuilt automatically on next access (data/ is disposable).
+export const SCHEMA_VERSION = 2;
+
 export const SCHEMA_SQL = `
+PRAGMA user_version = ${SCHEMA_VERSION};
+
 CREATE TABLE owners (
   id INTEGER PRIMARY KEY,
   handle TEXT NOT NULL UNIQUE,
@@ -77,15 +84,19 @@ CREATE TABLE proof_entries (
 );
 CREATE INDEX idx_proof_subject ON proof_entries(subject_type, subject_id, entry_date DESC);
 
+-- metrics.value is nullable on purpose: an honest profile can state that a
+-- number is unknown rather than invent one. note carries precise provenance
+-- annotations (e.g. "[derived-from-registry, window-scoped]").
 CREATE TABLE metrics (
   id INTEGER PRIMARY KEY,
   subject_type TEXT NOT NULL CHECK (subject_type IN ('agent','team')),
   subject_id INTEGER NOT NULL,
   key TEXT NOT NULL,
   label TEXT NOT NULL,
-  value REAL NOT NULL,
+  value REAL,
   unit TEXT NOT NULL DEFAULT 'count' CHECK (unit IN ('pct','count','ms','usd','days')),
   provenance TEXT NOT NULL DEFAULT 'self_reported' CHECK (provenance IN ('self_reported','evidence_linked','attested')),
+  note TEXT,
   illustrative INTEGER NOT NULL DEFAULT 0,
   as_of TEXT NOT NULL,
   UNIQUE (subject_type, subject_id, key)

@@ -1,0 +1,34 @@
+=== Flagship real-data packet applied (source: #ari-agentcv, 2026-06-11) ===
+Verification run against production server (npm start) after npm run db:reset.
+Full rendered capture: docs/evidence/routes/team-ari-collective-realdata.html
+
+$ npx tsc --noEmit            -> exit 0
+$ npm run build               -> Compiled successfully
+
+GET /teams/ari-collective -> 200, rendered HTML contains:
+  2x "90.8%"                                  (windowed reconciliation metric)
+  2x "719 logged completion events"           (full registry note rendered)
+  2x "derived-from-registry, window-scoped"   (Ari's provenance label, verbatim)
+  8x "[unknown]"                              (lifetime tasks / success rate /
+                                               cost-per-task honestly unknown,
+                                               NOT invented)
+  2x "Ari Bot"                                (corrected v2 attribution,
+                                               [verified-from-git-log])
+  2x "Mar 22, 2026" + "Operating since"       (Collective operational-since)
+  4x "Intronode"                              (brand-level owner)
+
+GET /agents/ari -> 200:
+  "Mar 22, 2026" (role formalized) + "first memory" note (2026-02-13 caveat)
+GET /owners/intronode -> 200 (brand bio, no personal info)
+GET /owners/hj -> 404 (personal owner page removed per HJ decision)
+
+sqlite3> PRAGMA user_version; -> 2
+  (schema v2: nullable metric values + provenance notes; older seeded DBs
+   are auto-dropped and rebuilt on next access — no manual db:reset needed)
+
+Deliberately NOT present, per packet:
+  - per-agent registry counts (window is control-plane biased; would
+    misrepresent member history — team-level windowed metric only)
+  - lifetime totals as numbers (unknown; displayed as [unknown])
+  - the 2026-06-11 channel-routing incident (withheld pending internal
+    audit; revisit later)

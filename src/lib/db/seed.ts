@@ -11,6 +11,9 @@ import type {
 /**
  * Seed policy (SPEC-V3 §8):
  * - The Ari Collective flagship uses the REAL team topology and real lessons.
+ *   Operating dates, attribution, and the windowed reconciliation metric come
+ *   from the flagship real-data packet (#ari-agentcv, 2026-06-11); lifetime
+ *   metrics are stored as NULL ("[unknown]") rather than invented.
  *   Entries whose content or date is invented/approximate carry illustrative=1.
  *   Evidence URLs on flagship entries point at the real public repo
  *   (github.com/intronode/agentcv-web; commit c70e14a verified on origin).
@@ -57,9 +60,11 @@ interface SeedMetric {
   subject: [SubjectType, string];
   key: string;
   label: string;
-  value: number;
+  /** null = honestly unknown; rendered as "[unknown]" rather than invented. */
+  value: number | null;
   unit: MetricUnit;
   asOf: string;
+  note?: string;
   illustrative?: boolean;
 }
 
@@ -79,10 +84,10 @@ export function seed(db: Database.Database): void {
   );
   const owners: [string, string, 'individual' | 'org', string, string | null][] = [
     [
-      'hj',
-      'HJ',
-      'individual',
-      'Independent builder. Operates the Ari Collective — a four-agent team covering orchestration, engineering, operations, and independent audit.',
+      'intronode',
+      'Intronode',
+      'org',
+      'Independent agent-operations studio. Operates the Ari Collective — a four-agent team covering orchestration, engineering, operations, and independent audit.',
       null,
     ],
     [
@@ -124,10 +129,11 @@ export function seed(db: Database.Database): void {
       avatar: '🧭',
       tagline: 'Solo OpenClaw agent orchestrating a four-agent product team.',
       about:
-        'Hub of the Ari Collective: scoping, routing, exception drill-down, and user-facing synthesis. Delegates sustained work to specialist agents and owns final judgment. Parts of this profile (metrics, some dates) are illustrative pending verification — see the markers on individual entries.',
+        "Hub of the Ari Collective: scoping, routing, exception drill-down, and user-facing synthesis. Delegates sustained work to specialist agents and owns final judgment. Role formalized 2026-03-22; earliest workspace memory 2026-02-13 and may appear as 'first memory' in some logs. [verified-from-logs/rules] Entries marked illustrative carry approximate dates.",
       category: 'Orchestration',
       platform: 'OpenClaw',
-      owner: 'hj',
+      owner: 'intronode',
+      operationalSince: '2026-03-22',
       oversight:
         'Human approval required for the four blockers: spending, external sends, irreversible destruction, business direction. Everything else: decide, execute, report.',
       howBuilt:
@@ -144,7 +150,8 @@ export function seed(db: Database.Database): void {
         'Writes and ships code under role boundaries: implementers do not certify their own work. Profile data beyond name, role, and team topology is illustrative.',
       category: 'Engineering',
       platform: 'Claude Code',
-      owner: 'hj',
+      owner: 'intronode',
+      operationalSince: '2026-03-31',
       oversight: 'Reports to the team hub; no direct external sends.',
       featured: false,
       illustrative: true,
@@ -158,7 +165,8 @@ export function seed(db: Database.Database): void {
         'Runs the operational layer — scheduled jobs, status checks, deploy verification. Does not modify production code; reports issues for routing. Profile data beyond name, role, and team topology is illustrative.',
       category: 'Operations',
       platform: 'OpenClaw',
-      owner: 'hj',
+      owner: 'intronode',
+      operationalSince: '2026-03-25',
       oversight: 'Read-only on production code; cron changes require owner approval.',
       featured: false,
       illustrative: true,
@@ -172,7 +180,8 @@ export function seed(db: Database.Database): void {
         'The acceptance gate of the Ari Collective. Audits work it did not produce; identifies issues but does not implement fixes. Profile data beyond name, role, and team topology is illustrative.',
       category: 'Audit & QA',
       platform: 'OpenClaw',
-      owner: 'hj',
+      owner: 'intronode',
+      operationalSince: '2026-04-16',
       oversight: 'Independent by design — never audits its own output.',
       featured: false,
       illustrative: true,
@@ -320,6 +329,7 @@ export function seed(db: Database.Database): void {
     oversight?: string;
     howBuilt?: string;
     owner: string;
+    operationalSince?: string;
     featured?: boolean;
     illustrative?: boolean;
     members: [string, string, string][]; // agent slug, role, role detail
@@ -332,14 +342,15 @@ export function seed(db: Database.Database): void {
       tagline:
         'Four-agent operating team: orchestration, engineering, operations, independent audit.',
       about:
-        'A real, operating agent team. The topology, role boundaries, and lessons below are real; metrics and some dates are illustrative pending verification and are marked as such.',
+        'A real, operating agent team. Topology, role boundaries, lessons, and operating dates are real [verified-from-logs/rules]. Lifetime metrics are shown as [unknown] rather than invented; the windowed reconciliation metric is derived from the task registry. Entries with approximate dates are marked illustrative.',
       topology:
         'Hub-and-spoke. Ari (hub) scopes and routes work; Stanley executes engineering; Arthur runs operations; Laplace audits independently. Acceptance flows through Laplace or the human owner — never through the agent that did the work.',
       oversight:
         'Human-on-the-loop. Four approval blockers are reserved to the owner: spending, external sends, irreversible destruction, business direction. Everything else is decide → execute → report.',
       howBuilt:
         'OpenClaw and Claude Code runtimes. File-based shared memory (files are truth; memory lies). Lesson capture in the same response as the correction. Role boundaries enforced by per-agent permissions, so failures stay traceable and recoverable.',
-      owner: 'hj',
+      owner: 'intronode',
+      operationalSince: '2026-03-22',
       featured: true,
       illustrative: true,
       members: [
@@ -401,7 +412,7 @@ export function seed(db: Database.Database): void {
       t.oversight ?? null,
       t.howBuilt ?? null,
       ownerId,
-      null,
+      t.operationalSince ?? null,
       t.featured ? 1 : 0,
       t.illustrative ? 1 : 0
     );
@@ -424,7 +435,7 @@ export function seed(db: Database.Database): void {
       date: '2026-06-08',
       type: 'milestone',
       title: 'Shipped AgentCV v2 (Sprints 1–5)',
-      body: 'Registration, discovery, profiles, verification badges, consulting-request flow — built and deployed across five sprints.',
+      body: 'Registration, discovery, profiles, verification badges, consulting-request flow — built and deployed across five sprints. Sprints 1–5 implemented via the Ari/Codex-CLI-era workflow (commits authored by Ari Bot); v3 rebuilt by Claude Code (Fable 5), independently QA-gated by Laplace. [verified-from-git-log]',
       evidenceUrl: REPO,
       provenance: 'evidence_linked',
     },
@@ -460,8 +471,8 @@ export function seed(db: Database.Database): void {
       subject: ['team', 'ari-collective'],
       date: '2026-06-11',
       type: 'task',
-      title: 'AgentCV v3 rebuild started — local-first, teams first-class',
-      body: 'Full audit of v2, market re-verification, and a v3 product model with provenance-tagged proof. This site is the artifact.',
+      title: 'AgentCV v3 rebuild — local-first, teams first-class',
+      body: 'Full audit of v2, market re-verification, and a v3 product model with provenance-tagged proof. Rebuilt by Claude Code (Fable 5); independent QA by Laplace returned ACCEPT-WITH-FINDINGS, findings resolved same day. This site is the artifact.',
       evidenceUrl: REPO,
       provenance: 'evidence_linked',
     },
@@ -493,16 +504,6 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     // -- Stanley --
-    {
-      subject: ['agent', 'stanley'],
-      date: '2026-06-08',
-      type: 'task',
-      title: 'AgentCV v2 sprint implementation',
-      body: 'Implementation work across Sprints 1–5. Attribution within the team is illustrative; the shipped result is real.',
-      evidenceUrl: REPO,
-      provenance: 'evidence_linked',
-      illustrative: true,
-    },
     {
       subject: ['agent', 'stanley'],
       date: '2026-05-10',
@@ -682,8 +683,8 @@ export function seed(db: Database.Database): void {
 
   // ---- metrics (all numeric values illustrative unless noted) ----
   const insMetric = db.prepare(
-    `INSERT INTO metrics (subject_type, subject_id, key, label, value, unit, provenance, illustrative, as_of)
-     VALUES (?,?,?,?,?,?,?,?,?)`
+    `INSERT INTO metrics (subject_type, subject_id, key, label, value, unit, provenance, note, illustrative, as_of)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`
   );
   const m = (
     subject: [SubjectType, string],
@@ -694,14 +695,50 @@ export function seed(db: Database.Database): void {
     illustrative = true
   ): SeedMetric => ({ subject, key, label, value, unit, asOf: '2026-06-01', illustrative });
   const metrics: SeedMetric[] = [
-    m(['team', 'ari-collective'], 'tasks_completed', 'Tasks completed', 412, 'count'),
-    m(['team', 'ari-collective'], 'success_rate', 'Success rate', 94.2, 'pct'),
-    m(['team', 'ari-collective'], 'cost_per_task_usd', 'Cost per task', 0.84, 'usd'),
-    m(['agent', 'ari'], 'tasks_completed', 'Tasks completed', 1284, 'count'),
-    m(['agent', 'ari'], 'uptime_pct', 'Uptime', 98.4, 'pct'),
-    m(['agent', 'stanley'], 'tasks_completed', 'Tasks completed', 503, 'count'),
-    m(['agent', 'arthur'], 'uptime_pct', 'Uptime', 99.1, 'pct'),
-    m(['agent', 'laplace'], 'tasks_completed', 'Audit passes', 161, 'count'),
+    // -- Ari Collective: flagship real-data packet (2026-06-11). Lifetime
+    //    figures are honestly unknown — displayed as [unknown], never invented.
+    //    Per-agent registry counts deliberately not shown: the current window
+    //    is control-plane biased and would misrepresent member history.
+    {
+      subject: ['team', 'ari-collective'],
+      key: 'window_reconciliation_pct',
+      label: 'Windowed reconciliation',
+      value: 90.8,
+      unit: 'pct',
+      asOf: '2026-06-11',
+      note: '394 of 434 tasks terminal-reconciled in the current registry window (since 2026-05-30); 719 logged completion events pending dedupe. [derived-from-registry, window-scoped]',
+      illustrative: false,
+    },
+    {
+      subject: ['team', 'ari-collective'],
+      key: 'tasks_completed',
+      label: 'Lifetime tasks',
+      value: null,
+      unit: 'count',
+      asOf: '2026-06-11',
+      note: 'Lifetime total not reconciled end-to-end; deliberately not estimated.',
+      illustrative: false,
+    },
+    {
+      subject: ['team', 'ari-collective'],
+      key: 'success_rate',
+      label: 'Lifetime success rate',
+      value: null,
+      unit: 'pct',
+      asOf: '2026-06-11',
+      note: 'Unknown pending full-history reconciliation; the windowed metric above is the honest current figure.',
+      illustrative: false,
+    },
+    {
+      subject: ['team', 'ari-collective'],
+      key: 'cost_per_task_usd',
+      label: 'Cost per task',
+      value: null,
+      unit: 'usd',
+      asOf: '2026-06-11',
+      note: 'Not tracked per-task across runtimes; deliberately not estimated.',
+      illustrative: false,
+    },
     m(['agent', 'codepilot-cr'], 'tasks_completed', 'PRs reviewed', 10240, 'count'),
     m(['agent', 'codepilot-cr'], 'success_rate', 'Accepted findings', 96.1, 'pct'),
     m(['agent', 'codepilot-cr'], 'uptime_pct', 'Uptime', 99.2, 'pct'),
@@ -727,6 +764,7 @@ export function seed(db: Database.Database): void {
       x.value,
       x.unit,
       'self_reported',
+      x.note ?? null,
       x.illustrative ? 1 : 0,
       x.asOf
     );

@@ -58,7 +58,12 @@ export interface AgentListFilters {
   limit?: number;
 }
 
-const CARD_METRIC_KEYS = ['uptime_pct', 'tasks_completed', 'success_rate'];
+const CARD_METRIC_KEYS = [
+  'window_reconciliation_pct',
+  'uptime_pct',
+  'tasks_completed',
+  'success_rate',
+];
 
 function cardMetricsFor(subjectType: SubjectType, ids: number[]): Map<number, MetricRow[]> {
   const map = new Map<number, MetricRow[]>();
@@ -68,7 +73,7 @@ function cardMetricsFor(subjectType: SubjectType, ids: number[]): Map<number, Me
   const rows = getDb()
     .prepare(
       `SELECT * FROM metrics WHERE subject_type=? AND subject_id IN (${placeholders}) AND key IN (${keyPlaceholders})
-       ORDER BY CASE key WHEN 'uptime_pct' THEN 0 WHEN 'tasks_completed' THEN 1 ELSE 2 END`
+       ORDER BY CASE key WHEN 'window_reconciliation_pct' THEN 0 WHEN 'uptime_pct' THEN 1 WHEN 'tasks_completed' THEN 2 ELSE 3 END`
     )
     .all(subjectType, ...ids, ...CARD_METRIC_KEYS) as MetricRow[];
   for (const row of rows) {

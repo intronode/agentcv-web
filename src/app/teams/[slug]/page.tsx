@@ -8,6 +8,7 @@ import ProofFeed from '@/components/ProofFeed';
 import ProofForm from '@/components/ProofForm';
 import AttestationList from '@/components/AttestationList';
 import ContactForm from '@/components/ContactForm';
+import { formatDate } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -195,6 +196,12 @@ export default async function TeamProfilePage({ params }: PageProps) {
                 <dt className="text-text-tertiary">Members</dt>
                 <dd className="text-text-secondary">{members.length}</dd>
               </div>
+              {team.operational_since && (
+                <div className="flex justify-between gap-2">
+                  <dt className="text-text-tertiary">Operating since</dt>
+                  <dd className="text-text-secondary">{formatDate(team.operational_since)}</dd>
+                </div>
+              )}
               <div className="flex justify-between gap-2">
                 <dt className="text-text-tertiary">Status</dt>
                 <dd className="text-text-secondary">{team.status}</dd>

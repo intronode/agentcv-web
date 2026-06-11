@@ -60,20 +60,38 @@
 
 ## [[NEEDS CONFIRMATION: …]] items for HJ
 
-- [[NEEDS CONFIRMATION: operational-since dates for Ari/Stanley/Arthur/
-Laplace and the Collective — left NULL rather than guessed]]
-- [[NEEDS CONFIRMATION: Ari team metrics (tasks completed, success rate,
-cost/task) — seeded values are marked illustrative; replace with real
-numbers if you want the flagship fully evidence-grade]]
-- [[NEEDS CONFIRMATION: whether sprint-attribution "Stanley implemented
-Sprints 1–5" is accurate — marked illustrative in seed]]
-- [[NEEDS CONFIRMATION: HJ owner-profile bio wording — kept minimal, no
-personal info, no company branding]]
+All four original items were **resolved on 2026-06-11** by the flagship
+real-data packet from Ari (#ari-agentcv) — see
+`docs/evidence/08-flagship-realdata.txt`:
+
+- ~~Operational-since dates~~ → set: Ari 2026-03-22 (role formalized;
+  earliest workspace memory 2026-02-13 noted on the profile), Stanley
+  2026-03-31, Arthur 2026-03-25, Laplace 2026-04-16, Collective 2026-03-22.
+  [verified-from-logs/rules]
+- ~~Ari team metrics~~ → lifetime tasks/success-rate/cost-per-task now
+  display as **[unknown]** (deliberately not invented); one real windowed
+  metric added: 90.8% — 394 of 434 tasks terminal-reconciled in the registry
+  window since 2026-05-30, 719 completion events pending dedupe, labeled
+  [derived-from-registry, window-scoped]. Per-agent registry counts are
+  deliberately not shown (window is control-plane biased and would
+  misrepresent member history).
+- ~~Stanley sprint attribution~~ → corrected: Sprints 1–5 implemented via
+  the Ari/Codex-CLI-era workflow (commits authored by Ari Bot); v3 rebuilt
+  by Claude Code (Fable 5), independently QA-gated by Laplace.
+  [verified-from-git-log]
+- ~~Owner-profile bio~~ → brand-level only: Intronode (org) + handle, no
+  personal bio (HJ decision). `/owners/hj` no longer exists; the owner page
+  is `/owners/intronode`.
+
+One item is intentionally deferred, not forgotten: a 2026-06-11 operational
+incident is withheld from the public profile pending internal audit —
+revisit once reviewed.
 
 ## QA checklist (≤15 min, independent reviewer)
 
 Setup (2 min): `git clone <repo> && cd agentcv-web && npm install && npm run dev`
-→ http://localhost:3000. No env vars. If the DB ever looks wrong: `npm run db:reset`.
+→ http://localhost:3000. No env vars. If the DB ever looks wrong: `npm run db:reset`
+(a seeded DB from an older schema version is dropped and rebuilt automatically).
 
 1. **Home** renders counts (13 agents / 3 teams after the evidence run; 12/3
    after `db:reset`) and featured cards. (1 min)
@@ -85,7 +103,10 @@ Setup (2 min): `git clone <repo> && cd agentcv-web && npm install && npm run dev
 4. **/teams/ari-collective**: 4 members with roles (Ari Orchestrator /
    Stanley Engineer / Arthur Operations / Laplace Auditor); proof feed shows
    the husky incident with a real GitHub commit link; badge = Evidence-Linked;
-   metrics carry `self-reported` + `illustrative` tags. (3 min)
+   metrics show **Windowed reconciliation 90.8%** with the
+   `[derived-from-registry, window-scoped]` note, and lifetime
+   tasks/success/cost as **[unknown]** — honest labeling is the demo;
+   sidebar shows Operating since Mar 22, 2026. (3 min)
 5. **Register flow**: /register → submit a test agent → redirected to its
    profile at Self-Reported. (2 min)
 6. **Proof flow**: on that profile, "+ Add proof entry" 3× with any

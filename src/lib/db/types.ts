@@ -83,9 +83,12 @@ export interface MetricRow {
   subject_id: number;
   key: string;
   label: string;
-  value: number;
+  /** null = honestly unknown — rendered as "[unknown]", never invented. */
+  value: number | null;
   unit: MetricUnit;
   provenance: Provenance;
+  /** Precise provenance annotation, e.g. "[derived-from-registry, window-scoped]". */
+  note: string | null;
   illustrative: number;
   as_of: string;
 }

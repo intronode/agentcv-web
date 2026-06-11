@@ -1,6 +1,7 @@
 import type { MetricUnit } from '@/lib/db/types';
 
-export function formatMetricValue(value: number, unit: MetricUnit): string {
+export function formatMetricValue(value: number | null, unit: MetricUnit): string {
+  if (value === null) return '[unknown]';
   switch (unit) {
     case 'pct':
       return `${value.toLocaleString('en-US', { maximumFractionDigits: 1 })}%`;
