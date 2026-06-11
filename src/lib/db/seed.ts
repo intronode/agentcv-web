@@ -176,6 +176,84 @@ export function seed(db: Database.Database): void {
       'Profile curated from public sources; not claimed by the organization. CrewAI is an open-source multi-agent orchestration framework.',
       'https://www.crewai.com',
     ],
+    // --- CURATED additional org owners ---
+    [
+      'camel-ai',
+      'CAMEL-AI (King Abdullah University of Science and Technology)',
+      'org',
+      'Profile curated from public sources; not claimed by the organization. Research group that introduced the CAMEL role-playing multi-agent framework (NeurIPS 2023).',
+      'https://github.com/camel-ai/camel',
+    ],
+    [
+      'stanford-nlp',
+      'Stanford NLP Group',
+      'org',
+      'Profile curated from public sources; not claimed by the organization. Research group that published Generative Agents (arXiv 2304.03442), the Smallville interactive sandbox.',
+      'https://nlp.stanford.edu',
+    ],
+    [
+      'princeton-nlp',
+      'Princeton NLP / SWE-bench authors',
+      'org',
+      'Profile curated from public sources; not claimed by the organization. Research group behind SWE-agent and the SWE-bench evaluation benchmark.',
+      'https://github.com/princeton-nlp',
+    ],
+    [
+      'nvidia-voyager',
+      'NVIDIA Research (Voyager)',
+      'org',
+      'Profile curated from public sources; not claimed by the organization. Research group that published Voyager (arXiv 2305.16291), the open-ended LLM agent for Minecraft.',
+      'https://arxiv.org/abs/2305.16291',
+    ],
+    [
+      'aider-ai',
+      'Aider (Paul Gauthier)',
+      'org',
+      'Profile curated from public sources; not claimed by the organization. Open-source AI pair programming tool; introduced architect/editor two-role mode in 2024.',
+      'https://aider.chat',
+    ],
+    [
+      'all-hands-ai',
+      'All Hands AI (OpenHands)',
+      'org',
+      'Profile curated from public sources; not claimed by the organization. Makers of OpenHands (formerly OpenDevin), an open-source platform for generalist AI software developers; ICLR 2025.',
+      'https://github.com/All-Hands-AI/OpenHands',
+    ],
+    [
+      'huggingface',
+      'Hugging Face',
+      'org',
+      'Profile curated from public sources; not claimed by the organization. Makers of smolagents, a minimal Python library for building AI agents.',
+      'https://huggingface.co',
+    ],
+    [
+      'openai',
+      'OpenAI',
+      'org',
+      'Profile curated from public sources; not claimed by the organization. Maker of the Swarm educational framework (now deprecated; superseded by OpenAI Agents SDK).',
+      'https://openai.com',
+    ],
+    [
+      'microsoft-research-autogen',
+      'Microsoft Research (AutoGen)',
+      'org',
+      'Profile curated from public sources; not claimed by the organization. Research group behind AutoGen, a flexible multi-agent conversation framework (arXiv 2308.08155).',
+      'https://www.microsoft.com/en-us/research',
+    ],
+    [
+      'tencent-ai',
+      'Tencent AI Lab / OpenBMB (AgentVerse)',
+      'org',
+      'Profile curated from public sources; not claimed by the organization. Research groups that published AgentVerse (arXiv 2308.10848), a multi-agent collaboration framework.',
+      'https://arxiv.org/abs/2308.10848',
+    ],
+    [
+      'malbo-research',
+      'University of Milano-Bicocca (MALBO)',
+      'org',
+      'Profile curated from public sources; not claimed by the organization. Research group behind MALBO — multi-objective Bayesian optimization for LLM-based multi-agent teams (arXiv 2511.11788).',
+      'https://arxiv.org/abs/2511.11788',
+    ],
     // --- ILLUSTRATIVE additional owners ---
     [
       'nexus-content',
@@ -617,6 +695,227 @@ export function seed(db: Database.Database): void {
       seedLayer: 'curated',
       sourceUrl: 'https://code.claude.com/docs/en/agent-teams',
       sourceName: 'Claude Code Docs — Agent Teams',
+    },
+
+    // -- CAMEL agents (AI User + AI Assistant) --
+    {
+      slug: 'camel-ai-user',
+      name: 'CAMEL AI User',
+      avatar: '🧑‍💼',
+      tagline: 'Role-playing task assigner in the CAMEL two-agent cooperative framework.',
+      about:
+        'Documents the AI User role in CAMEL (arXiv 2303.17760, NeurIPS 2023). The AI User gives instructions to the AI Assistant and drives the conversation toward a defined goal. The "inception prompting" technique assigns roles and goals to both agents, enabling autonomous cooperation without human guidance. Source: arXiv paper.',
+      category: 'Orchestration',
+      platform: 'CAMEL',
+      owner: 'camel-ai',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2303.17760',
+      sourceName: 'arXiv 2303.17760 — CAMEL',
+    },
+    {
+      slug: 'camel-ai-assistant',
+      name: 'CAMEL AI Assistant',
+      avatar: '🤖',
+      tagline: 'Role-playing task executor responding to AI User instructions in CAMEL.',
+      about:
+        'Documents the AI Assistant role in CAMEL (arXiv 2303.17760, NeurIPS 2023). Receives instructions from the AI User and executes steps toward the shared goal. Communication is turn-by-turn natural language. The framework supports role-playing scenarios across coding, math, and general reasoning tasks. Source: arXiv paper.',
+      category: 'Engineering',
+      platform: 'CAMEL',
+      owner: 'camel-ai',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2303.17760',
+      sourceName: 'arXiv 2303.17760 — CAMEL',
+    },
+
+    // -- Generative Agents --
+    {
+      slug: 'generative-agent-npc',
+      name: 'Generative Agent (Smallville)',
+      avatar: '🏘️',
+      tagline: 'Autonomous NPC with memory stream, reflection, and planning — 25-agent sandbox.',
+      about:
+        "Documents a single generative agent from the Smallville sandbox (arXiv 2304.03442, Stanford / Google Research). Each agent maintains a memory stream (stream of observations), produces higher-level reflections via synthesis, and plans behavior around those reflections. 25 agents populated the sandbox; they autonomously organized a Valentine's Day party over two in-game days. Ablation showed observation + planning + reflection are each individually necessary for believable behavior. Source: arXiv paper.",
+      category: 'Research',
+      platform: 'Custom (The Sims-inspired sandbox)',
+      owner: 'stanford-nlp',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2304.03442',
+      sourceName: 'arXiv 2304.03442 — Generative Agents',
+    },
+
+    // -- SWE-agent --
+    {
+      slug: 'swe-agent',
+      name: 'SWE-agent',
+      avatar: '🐛',
+      tagline: 'Software engineering agent with ACI — 12.5% SWE-bench, 87.7% HumanEvalFix.',
+      about:
+        'Documents SWE-agent (arXiv 2405.15793, Princeton NLP). A single LM agent equipped with a custom Agent-Computer Interface (ACI) designed specifically for software development tasks. The ACI provides file viewing, editing, and search commands optimized for LM interaction. Benchmark results: 12.5% pass@1 on SWE-bench (unassisted); 87.7% on HumanEvalFix. Key finding: ACI design significantly impacts agent performance. Source: arXiv paper.',
+      category: 'Engineering',
+      platform: 'Custom ACI',
+      owner: 'princeton-nlp',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2405.15793',
+      sourceName: 'arXiv 2405.15793 — SWE-agent',
+    },
+
+    // -- Voyager --
+    {
+      slug: 'voyager-agent',
+      name: 'Voyager',
+      avatar: '⛏️',
+      tagline: 'Open-ended Minecraft agent — 3.3x items, 15.3x faster tech tree vs prior SOTA.',
+      about:
+        'Documents Voyager (arXiv 2305.16291, NVIDIA). An open-ended embodied agent using GPT-4 that continuously explores Minecraft. Three components: automatic curriculum (proposes tasks), skill library (stores reusable programs), iterative prompting (refines code execution). Benchmark: 3.3× more unique items, 2.3× longer distances, 15.3× faster tech tree milestones vs prior state-of-the-art (DEPS). Requires no fine-tuning. Source: arXiv paper.',
+      category: 'Engineering',
+      platform: 'GPT-4 API (Minecraft environment)',
+      model: 'GPT-4',
+      owner: 'nvidia-voyager',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2305.16291',
+      sourceName: 'arXiv 2305.16291 — Voyager',
+    },
+
+    // -- Aider architect/editor --
+    {
+      slug: 'aider-architect',
+      name: 'Aider Architect',
+      avatar: '📐',
+      tagline: 'High-reasoning model that plans code changes in the Aider two-role pipeline.',
+      about:
+        "Documents the Architect role in Aider's architect/editor mode (aider.chat, 2024-09-26). The Architect uses a capable reasoning model (e.g. o1-preview) to think through what changes to make, then passes instructions to the Editor. Key insight: separating reasoning from edit-format compliance allows using a stronger model for planning and a faster model for formatting. Benchmark: o1-preview (architect) + o1-mini (editor) = 85.0% on SWE-bench. Source: Aider blog.",
+      category: 'Engineering',
+      platform: 'Aider',
+      model: 'o1-preview',
+      owner: 'aider-ai',
+      seedLayer: 'curated',
+      sourceUrl: 'https://aider.chat/2024/09/26/architect.html',
+      sourceName: 'Aider blog — Architect/Editor Mode',
+    },
+    {
+      slug: 'aider-editor',
+      name: 'Aider Editor',
+      avatar: '✏️',
+      tagline: 'Edit-format specialist that applies code changes in the Aider two-role pipeline.',
+      about:
+        "Documents the Editor role in Aider's architect/editor mode (aider.chat, 2024-09-26). Receives precise edit instructions from the Architect and applies them in the correct edit format (diff, whole-file, etc). A smaller/faster model (e.g. o1-mini, DeepSeek) is effective in this role because the reasoning challenge is already handled by the Architect. Benchmark: Claude 3.5 Sonnet as both architect and editor = 80.5%; Claude 3.5 Sonnet (architect) + itself (editor) tested. Source: Aider blog.",
+      category: 'Engineering',
+      platform: 'Aider',
+      model: 'o1-mini',
+      owner: 'aider-ai',
+      seedLayer: 'curated',
+      sourceUrl: 'https://aider.chat/2024/09/26/architect.html',
+      sourceName: 'Aider blog — Architect/Editor Mode',
+    },
+
+    // -- OpenHands --
+    {
+      slug: 'openhands-agent',
+      name: 'OpenHands Agent',
+      avatar: '🙌',
+      tagline: 'Generalist AI software developer operating in a sandboxed execution environment.',
+      about:
+        'Documents the primary agent in OpenHands (arXiv 2407.16741, accepted ICLR 2025; formerly OpenDevin). A generalist agent that interacts with a sandboxed environment using tools for file editing, web browsing, and code execution. Open-source, 188+ contributors. The platform supports multiple runtimes: local Docker, cloud, and modal. Evaluated on SWE-Bench and WebArena task suites. Source: arXiv paper (ICLR 2025 accepted).',
+      category: 'Engineering',
+      platform: 'OpenHands',
+      owner: 'all-hands-ai',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2407.16741',
+      sourceName: 'arXiv 2407.16741 — OpenHands',
+    },
+
+    // -- smolagents --
+    {
+      slug: 'smolagents-code-agent',
+      name: 'smolagents CodeAgent',
+      avatar: '🐍',
+      tagline: 'Python-writing agent using code actions — minimal library, multi-provider support.',
+      about:
+        'Documents the CodeAgent in smolagents (Hugging Face). CodeAgent writes Python snippets as actions (vs JSON tool-calling). Core library: ~1000 lines. Supports any model provider: HuggingFace Inference, OpenAI, Anthropic, LiteLLM, Transformers, Ollama. Integrates with MCP servers and LangChain tools. Multi-agent orchestration supported via tutorials: one CodeAgent can call sub-agents as tools. Source: Hugging Face smolagents documentation.',
+      category: 'Engineering',
+      platform: 'smolagents (Python)',
+      owner: 'huggingface',
+      seedLayer: 'curated',
+      sourceUrl: 'https://huggingface.co/docs/smolagents/en/index',
+      sourceName: 'Hugging Face — smolagents docs',
+    },
+
+    // -- OpenAI Swarm --
+    {
+      slug: 'swarm-triage-agent',
+      name: 'Swarm Triage Agent',
+      avatar: '🔀',
+      tagline: 'Stateless routing agent that hands off to specialists in OpenAI Swarm.',
+      about:
+        'Documents the triage/routing agent role in OpenAI Swarm (github.com/openai/swarm). Swarm is an educational (now deprecated; superseded by OpenAI Agents SDK) framework for multi-agent orchestration built on the Chat Completions API. The core primitive is the "handoff" — an agent can transfer control to another agent mid-conversation. Triage agents receive requests and route to specialist agents based on intent. Client-side stateless: state lives in the messages array. Source: OpenAI Swarm GitHub.',
+      category: 'Orchestration',
+      platform: 'OpenAI Swarm (deprecated)',
+      owner: 'openai',
+      seedLayer: 'curated',
+      sourceUrl: 'https://github.com/openai/swarm',
+      sourceName: 'OpenAI Swarm GitHub',
+    },
+    {
+      slug: 'swarm-specialist-agent',
+      name: 'Swarm Specialist Agent',
+      avatar: '🎯',
+      tagline: 'Domain specialist receiving handoffs from the triage agent in OpenAI Swarm.',
+      about:
+        'Documents the specialist agent role in OpenAI Swarm (github.com/openai/swarm). Specialists receive control via handoff from the triage agent and handle requests within their domain (e.g. billing, support, technical). Can transfer back or to other agents. Each agent has its own system prompt defining its role and capabilities. Source: OpenAI Swarm GitHub.',
+      category: 'Engineering',
+      platform: 'OpenAI Swarm (deprecated)',
+      owner: 'openai',
+      seedLayer: 'curated',
+      sourceUrl: 'https://github.com/openai/swarm',
+      sourceName: 'OpenAI Swarm GitHub',
+    },
+
+    // -- AutoGen group chat --
+    {
+      slug: 'autogen-group-agent',
+      name: 'AutoGen Conversable Agent',
+      avatar: '💬',
+      tagline: 'Customizable conversable agent in AutoGen flexible multi-agent conversations.',
+      about:
+        'Documents the ConversableAgent primitive in AutoGen (arXiv 2308.08155, Microsoft Research). Agents are customizable (persona, capabilities), conversable (can send/receive to any other agent), and support flexible conversation patterns: two-agent dialogue, hierarchical, group chat, or proxy-based orchestration. Used across math, coding, question answering, and decision-making tasks. Framework is open-source. Source: arXiv paper.',
+      category: 'Engineering',
+      platform: 'AutoGen',
+      owner: 'microsoft-research-autogen',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2308.08155',
+      sourceName: 'arXiv 2308.08155 — AutoGen',
+    },
+
+    // -- AgentVerse --
+    {
+      slug: 'agentverse-participant',
+      name: 'AgentVerse Participant',
+      avatar: '🌐',
+      tagline: 'Dynamically recruited specialist in an AgentVerse collaborative group.',
+      about:
+        'Documents the participant agent role in AgentVerse (arXiv 2308.10848). AgentVerse assembles agent groups dynamically — a group recruitment phase selects specialists relevant to the current task, then agents collaborate and produce peer evaluations. Framework enables emergent group behavior inspired by human social dynamics. Multi-agent groups outperform single agents on problem-solving, science, and NLP tasks per the paper. Source: arXiv paper.',
+      category: 'Research',
+      platform: 'AgentVerse',
+      owner: 'tencent-ai',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2308.10848',
+      sourceName: 'arXiv 2308.10848 — AgentVerse',
+    },
+
+    // -- MALBO --
+    {
+      slug: 'malbo-team-member',
+      name: 'MALBO Team Member',
+      avatar: '📊',
+      tagline: 'LLM agent in a team configuration optimized via Bayesian search — MALBO.',
+      about:
+        "Documents a team member in the MALBO framework (arXiv 2511.11788, University of Milano-Bicocca). MALBO applies multi-objective Bayesian optimization to search for agent team configurations that balance performance and cost. Bayesian optimization reduced average configuration cost by >45% vs random search while maintaining comparable performance. Specialized heterogeneous teams achieved cost reductions up to 65.8% vs homogeneous baselines. Source: arXiv paper (Master's thesis).",
+      category: 'Engineering',
+      platform: 'MALBO',
+      owner: 'malbo-research',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2511.11788',
+      sourceName: 'arXiv 2511.11788 — MALBO',
     },
 
     // =========================================================
@@ -1161,6 +1460,401 @@ export function seed(db: Database.Database): void {
     },
 
     // =========================================================
+    // CURATED — New configurations (added QA cycle-01)
+    // =========================================================
+
+    // 9. CAMEL
+    {
+      slug: 'camel-two-agent',
+      name: 'CAMEL Role-Playing Two-Agent',
+      avatar: '🐪',
+      kind: 'team',
+      tagline:
+        'Inception-prompted AI User + AI Assistant — autonomous cooperative task completion.',
+      about:
+        'Documents the CAMEL framework (arXiv 2303.17760, NeurIPS 2023, King Abdullah University of Science and Technology). Two agents — AI User and AI Assistant — are given complementary roles and a shared goal via "inception prompting." They converse autonomously to complete the task without human guidance. The paper studies emergent role-playing capabilities and cooperative behaviors. Evaluated across coding, math, and general reasoning. Source: arXiv paper (NeurIPS 2023).',
+      topology:
+        'Peer (dual-agent dialogue). AI User gives instructions; AI Assistant executes and responds. The conversation is turn-by-turn natural language. Inception prompting assigns both agents their roles and the shared goal at the start, enabling self-directed cooperation.',
+      oversight:
+        "No human-in-the-loop in the paper's study setup. The framework was used to generate a dataset of AI-society conversations for societal analysis. Human review applied to the analysis, not the conversations themselves.",
+      howBuilt:
+        'CAMEL open-source framework. Inception prompting technique: both agents receive structured system prompts establishing their role and the shared goal. Communication in natural language only. The CAMEL-AI GitHub (github.com/camel-ai/camel) hosts the implementation.',
+      owner: 'camel-ai',
+      operationalSince: '2023-03-31',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2303.17760',
+      sourceName: 'arXiv 2303.17760 — CAMEL (NeurIPS 2023)',
+      topologyType: 'peer',
+      agentCount: 2,
+      platform: 'CAMEL',
+      industries: ['research', 'education'],
+      taskKinds: ['cooperative-reasoning', 'role-playing', 'task-completion'],
+      whyItWorks:
+        'Inception prompting establishes shared role and goal context for both agents, enabling autonomous cooperation without additional human instruction. Turn-by-turn dialogue provides natural checkpoints. The complementary roles (User directs, Assistant executes) create a productive feedback loop.',
+      members: [
+        ['camel-ai-user', 'AI User', 'Instruction giver driving toward goal'],
+        ['camel-ai-assistant', 'AI Assistant', 'Instruction follower executing tasks'],
+      ],
+    },
+
+    // 10. Generative Agents (Smallville)
+    {
+      slug: 'generative-agents-smallville',
+      name: 'Generative Agents Sandbox',
+      avatar: '🏘️',
+      kind: 'team',
+      tagline: '25 autonomous NPC agents with memory, reflection, planning — emergent social org.',
+      about:
+        'Documents the Generative Agents sandbox (arXiv 2304.03442, Stanford / Google Research). A Sims-like environment with 25 LLM-powered agents, each maintaining a memory stream of observations. Agents produce "reflections" — higher-level inferences about their experiences — and plan behaviors around those reflections. In the paper\'s study, agents autonomously organized a Valentine\'s Day party over two in-game days without human guidance. Ablation: removing observation, planning, or reflection individually degraded believable behavior. Source: arXiv paper.',
+      topology:
+        'Peer (emergent social network). 25 agents act independently in a shared environment. No central orchestrator. Each agent has its own memory stream, reflection, and planning subsystem. Inter-agent communication is natural-language conversation initiated by proximity in the sandbox environment.',
+      oversight:
+        'No operational oversight in the study setup. A single user-defined action ("Isabella is planning a Valentine\'s Day party") was injected as the scenario seed; subsequent behavior was autonomous. Human evaluation used to measure believability.',
+      howBuilt:
+        'Custom "The Sims-inspired" sandbox environment. Each agent architecture has three subsystems: memory stream (time-tagged observations), reflection (periodic synthesis queries), and planning (daily plans updated from reflections). GPT-3.5 and GPT-4 used per the paper.',
+      owner: 'stanford-nlp',
+      operationalSince: '2023-04-07',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2304.03442',
+      sourceName: 'arXiv 2304.03442 — Generative Agents',
+      topologyType: 'peer',
+      agentCount: 25,
+      platform: 'Custom (The Sims-inspired sandbox)',
+      industries: ['research', 'gaming'],
+      taskKinds: ['autonomous-simulation', 'social-interaction', 'emergent-behavior'],
+      whyItWorks:
+        'Memory + reflection + planning enables each agent to act with contextual awareness over time, not just on immediate inputs. Emergent coordination arises from individual behavior, not top-down orchestration. Reflection subsystem converts short-term observations into long-term behavioral guidance. Ablation studies in the paper confirm each component is necessary.',
+      members: [
+        [
+          'generative-agent-npc',
+          'Smallville Resident',
+          'Autonomous NPC with memory, reflection, and planning',
+        ],
+      ],
+    },
+
+    // 11. SWE-agent
+    {
+      slug: 'swe-agent-config',
+      name: 'SWE-agent (Princeton ACI)',
+      avatar: '🐛',
+      kind: 'team',
+      tagline: 'Solo software agent with custom ACI — 12.5% SWE-bench, 87.7% HumanEvalFix.',
+      about:
+        "Documents SWE-agent (arXiv 2405.15793, Princeton NLP). A single LM agent equipped with a custom Agent-Computer Interface (ACI) designed for software development tasks. The ACI provides specialized file viewer, editor, and search commands that are more LM-friendly than raw terminal tools. Key benchmark results stated by the paper: 12.5% pass@1 on SWE-bench (unassisted); 87.7% on HumanEvalFix (bug fixing). The paper's main finding: ACI design significantly impacts agent performance on SE tasks. Source: arXiv paper.",
+      topology:
+        'Solo-plus-tools. Single LM agent with custom ACI providing: file viewer (with windows and search), file editor, fuzzy search. The ACI was designed specifically to match LM working patterns. No sub-agents or orchestration layer.',
+      oversight:
+        'No human-in-the-loop in benchmark evaluation. Evaluated on 300 issues from SWE-bench and HumanEvalFix. Agent operates autonomously until producing a patch.',
+      howBuilt:
+        'Custom ACI built on top of a Docker sandboxed environment. File viewing commands show content in windows rather than raw dumps. Edit commands use structured diffs. Search commands support fuzzy matching. Model: Claude 3, GPT-4 (multiple models evaluated in paper). Open-source at github.com/princeton-nlp/SWE-agent.',
+      owner: 'princeton-nlp',
+      operationalSince: '2024-04-02',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2405.15793',
+      sourceName: 'arXiv 2405.15793 — SWE-agent',
+      topologyType: 'solo_plus_tools',
+      agentCount: 1,
+      platform: 'Custom ACI (Docker)',
+      industries: ['software-delivery'],
+      taskKinds: ['bug-fixing', 'code-editing', 'software-engineering'],
+      whyItWorks:
+        "LM-designed ACI reduces friction between the model's natural outputs and the execution environment. Specialized file viewing and editing commands match how LMs want to interact with code (windowed context, structured diffs). The paper demonstrated that the same model with different ACIs produces measurably different benchmark results.",
+      members: [
+        ['swe-agent', 'Software Engineer', 'Autonomous bug fixing and code editing via custom ACI'],
+      ],
+    },
+
+    // 12. Voyager
+    {
+      slug: 'voyager-minecraft',
+      name: 'Voyager (Minecraft)',
+      avatar: '⛏️',
+      kind: 'team',
+      tagline: 'Open-ended Minecraft agent — 3.3× items, 15.3× tech tree vs prior SOTA.',
+      about:
+        'Documents Voyager (arXiv 2305.16291, NVIDIA). An open-ended embodied lifelong learning agent using GPT-4, deployed in Minecraft. Three components: automatic curriculum (continuously proposes tasks), skill library (stores reusable programs), iterative prompting (refines code until execution succeeds). Benchmark: 3.3× more unique items obtained, 2.3× longer distances traveled, 15.3× faster tech tree milestone completion vs prior SOTA (DEPS). Does not require fine-tuning. Source: arXiv paper.',
+      topology:
+        "Solo-plus-tools. Single GPT-4 agent with three internal subsystems: curriculum generator, skill library, and code execution environment. The agent's behavior emerges from the interaction of these components, not multi-agent coordination.",
+      oversight:
+        'No human-in-the-loop in evaluation. The agent operates autonomously for extended exploration sessions. The automatic curriculum is GPT-4-generated based on current state and past discoveries.',
+      howBuilt:
+        'GPT-4 API with Mineflayer JavaScript API for Minecraft control. Curriculum generation uses GPT-4 with exploration state context. Skill library stores executable JavaScript programs indexed by natural language description. Iterative prompting executes code, captures errors and environment feedback, and re-prompts for correction.',
+      owner: 'nvidia-voyager',
+      operationalSince: '2023-05-25',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2305.16291',
+      sourceName: 'arXiv 2305.16291 — Voyager',
+      topologyType: 'solo_plus_tools',
+      agentCount: 1,
+      platform: 'GPT-4 API (Mineflayer/Minecraft)',
+      industries: ['gaming', 'research'],
+      taskKinds: ['open-ended-exploration', 'skill-acquisition', 'embodied-reasoning'],
+      whyItWorks:
+        'Automatic curriculum keeps the agent in a productive challenge range — not too easy, not impossible. Skill library prevents re-learning already-discovered capabilities. Iterative prompting with execution feedback creates a tight edit-run-fix loop. The combination enables compound skill growth over long sessions.',
+      members: [
+        ['voyager-agent', 'Explorer', 'Open-ended exploration with curriculum + skill library'],
+      ],
+    },
+
+    // 13. Aider Architect/Editor
+    {
+      slug: 'aider-architect-editor',
+      name: 'Aider Architect/Editor',
+      avatar: '📐',
+      kind: 'team',
+      tagline: 'Two-role pipeline: reasoning architect + format-specialist editor — 85% SWE-bench.',
+      about:
+        "Documents Aider's architect/editor mode (aider.chat blog, 2024-09-26). Two-role pipeline: an Architect (strong reasoning model, e.g. o1-preview) thinks through required code changes; an Editor (fast model, e.g. o1-mini) applies them in the correct edit format. Key insight from the post: separating reasoning from formatting compliance allows using the best model for thinking without penalizing it for edit-format tasks. Benchmark: o1-preview (architect) + o1-mini (editor) achieves 85.0% on SWE-bench. Source: Aider blog post.",
+      topology:
+        'Pipeline (two-stage). Architect receives the task and produces a natural-language plan of changes. Editor receives the plan and applies edits in the required diff format. One-directional: Architect does not see Editor output unless a retry is triggered. The Architect is model-agnostic; any strong reasoning model can fill the role.',
+      oversight:
+        "User reviews changes via Aider's standard diff review workflow. No autonomous loop — Aider operates in a human-on-the-loop mode where each set of changes is presented for confirmation. Source: Aider blog.",
+      howBuilt:
+        'Aider open-source CLI. Architect model specified separately from editor model in config. Tested combinations include: o1-preview + o1-mini (85.0% SWE-bench), Claude 3.5 Sonnet as both roles (80.5%), Claude 3.5 Sonnet (architect) + various editors. Model costs differ significantly between architect and editor — o1-mini is ~10× cheaper than o1-preview.',
+      owner: 'aider-ai',
+      operationalSince: '2024-09-26',
+      seedLayer: 'curated',
+      sourceUrl: 'https://aider.chat/2024/09/26/architect.html',
+      sourceName: 'Aider blog — Architect/Editor Mode',
+      topologyType: 'pipeline',
+      agentCount: 2,
+      platform: 'Aider',
+      industries: ['software-delivery'],
+      taskKinds: ['code-editing', 'bug-fixing', 'refactoring'],
+      whyItWorks:
+        "Separating reasoning from edit-format compliance removes conflicting objectives from a single model. The architect can focus entirely on what to change; the editor focuses entirely on how to format the output. This enables using a top-tier reasoning model cost-effectively since the architect's output is natural language, not code diffs.",
+      members: [
+        [
+          'aider-architect',
+          'Architect',
+          'Plans code changes in natural language using strong reasoning model',
+        ],
+        ['aider-editor', 'Editor', 'Applies edits in correct diff format using fast model'],
+      ],
+    },
+
+    // 14. OpenHands
+    {
+      slug: 'openhands-dev',
+      name: 'OpenHands (OpenDevin)',
+      avatar: '🙌',
+      kind: 'team',
+      tagline: 'Open-source AI software developer with sandboxed runtime — ICLR 2025.',
+      about:
+        'Documents OpenHands (arXiv 2407.16741, accepted ICLR 2025; formerly OpenDevin, All Hands AI). An open-source platform for AI software developers with 188+ contributors. The primary agent operates in a sandboxed container with access to web browser, file system, and code execution. Designed as a general-purpose software development platform. Evaluated on SWE-bench and WebArena task suites. Supports multiple runtime environments: local Docker, cloud, modal. Source: arXiv paper (ICLR 2025 accepted).',
+      topology:
+        "Solo-plus-tools. Single agent with sandboxed execution environment providing: bash shell, file editor, web browser, Jupyter notebooks. Agent selects and sequences actions autonomously. The platform also supports multi-agent configurations as documented in the codebase, but the paper's core evaluation is the single-agent setup.",
+      oversight:
+        'Sandbox isolation by default. Human can review and intervene at any step. Platform supports both autonomous mode and interactive mode. Designed for production use with security isolation via container boundaries.',
+      howBuilt:
+        'Docker-containerized sandbox with persistent state. Web UI for interaction. REST API for programmatic control. 188+ contributors. Model-agnostic: documented support for Claude, GPT-4, and open-source models. Open-source at github.com/All-Hands-AI/OpenHands.',
+      owner: 'all-hands-ai',
+      operationalSince: '2024-07-23',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2407.16741',
+      sourceName: 'arXiv 2407.16741 — OpenHands (ICLR 2025)',
+      topologyType: 'solo_plus_tools',
+      agentCount: 1,
+      platform: 'OpenHands',
+      industries: ['software-delivery'],
+      taskKinds: ['software-development', 'bug-fixing', 'web-navigation', 'code-execution'],
+      whyItWorks:
+        'Sandboxed execution environment provides safety isolation while giving the agent full system access within the container. Broad tool set (shell + browser + editor) covers the full software development workflow. Open-source with large contributor base (188+) drives rapid iteration.',
+      members: [
+        [
+          'openhands-agent',
+          'AI Developer',
+          'Generalist software development in sandboxed environment',
+        ],
+      ],
+    },
+
+    // 15. smolagents
+    {
+      slug: 'smolagents-code',
+      name: 'smolagents CodeAgent',
+      avatar: '🐍',
+      kind: 'team',
+      tagline:
+        'Python-first multi-provider agent — minimal 1K-line library, MCP + LangChain tools.',
+      about:
+        'Documents the CodeAgent in smolagents (Hugging Face). CodeAgent writes Python code snippets as actions rather than JSON tool-call objects, improving performance on code-heavy tasks. Core library: ~1000 lines. Supports any model provider: HuggingFace Inference, OpenAI, Anthropic, LiteLLM, Transformers, Ollama. Integrates with MCP servers and LangChain tools. Multi-agent orchestration supported: one CodeAgent can call sub-agents as tools. Source: Hugging Face smolagents documentation.',
+      topology:
+        'Solo-plus-tools (single agent) or hub-and-spoke (multi-agent). CodeAgent primary; can orchestrate ToolCallingAgents as subagents. Each subagent is called as a tool by the coordinator agent. Supports ManagedAgent wrapper for delegating to specialized sub-agents.',
+      oversight:
+        'User controls model selection and tool access. Library is minimal by design — ~1K lines — to maximize auditability. Sandboxed code execution recommended for production deployments. Source: smolagents docs.',
+      howBuilt:
+        'Python package (pip install smolagents). Agents defined with a model (any provider) and a list of tools. CodeAgent produces Python blobs; ToolCallingAgent produces JSON tool calls. Multi-agent: pass agent instances wrapped in ManagedAgent to the tools list of a coordinator. Tutorial notebooks in the docs.',
+      owner: 'huggingface',
+      operationalSince: '2025-01-01',
+      seedLayer: 'curated',
+      sourceUrl: 'https://huggingface.co/docs/smolagents/en/index',
+      sourceName: 'Hugging Face — smolagents docs',
+      topologyType: 'solo_plus_tools',
+      agentCount: 1,
+      platform: 'smolagents (Python)',
+      industries: ['software-delivery', 'research', 'data-extraction'],
+      taskKinds: ['code-execution', 'tool-use', 'multi-agent-orchestration'],
+      whyItWorks:
+        'Python-as-actions reduces the translation overhead between LM output and execution. Minimal library size (~1K lines) keeps the framework auditable and hackable. Broad provider support avoids vendor lock-in. MCP compatibility connects to an expanding ecosystem of tools without custom integration work.',
+      members: [
+        [
+          'smolagents-code-agent',
+          'CodeAgent',
+          'Python-writing agent orchestrating tools and sub-agents',
+        ],
+      ],
+    },
+
+    // 16. OpenAI Swarm
+    {
+      slug: 'openai-swarm-triage',
+      name: 'OpenAI Swarm Triage Pattern',
+      avatar: '🔀',
+      kind: 'team',
+      tagline:
+        'Triage-to-specialist handoff pattern — stateless, client-side, Chat Completions API.',
+      about:
+        'Documents the triage-to-specialist handoff pattern in OpenAI Swarm (github.com/openai/swarm). Note: Swarm is an educational/deprecated framework superseded by the OpenAI Agents SDK. Core primitive: the "handoff" — an agent transfers conversation control to another agent. A triage agent receives incoming requests and routes to specialist agents by intent. Entirely client-side: no server state; state lives in the messages array. Source: OpenAI Swarm GitHub.',
+      topology:
+        'Hub-and-spoke (handoff-based). Triage agent acts as router; specialist agents handle domain-specific tasks. Handoffs are represented as tool calls that return a new Agent object. Specialists can hand back to triage or to other specialists. Each agent has its own instructions and tools.',
+      oversight:
+        'Stateless design: all state is in the messages array, making the full conversation history inspectable. Designed as an educational framework — the source recommends the OpenAI Agents SDK for production use. Source: Swarm GitHub.',
+      howBuilt:
+        'Python package built on top of Chat Completions API. Agents defined with instructions and tools (Python functions). Handoffs are tool functions returning another Agent. The run_demo_loop() utility handles the REPL. Examples in the repo: triage agent, airline customer service, weather agent, and others.',
+      owner: 'openai',
+      operationalSince: '2024-10-11',
+      seedLayer: 'curated',
+      sourceUrl: 'https://github.com/openai/swarm',
+      sourceName: 'OpenAI Swarm GitHub',
+      topologyType: 'hub_and_spoke',
+      agentCount: 3,
+      platform: 'OpenAI Swarm (deprecated)',
+      industries: ['customer-support', 'operations'],
+      taskKinds: ['intent-routing', 'customer-service', 'task-handoff'],
+      whyItWorks:
+        'Handoff primitive is simple and composable: any agent can route to any other via a tool call. Stateless design eliminates server-side coordination infrastructure. The educational focus means the code is minimal and readable, making it useful as a reference pattern even in its deprecated state.',
+      members: [
+        [
+          'swarm-triage-agent',
+          'Triage Agent',
+          'Receives requests and routes to specialists via handoff',
+        ],
+        [
+          'swarm-specialist-agent',
+          'Specialist Agent',
+          'Handles domain-specific tasks after handoff',
+        ],
+      ],
+    },
+
+    // 17. AutoGen Group Chat
+    {
+      slug: 'autogen-group-chat',
+      name: 'AutoGen Group Chat',
+      avatar: '💬',
+      kind: 'team',
+      tagline: 'Flexible multi-agent group conversation — hierarchical, peer, or proxy topologies.',
+      about:
+        'Documents AutoGen (arXiv 2308.08155, Microsoft Research). A framework for multi-agent LLM applications using "conversable agents" — customizable agents that can send/receive messages to any other agent. Supports multiple conversation patterns: two-agent chat, group chat (three or more agents), hierarchical, and "nested conversations" (agent-within-agent). Used across coding, math, question answering, and decision-making tasks. Open-source framework. Source: arXiv paper.',
+      topology:
+        'Flexible. Supports: two-agent dialogue, group chat (all agents receive all messages), hierarchical (manager coordinates workers), and proxy patterns (human-in-loop via UserProxy). The GroupChat class assigns a GroupChatManager that selects the next speaker. Speaker selection strategies: auto, round-robin, random, or manual.',
+      oversight:
+        'UserProxy agent enables human-in-the-loop patterns: a human can review and provide input at configurable intervals. Configurable human input modes: ALWAYS, NEVER, TERMINATE. Code execution can be sandboxed via Docker.',
+      howBuilt:
+        'Python package. Agents defined with name, system_message, and capabilities (code execution, tool use, etc). GroupChat connects agents via GroupChatManager. Supports OpenAI, Azure, Claude, and local models. AutoGenBench tool for isolated benchmark evaluation.',
+      owner: 'microsoft-research-autogen',
+      operationalSince: '2023-08-16',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2308.08155',
+      sourceName: 'arXiv 2308.08155 — AutoGen',
+      topologyType: 'hierarchical',
+      agentCount: 3,
+      platform: 'AutoGen',
+      industries: ['software-delivery', 'research', 'data-extraction'],
+      taskKinds: ['multi-agent-dialogue', 'coding', 'problem-solving', 'human-in-loop'],
+      whyItWorks:
+        'Conversable agent abstraction is simple enough to compose in many topologies without framework rewrites. Human-in-loop proxy enables controlled autonomy. The flexible conversation patterns (two-agent to group to hierarchical) mean the same framework handles both simple and complex coordination needs.',
+      members: [
+        ['autogen-group-agent', 'ConversableAgent', 'Customizable agent in group conversation'],
+      ],
+    },
+
+    // 18. AgentVerse
+    {
+      slug: 'agentverse-group',
+      name: 'AgentVerse Dynamic Group',
+      avatar: '🌐',
+      kind: 'team',
+      tagline:
+        'Dynamically recruited specialist group — outperforms single agents on science and NLP.',
+      about:
+        'Documents AgentVerse (arXiv 2308.10848, Tencent AI Lab). A framework for dynamic multi-agent group formation. Group recruitment: a coordinator selects agents relevant to the current task from a candidate pool. Then agents collaborate in a structured discussion phase and produce peer evaluations. Paper claims multi-agent groups outperform single agents on scientific question answering, tabular reasoning, and reading comprehension tasks. Source: arXiv paper.',
+      topology:
+        "Hierarchical (dynamic recruitment). A recruitment/coordinator phase selects specialist agents per task. Recruited agents then collaborate in a group, with the coordinator synthesizing outputs. Peer evaluation: agents critique each other's contributions before final answer is committed.",
+      oversight:
+        'Coordinator agent manages recruitment and synthesis. Peer evaluation built into the collaboration phase. No human-in-loop described in paper evaluation.',
+      howBuilt:
+        'Python framework with configurable agent pool. Each agent has a persona and expertise. Coordinator uses LLM to select relevant agents from the pool for each task. Supported models: GPT-3.5, GPT-4. Open-source at github.com/OpenBMB/AgentVerse.',
+      owner: 'tencent-ai',
+      operationalSince: '2023-08-21',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2308.10848',
+      sourceName: 'arXiv 2308.10848 — AgentVerse',
+      topologyType: 'hierarchical',
+      agentCount: 4,
+      platform: 'AgentVerse',
+      industries: ['research', 'education'],
+      taskKinds: ['scientific-reasoning', 'question-answering', 'collaborative-analysis'],
+      whyItWorks:
+        'Dynamic recruitment means the group is tailored to the task rather than using a static team. Peer evaluation catches errors before commitment. The coordinator synthesis role prevents individual agent biases from dominating the final answer.',
+      members: [
+        [
+          'agentverse-participant',
+          'Recruited Specialist',
+          'Domain expert dynamically recruited per task',
+        ],
+      ],
+    },
+
+    // 19. MALBO
+    {
+      slug: 'malbo-optimized-team',
+      name: 'MALBO Bayesian-Optimized Team',
+      avatar: '📊',
+      kind: 'team',
+      tagline: 'Multi-objective Bayesian search for team config — >45% cost reduction vs random.',
+      about:
+        "Documents MALBO (arXiv 2511.11788, University of Milano-Bicocca, Master's thesis). A framework that applies multi-objective Bayesian optimization (BO) to search the space of agent team configurations, balancing task performance and API cost. BO outperformed random search: >45% cost reduction on average while maintaining comparable performance. Heterogeneous specialized teams achieved cost reductions up to 65.8% vs homogeneous (all same model) baselines. Source: arXiv paper (note: Master's thesis, not peer-reviewed).",
+      topology:
+        'Hierarchical (configurable by search). MALBO searches the configuration space: which agent roles, which model per role, which team size. The output is an optimized configuration for a specific task type. The resulting team can be any topology (hierarchical is the primary studied case).',
+      oversight:
+        'Multi-objective optimization loop is automated. Human sets the objective weights (performance vs cost tradeoff) and task specification. BO requires significantly fewer evaluations than random search (sample-efficient). Source: arXiv paper.',
+      howBuilt:
+        'Python implementation using Bayesian optimization libraries. Task evaluated on a standardized benchmark. Configuration space: model selection per role, number of agents, role assignments. Pareto-frontier search identifies configurations that are not dominated on both objectives simultaneously.',
+      owner: 'malbo-research',
+      operationalSince: '2024-11-18',
+      seedLayer: 'curated',
+      sourceUrl: 'https://arxiv.org/abs/2511.11788',
+      sourceName: 'arXiv 2511.11788 — MALBO',
+      topologyType: 'hierarchical',
+      agentCount: 3,
+      platform: 'MALBO',
+      industries: ['research', 'software-delivery'],
+      taskKinds: ['configuration-optimization', 'cost-performance-tradeoff', 'team-design'],
+      whyItWorks:
+        'Bayesian optimization is sample-efficient — it finds good configurations in far fewer trials than random search. Multi-objective formulation explicitly trades off performance vs cost, producing configurations that are not needlessly expensive. Heterogeneous model assignment (different models per role) captures the insight that different tasks within a workflow have different capability requirements.',
+      members: [
+        [
+          'malbo-team-member',
+          'Optimized Team Member',
+          'Role and model assigned by Bayesian optimization search',
+        ],
+      ],
+    },
+
+    // =========================================================
     // ILLUSTRATIVE — existing fictional configurations (unchanged)
     // =========================================================
     {
@@ -1170,8 +1864,17 @@ export function seed(db: Database.Database): void {
       kind: 'team',
       tagline:
         'Bilingual support pod: frontline resolution plus localization. (Fictional demo data.)',
+      about:
+        'A fictional demo configuration illustrating a bilingual customer support pod. Haven Support handles tier-1 ticket resolution and intent triage; TranslateFlow provides inbound and outbound localization across 12 languages. The configuration ran a bilingual launch for a German e-commerce customer and sustained sub-2-minute median first response for 60 days. (Fictional — illustrative demo data.)',
       topology:
         'Frontline/specialist split: Haven Support resolves; TranslateFlow localizes inbound and outbound. (Fictional.)',
+      oversight:
+        'Refund and escalation decisions above a cost threshold require human review. A back-pressure rule pauses auto-resolution when the escalation queue exceeds a threshold. (Fictional.)',
+      howBuilt:
+        'CrewAI sequential crew. Haven Support handles classification and resolution; resolved tickets pass to TranslateFlow for outbound localization. Brand-tone rules encoded in Haven system prompt. (Fictional.)',
+      whyItWorks:
+        'Separating resolution from localization keeps each agent focused on a single concern. The pipeline order (resolve → localize) prevents localization of draft responses that may still change. Back-pressure rule prevents automated throughput from overwhelming the escalation queue. (Fictional.)',
+      operationalSince: '2025-11-01',
       owner: 'mira-systems',
       featured: true,
       seedLayer: 'illustrative',
@@ -1192,8 +1895,17 @@ export function seed(db: Database.Database): void {
       kind: 'swarm',
       tagline:
         'Homogeneous extraction worker pool deployed from a single blueprint. (Fictional demo data.)',
+      about:
+        'A fictional demo configuration illustrating a homogeneous swarm pattern. All workers are instances of the Helios Extractor blueprint — a single configuration deployed across EU and US regions. Workers consume jobs from a shared queue; a job ledger tracks state and output validation results. Blueprint v3 introduced schema-validated outputs, reducing downstream data errors. (Fictional — illustrative demo data.)',
       topology:
         'Coordinator-less pool. Workers are instances of the Helios Extractor blueprint, fed from a shared job queue with state in a job ledger. (Fictional.)',
+      oversight:
+        'Validation failures above 1% trigger an alert to the owner. Blueprint updates require review before deployment to all workers. (Fictional.)',
+      howBuilt:
+        'Custom event-driven architecture. Workers poll a Redis-backed job queue. Each worker runs the same extraction pipeline: fetch → parse → validate → write. Schema validation is applied at the write step; failures go to a dead-letter queue. (Fictional.)',
+      whyItWorks:
+        'Homogeneous workers simplify deployment and debugging — a bug in one worker is a bug in all, so the failure surface is small. Blueprint versioning lets the team update all workers atomically. Regional deployment (EU, US) reduces extraction latency for geographically distributed sources. (Fictional.)',
+      operationalSince: '2025-10-15',
       owner: 'helios-labs',
       seedLayer: 'illustrative',
       topologyType: 'peer',
@@ -1216,6 +1928,9 @@ export function seed(db: Database.Database): void {
       kind: 'team',
       tagline:
         'Plan → Write → Edit content pipeline with brand-voice enforcement. (Fictional demo data.)',
+      about:
+        'A fictional demo configuration illustrating a three-stage content production pipeline. NexusPlanner generates briefs and assigns publication calendar slots; NexusWriter produces long-form drafts with brand-voice rules embedded in the system prompt; NexusEditor runs SEO analysis and quality passes before a human review gate. The pipeline has published over 500 articles since launch. (Fictional — illustrative demo data.)',
+      operationalSince: '2025-09-01',
       topology:
         'Sequential pipeline: NexusPlanner generates content briefs and calendar assignments; NexusWriter drafts long-form content; NexusEditor runs SEO and quality passes before a human publish gate. (Fictional.)',
       oversight:
@@ -1244,6 +1959,9 @@ export function seed(db: Database.Database): void {
       kind: 'team',
       tagline:
         'E-commerce ops trio: catalog sync, dynamic repricing, order triage. (Fictional demo data.)',
+      about:
+        'A fictional demo configuration illustrating a peer specialist pool for e-commerce operations. Three agents share a domain with clear ownership: CatalogAgent syncs and enriches product data; PricerAgent runs dynamic repricing from competitor feeds within margin rules; OpsAgent handles order routing, fulfillment tracking, and returns. Cross-agent coordination happens via a shared event ledger rather than direct coupling. Processed over 48,000 orders including a spring sale spike. (Fictional — illustrative demo data.)',
+      operationalSince: '2025-08-01',
       topology:
         'Peer specialist pool with a shared ops ledger. CatalogAgent, PricerAgent, and OpsAgent each own their domain; the shared ledger triggers cross-agent events (e.g. a catalog update triggers a repricing run). (Fictional.)',
       oversight:
@@ -1272,6 +1990,9 @@ export function seed(db: Database.Database): void {
       kind: 'team',
       tagline:
         'Three-lens parallel PR review: security, performance, test coverage. (Fictional demo data.)',
+      about:
+        'A fictional demo configuration illustrating a parallel peer review pattern for CI pipelines. Three CodePilot CR instances each review the same PR diff simultaneously, each focused on a single lens: security vulnerabilities, performance regressions, and test coverage gaps. LedgerLine tracks findings and cost allocation. A synthesis step deduplicates and merges findings before presenting a unified report. Achieved 1,000 PRs reviewed with zero missed HIGH-severity findings. (Fictional — illustrative demo data.)',
+      operationalSince: '2025-12-01',
       topology:
         'Peer parallel review with synthesis. Three CodePilot CR instances each run a distinct lens (security, performance, test coverage) simultaneously; LedgerLine tracks findings and cost allocation; a synthesis step merges findings. (Fictional.)',
       oversight: 'Findings above severity HIGH require human sign-off before merge. (Fictional.)',
@@ -1511,6 +2232,107 @@ export function seed(db: Database.Database): void {
       title: 'CrewAI sequential crew pattern documented in official docs',
       body: 'Researcher + Analyst sequential pipeline with context chain. Supports multiple LLM providers. Flows enable state-managed, event-driven higher-level orchestration.',
       evidenceUrl: 'https://docs.crewai.com/en/guides/crews/first-crew',
+      provenance: 'evidence_linked',
+    },
+
+    // -- New curated configuration proof entries (QA cycle-01 additions) --
+    {
+      subject: ['configuration', 'camel-two-agent'],
+      date: '2023-03-31',
+      type: 'artifact',
+      title: 'CAMEL paper published — arXiv 2303.17760 (NeurIPS 2023)',
+      body: 'Introduces inception prompting and the AI User / AI Assistant role-playing framework. Studies emergent cooperative behaviors in a 2-agent setup.',
+      evidenceUrl: 'https://arxiv.org/abs/2303.17760',
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'generative-agents-smallville'],
+      date: '2023-04-07',
+      type: 'artifact',
+      title: 'Generative Agents paper published — arXiv 2304.03442',
+      body: "25 agents in a Sims-inspired sandbox autonomously organized a Valentine's Day party. Ablation: removing observation, planning, or reflection individually degraded believable behavior.",
+      evidenceUrl: 'https://arxiv.org/abs/2304.03442',
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'swe-agent-config'],
+      date: '2024-04-02',
+      type: 'artifact',
+      title: 'SWE-agent paper published — arXiv 2405.15793',
+      body: '12.5% pass@1 on SWE-bench; 87.7% on HumanEvalFix. Key finding: ACI design significantly impacts agent performance on SE tasks.',
+      evidenceUrl: 'https://arxiv.org/abs/2405.15793',
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'voyager-minecraft'],
+      date: '2023-05-25',
+      type: 'artifact',
+      title: 'Voyager paper published — arXiv 2305.16291',
+      body: '3.3× more unique items, 2.3× longer distances, 15.3× faster tech tree milestones vs prior SOTA (DEPS). No fine-tuning required.',
+      evidenceUrl: 'https://arxiv.org/abs/2305.16291',
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'aider-architect-editor'],
+      date: '2024-09-26',
+      type: 'artifact',
+      title: 'Aider architect/editor mode blog post published',
+      body: 'o1-preview (architect) + o1-mini (editor) = 85.0% on SWE-bench. Documents the separation of reasoning from edit-format compliance as a key performance lever.',
+      evidenceUrl: 'https://aider.chat/2024/09/26/architect.html',
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'openhands-dev'],
+      date: '2024-07-23',
+      type: 'artifact',
+      title: 'OpenHands paper published — arXiv 2407.16741 (accepted ICLR 2025)',
+      body: 'Open-source AI software developer platform with 188+ contributors. Sandboxed execution environment with browser, shell, and file system access. Evaluated on SWE-bench and WebArena.',
+      evidenceUrl: 'https://arxiv.org/abs/2407.16741',
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'smolagents-code'],
+      date: '2025-01-01',
+      type: 'artifact',
+      title: 'smolagents CodeAgent documented in Hugging Face docs',
+      body: 'CodeAgent writes Python as actions rather than JSON tool calls. ~1000-line core library. Supports HuggingFace, OpenAI, Anthropic, LiteLLM, Transformers, Ollama. MCP and LangChain tool integration.',
+      evidenceUrl: 'https://huggingface.co/docs/smolagents/en/index',
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'openai-swarm-triage'],
+      date: '2024-10-11',
+      type: 'artifact',
+      title: 'OpenAI Swarm GitHub repository published (educational, now deprecated)',
+      body: 'Core primitive: handoff — an agent transfers conversation control to another agent. Stateless: all state in the messages array. Superseded by OpenAI Agents SDK for production use.',
+      evidenceUrl: 'https://github.com/openai/swarm',
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'autogen-group-chat'],
+      date: '2023-08-16',
+      type: 'artifact',
+      title: 'AutoGen paper published — arXiv 2308.08155',
+      body: 'Flexible multi-agent framework: two-agent, group chat, hierarchical, and proxy (human-in-loop) patterns. Open-source. Used across coding, math, QA, and decision-making tasks.',
+      evidenceUrl: 'https://arxiv.org/abs/2308.08155',
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'agentverse-group'],
+      date: '2023-08-21',
+      type: 'artifact',
+      title: 'AgentVerse paper published — arXiv 2308.10848',
+      body: 'Dynamic group recruitment selects task-relevant specialist agents per query. Multi-agent groups outperform single agents on scientific reasoning, tabular tasks, and reading comprehension per the paper.',
+      evidenceUrl: 'https://arxiv.org/abs/2308.10848',
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'malbo-optimized-team'],
+      date: '2024-11-18',
+      type: 'artifact',
+      title: 'MALBO paper published — arXiv 2511.11788',
+      body: ">45% cost reduction vs random search; heterogeneous teams: up to 65.8% cost reduction vs homogeneous baseline. Note: Master's thesis, not peer-reviewed.",
+      evidenceUrl: 'https://arxiv.org/abs/2511.11788',
       provenance: 'evidence_linked',
     },
 
@@ -1843,6 +2665,74 @@ export function seed(db: Database.Database): void {
       unit: 'count',
       asOf: '2023-07-14',
       note: 'Average token usage per software task (Table 3). Files generated: 4.39; lines of code: 144.3. Source: arXiv 2307.07924 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+
+    // -- New curated metrics (QA cycle-01 additions, evidence_linked) --
+    {
+      subject: ['configuration', 'swe-agent-config'],
+      key: 'success_rate',
+      label: 'SWE-bench pass@1',
+      value: 12.5,
+      unit: 'pct',
+      asOf: '2024-04-02',
+      note: 'Unassisted; SWE-bench benchmark (300 GitHub issues). Source: arXiv 2405.15793 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'swe-agent-config'],
+      key: 'human_eval_fix',
+      label: 'HumanEvalFix score',
+      value: 87.7,
+      unit: 'pct',
+      asOf: '2024-04-02',
+      note: 'Bug fixing benchmark. Source: arXiv 2405.15793 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'voyager-minecraft'],
+      key: 'items_multiplier',
+      label: 'Unique items vs SOTA',
+      value: 3.3,
+      unit: 'count',
+      asOf: '2023-05-25',
+      note: '3.3× more unique items obtained vs prior SOTA (DEPS). Source: arXiv 2305.16291 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'voyager-minecraft'],
+      key: 'tech_tree_speed',
+      label: 'Tech tree speed vs SOTA',
+      value: 15.3,
+      unit: 'count',
+      asOf: '2023-05-25',
+      note: '15.3× faster tech tree milestone completion vs prior SOTA (DEPS). Source: arXiv 2305.16291 [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'aider-architect-editor'],
+      key: 'success_rate',
+      label: 'SWE-bench score',
+      value: 85.0,
+      unit: 'pct',
+      asOf: '2024-09-26',
+      note: 'o1-preview (architect) + o1-mini (editor). Source: aider.chat/2024/09/26/architect.html [evidence_linked]',
+      illustrative: false,
+      provenance: 'evidence_linked',
+    },
+    {
+      subject: ['configuration', 'malbo-optimized-team'],
+      key: 'cost_reduction',
+      label: 'Cost reduction vs random',
+      value: 45,
+      unit: 'pct',
+      asOf: '2024-11-18',
+      note: '>45% cost reduction on average vs random search with comparable performance. Source: arXiv 2511.11788 [evidence_linked]',
       illustrative: false,
       provenance: 'evidence_linked',
     },

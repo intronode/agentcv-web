@@ -169,11 +169,13 @@ export interface AgentCardData {
   tagline: string;
   category: string;
   platform: string;
+  model: string | null;
   status: SubjectStatus;
   ownerHandle: string;
   ownerName: string;
   tier: TrustTier;
   proofCount: number;
+  configurationCount: number;
   seedLayer: SeedLayer;
   metrics: MetricRow[]; // up to 3, for the card footer
 }

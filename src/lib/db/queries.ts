@@ -90,7 +90,8 @@ function cardMetricsFor(subjectType: SubjectType, ids: number[]): Map<number, Me
   return map;
 }
 
-type AgentListRow = AgentRow & SubjectCounts & { owner_handle: string; owner_name: string };
+type AgentListRow = AgentRow &
+  SubjectCounts & { owner_handle: string; owner_name: string; config_count: number };
 
 export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
   const where: string[] = [];
@@ -121,7 +122,9 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
 
   const rows = getDb()
     .prepare(
-      `SELECT a.*, o.handle AS owner_handle, o.display_name AS owner_name, ${COUNT_SELECTS('agent', 'a')}
+      `SELECT a.*, o.handle AS owner_handle, o.display_name AS owner_name,
+              ${COUNT_SELECTS('agent', 'a')},
+              (SELECT COUNT(*) FROM configuration_members cm WHERE cm.agent_id = a.id) AS config_count
        FROM agents a JOIN owners o ON o.id = a.owner_id
        ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
        ORDER BY ${orderBy}
@@ -141,11 +144,13 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
       tagline: r.tagline,
       category: r.category,
       platform: r.platform,
+      model: r.model,
       status: r.status,
       ownerHandle: r.owner_handle,
       ownerName: r.owner_name,
       tier: computeTier(r.evidence_count, r.attestation_count),
       proofCount: r.proof_count,
+      configurationCount: r.config_count,
       seedLayer: r.seed_layer,
       metrics: metrics.get(r.id) ?? [],
     })

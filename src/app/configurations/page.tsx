@@ -116,11 +116,32 @@ export default async function ConfigurationsPage({ searchParams }: PageProps) {
           )}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {configurations.map((config) => (
-            <ConfigurationCard key={config.slug} config={config} />
-          ))}
-        </div>
+        <>
+          {hasFilters && configurations.length > 0 && configurations.length < 4 && (
+            <div className="mb-6 rounded-xl border border-border bg-surface-elevated px-5 py-4">
+              <p className="text-sm text-text-secondary">
+                <span className="font-medium text-text-primary">
+                  {configurations.length} configuration{configurations.length === 1 ? '' : 's'}{' '}
+                  match.
+                </span>{' '}
+                The registry is young — not every combination is covered yet.
+              </p>
+              <div className="mt-2 flex gap-4 text-xs">
+                <a href="/configurations" className="text-accent hover:underline">
+                  Browse all configurations
+                </a>
+                <a href="/contact" className="text-text-tertiary hover:text-accent hover:underline">
+                  Submit yours
+                </a>
+              </div>
+            </div>
+          )}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {configurations.map((config) => (
+              <ConfigurationCard key={config.slug} config={config} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
