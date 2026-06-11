@@ -51,3 +51,74 @@ export async function readJsonBody(request: Request): Promise<Record<string, unk
 export const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const URL_PATTERN = /^https?:\/\/\S+$/;
+
+interface ArrOpts {
+  maxItems?: number;
+  maxItemLength?: number;
+}
+
+/**
+ * Parse an optional JSON array of strings from the request body.
+ * Accepts either a real Array value or a comma-separated string.
+ * Returns undefined if the key is absent or empty.
+ */
+export function optArr(
+  body: Record<string, unknown>,
+  key: string,
+  opts: ArrOpts = {}
+): string[] | undefined {
+  const value = body[key];
+  if (value === undefined || value === null) return undefined;
+
+  let items: string[];
+  if (Array.isArray(value)) {
+    items = value.map((v) => {
+      if (typeof v !== 'string') throw new ValidationError(`${key} items must be strings`);
+      return v.trim();
+    });
+  } else if (typeof value === 'string') {
+    items = value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  } else {
+    throw new ValidationError(`${key} must be an array or comma-separated string`);
+  }
+
+  const filtered = items.filter(Boolean);
+  if (filtered.length === 0) return undefined;
+
+  if (opts.maxItems !== undefined && filtered.length > opts.maxItems) {
+    throw new ValidationError(`${key} must have at most ${opts.maxItems} items`);
+  }
+  if (opts.maxItemLength !== undefined) {
+    for (const item of filtered) {
+      if (item.length > opts.maxItemLength) {
+        throw new ValidationError(
+          `${key} items must be at most ${opts.maxItemLength} characters each`
+        );
+      }
+    }
+  }
+  return filtered;
+}
+
+/**
+ * Parse an optional integer from the request body.
+ */
+export function optInt(
+  body: Record<string, unknown>,
+  key: string,
+  opts: { min?: number; max?: number } = {}
+): number | undefined {
+  const value = body[key];
+  if (value === undefined || value === null) return undefined;
+  const n =
+    typeof value === 'string' ? parseInt(value, 10) : typeof value === 'number' ? value : NaN;
+  if (!Number.isInteger(n)) throw new ValidationError(`${key} must be an integer`);
+  if (opts.min !== undefined && n < opts.min)
+    throw new ValidationError(`${key} must be at least ${opts.min}`);
+  if (opts.max !== undefined && n > opts.max)
+    throw new ValidationError(`${key} must be at most ${opts.max}`);
+  return n;
+}

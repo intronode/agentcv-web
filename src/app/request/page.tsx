@@ -1,23 +1,39 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { getConfigurationProfile } from '@/lib/db/queries';
+import RequestForm from './RequestForm';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = { title: 'Request a Setup — AgentCV' };
 
-export default function RequestPage() {
+interface PageProps {
+  searchParams: Promise<{ config?: string }>;
+}
+
+export default async function RequestPage({ searchParams }: PageProps) {
+  const { config: configSlug } = await searchParams;
+
+  // Pre-load the referenced configuration name if slug provided.
+  let refConfig: { slug: string; name: string } | null = null;
+  if (configSlug) {
+    const profile = getConfigurationProfile(configSlug);
+    if (profile) {
+      refConfig = { slug: configSlug, name: profile.configuration.name };
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-3xl px-6 py-20">
-      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">Coming soon</p>
-      <h1 className="mt-3 text-3xl font-bold tracking-tight">Request a setup</h1>
-      <p className="mt-4 max-w-xl text-sm leading-relaxed text-text-secondary">
-        Found a configuration that works for your use case? Request a consultation or custom setup
-        from the owner. This form is under construction.
+    <div className="mx-auto max-w-2xl px-6 py-12">
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+        Request a setup
       </p>
-      <Link
-        href="/configurations"
-        className="mt-8 inline-block rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
-      >
-        ← Browse configurations
-      </Link>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight">Request a configuration setup</h1>
+      <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+        Found a configuration that works for your use case? Request a consultation or custom setup
+        from Intronode. Tell us what you need to build or run.
+      </p>
+
+      <RequestForm refConfig={refConfig} />
     </div>
   );
 }

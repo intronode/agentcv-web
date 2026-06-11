@@ -625,31 +625,134 @@ export function addProofEntry(input: AddProofInput): { id: number; tier: TrustTi
 }
 
 export interface ContactInput {
-  subjectType: ContactSubjectType;
-  subjectSlug: string; // owner handle when subjectType === 'owner'
+  subjectType?: ContactSubjectType;
+  subjectSlug?: string; // owner handle when subjectType === 'owner'
   requesterName: string;
   requesterEmail: string;
   message: string;
+  kind?: string; // 'request_setup' | 'claim' | 'general'
 }
 
 export function createContactRequest(input: ContactInput): { id: number } {
   const db = getDb();
-  const table =
-    input.subjectType === 'agent'
-      ? 'agents'
-      : input.subjectType === 'configuration'
-        ? 'configurations'
-        : 'owners';
-  const column = input.subjectType === 'owner' ? 'handle' : 'slug';
-  const subject = db.prepare(`SELECT id FROM ${table} WHERE ${column}=?`).get(input.subjectSlug) as
-    | { id: number }
-    | undefined;
-  if (!subject) throw new Error(`Unknown ${input.subjectType}: ${input.subjectSlug}`);
+  const kind = input.kind ?? 'general';
+
+  let subjectType: ContactSubjectType | null = null;
+  let subjectId: number | null = null;
+
+  if (input.subjectType && input.subjectSlug) {
+    const table =
+      input.subjectType === 'agent'
+        ? 'agents'
+        : input.subjectType === 'configuration'
+          ? 'configurations'
+          : 'owners';
+    const column = input.subjectType === 'owner' ? 'handle' : 'slug';
+    const subject = db
+      .prepare(`SELECT id FROM ${table} WHERE ${column}=?`)
+      .get(input.subjectSlug) as { id: number } | undefined;
+    if (!subject) throw new Error(`Unknown ${input.subjectType}: ${input.subjectSlug}`);
+    subjectType = input.subjectType;
+    subjectId = subject.id;
+  }
+
+  // For general requests with no subject, we allow null subject.
+  // The schema CHECK requires subject_type to be in the enum — use a sentinel approach:
+  // we store subjectType as 'owner' and subjectId as 0 for subjectless general requests.
+  // For request_setup with no config ref, same sentinel.
+  const storeType = subjectType ?? 'owner';
+  const storeId = subjectId ?? 0;
+
   const res = db
     .prepare(
-      `INSERT INTO contact_requests (subject_type, subject_id, requester_name, requester_email, message)
-       VALUES (?, ?, ?, ?, ?)`
+      `INSERT INTO contact_requests (subject_type, subject_id, requester_name, requester_email, message, kind)
+       VALUES (?, ?, ?, ?, ?, ?)`
     )
-    .run(input.subjectType, subject.id, input.requesterName, input.requesterEmail, input.message);
+    .run(storeType, storeId, input.requesterName, input.requesterEmail, input.message, kind);
   return { id: Number(res.lastInsertRowid) };
+}
+
+// ---- register configuration -----------------------------------------------
+
+export interface RegisterConfigurationInput {
+  name: string;
+  tagline: string;
+  topologyType?: string;
+  platform?: string;
+  agentCount?: number;
+  industries?: string[];
+  taskKinds?: string[];
+  topology?: string; // prose description
+  whyItWorks?: string;
+  howBuilt?: string;
+  oversight?: string;
+  operationalSince?: string;
+  ownerName: string;
+  ownerHandle: string;
+  /** Existing agent slugs + roles for membership (agents must already exist). */
+  members?: { agentSlug: string; role: string }[];
+}
+
+export function registerConfiguration(input: RegisterConfigurationInput): {
+  slug: string;
+  id: number;
+} {
+  const db = getDb();
+  const tx = db.transaction((): { slug: string; id: number } => {
+    // Find or create owner (same pattern as registerAgent).
+    let owner = db.prepare('SELECT * FROM owners WHERE handle=?').get(input.ownerHandle) as
+      | OwnerRow
+      | undefined;
+    if (!owner) {
+      const res = db
+        .prepare('INSERT INTO owners (handle, display_name) VALUES (?, ?)')
+        .run(slugify(input.ownerHandle), input.ownerName);
+      owner = db.prepare('SELECT * FROM owners WHERE id=?').get(res.lastInsertRowid) as OwnerRow;
+    }
+
+    const slug = uniqueSlug('configurations', slugify(input.name));
+    const res = db
+      .prepare(
+        `INSERT INTO configurations
+          (slug, name, tagline, topology_type, platform, agent_count,
+           industries, task_kinds, topology, why_it_works, how_built, oversight,
+           operational_since, owner_id, seed_layer)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'real')`
+      )
+      .run(
+        slug,
+        input.name,
+        input.tagline,
+        input.topologyType ?? null,
+        input.platform ?? null,
+        input.agentCount ?? null,
+        input.industries ? JSON.stringify(input.industries) : null,
+        input.taskKinds ? JSON.stringify(input.taskKinds) : null,
+        input.topology ?? null,
+        input.whyItWorks ?? null,
+        input.howBuilt ?? null,
+        input.oversight ?? null,
+        input.operationalSince ?? null,
+        owner.id
+      );
+    const configId = Number(res.lastInsertRowid);
+
+    // Attach members if provided.
+    if (input.members && input.members.length > 0) {
+      const agentStmt = db.prepare('SELECT id FROM agents WHERE slug=?');
+      const memberStmt = db.prepare(
+        `INSERT INTO configuration_members (configuration_id, agent_id, role, ordinal)
+         VALUES (?, ?, ?, ?)`
+      );
+      let ordinal = 0;
+      for (const m of input.members) {
+        const agent = agentStmt.get(m.agentSlug) as { id: number } | undefined;
+        if (!agent) throw new Error(`Unknown agent: ${m.agentSlug}`);
+        memberStmt.run(configId, agent.id, m.role, ordinal++);
+      }
+    }
+
+    return { slug, id: configId };
+  });
+  return tx();
 }

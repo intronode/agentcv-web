@@ -12,6 +12,14 @@ interface ProofFormProps {
 const inputClasses =
   'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none';
 
+function todayIso(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export default function ProofForm({ subjectType, subjectSlug }: ProofFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -92,7 +100,7 @@ export default function ProofForm({ subjectType, subjectSlug }: ProofFormProps) 
               name="entryDate"
               required
               type="date"
-              defaultValue="2026-06-11"
+              defaultValue={todayIso()}
               className={inputClasses}
             />
           </div>
