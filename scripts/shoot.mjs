@@ -252,10 +252,11 @@ async function main() {
     // Brief wait for React state to update and render error messages
     await sleep(400);
 
-    // Screenshot the full form area (full-page to capture all validation inline errors)
-    await page.screenshot({
+    // Clip to the form element bounding box — a full-page shot is illegible
+    // because validation errors appear inline and the form is only a portion
+    // of the viewport.  locator.screenshot() clips to the element exactly.
+    await page.locator('form').screenshot({
       path: join(outDir, 'submit-validation-errors.png'),
-      fullPage: true,
     });
 
     await context.close();
@@ -284,10 +285,33 @@ async function main() {
       console.warn('    ⚠  compare tray not visible within 5s — screenshot anyway');
     }
 
-    // Viewport (not full-page) to keep the floating tray and card grid both in frame
+    // Try to clip to the tray element directly; fall back to viewport bottom-half
+    // so the floating tray is always prominent in the image.
+    const viewportSize = page.viewportSize() ?? { width: 1440, height: 900 };
+    let clip = null;
+    try {
+      const box = await tray.boundingBox();
+      if (box) {
+        // Expand 80 px above the tray to show context
+        const padding = 80;
+        clip = {
+          x: 0,
+          y: Math.max(0, box.y - padding),
+          width: viewportSize.width,
+          height: Math.min(viewportSize.height, box.height + padding * 2),
+        };
+      }
+    } catch (_e) {
+      // tray not found — fall back to bottom third of viewport
+    }
+    if (!clip) {
+      const h = viewportSize.height;
+      clip = { x: 0, y: Math.floor(h * 0.6), width: viewportSize.width, height: Math.floor(h * 0.4) };
+    }
     await page.screenshot({
       path: join(outDir, 'compare-tray-selected.png'),
       fullPage: false,
+      clip,
     });
 
     await context.close();

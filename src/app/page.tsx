@@ -234,16 +234,16 @@ export default function HomePage() {
             <Link
               key={type}
               href={`/configurations?topology=${type}`}
-              className="group flex items-center gap-4 rounded-xl border border-border bg-surface-elevated p-4 transition-all hover:border-accent/40 hover:bg-surface-hover"
+              className="group flex min-h-[64px] items-center gap-3 rounded-xl border border-border bg-surface-elevated p-4 transition-all hover:border-accent/40 hover:bg-surface-hover"
             >
-              <div className="shrink-0 opacity-70 transition-opacity group-hover:opacity-100">
-                <TopologyGlyph topology={type} size={36} />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center opacity-70 transition-opacity group-hover:opacity-100">
+                <TopologyGlyph topology={type} size={32} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="font-medium text-text-primary transition-colors group-hover:text-accent">
                   {TOPOLOGY_LABELS[type]}
                 </div>
-                <div className="mt-0.5 text-xs text-text-tertiary">{description}</div>
+                <div className="mt-0.5 text-xs leading-snug text-text-tertiary">{description}</div>
               </div>
             </Link>
           ))}

@@ -13,6 +13,7 @@ import type {
   ContactSubjectType,
   MetricRow,
   OwnerProfile,
+  OwnerProofFeedEntry,
   OwnerRow,
   ProofEntryRow,
   ProofType,
@@ -407,17 +408,19 @@ export function getConfigurationHeadlineMetrics(
       | { id: number; name: string }
       | undefined;
     if (!config) continue;
-    const keyPlaceholders = CARD_METRIC_KEYS.map(() => '?').join(',');
+    // Query ALL metrics for this configuration — do NOT restrict to CARD_METRIC_KEYS.
+    // The CARD_METRIC_KEYS filter was designed for the configurations card grid and only
+    // included Ari-specific keys, silently producing no headline for curated configs
+    // (e.g. magentic-one uses gaia_score, webarena_score).  Here we want the first
+    // non-null metric regardless of key; non-null rows are ranked first.
     const metric = db
       .prepare(
         `SELECT * FROM metrics
-         WHERE subject_type='configuration' AND subject_id=? AND key IN (${keyPlaceholders})
-         ORDER BY CASE WHEN value IS NULL THEN 1 ELSE 0 END,
-                  CASE key WHEN 'window_reconciliation_pct' THEN 0 WHEN 'uptime_pct' THEN 1
-                           WHEN 'tasks_completed' THEN 2 ELSE 3 END
+         WHERE subject_type='configuration' AND subject_id=?
+         ORDER BY CASE WHEN value IS NULL THEN 1 ELSE 0 END, id ASC
          LIMIT 1`
       )
-      .get(config.id, ...CARD_METRIC_KEYS) as MetricRow | undefined;
+      .get(config.id) as MetricRow | undefined;
     if (metric) {
       result.set(slug, { ...metric, configName: config.name });
     }
@@ -426,15 +429,58 @@ export function getConfigurationHeadlineMetrics(
 }
 
 export function getOwnerProfile(handle: string): OwnerProfile | null {
-  const owner = getDb().prepare('SELECT * FROM owners WHERE handle=?').get(handle) as
+  const db = getDb();
+  const owner = db.prepare('SELECT * FROM owners WHERE handle=?').get(handle) as
     | OwnerRow
     | undefined;
   if (!owner) return null;
-  return {
-    owner,
-    agents: listAgents({ ownerId: owner.id }),
-    configurations: listConfigurations(owner.id),
-  };
+
+  const agents = listAgents({ ownerId: owner.id });
+  const configurations = listConfigurations(owner.id);
+
+  // Build proof feed: aggregate proof entries across all subjects owned by this owner.
+  // Each entry is annotated with the subject name + slug so the feed can link back.
+  const agentRows = db
+    .prepare('SELECT id, slug, name FROM agents WHERE owner_id=?')
+    .all(owner.id) as { id: number; slug: string; name: string }[];
+  const configRows = db
+    .prepare('SELECT id, slug, name FROM configurations WHERE owner_id=?')
+    .all(owner.id) as { id: number; slug: string; name: string }[];
+
+  const proofFeed: OwnerProofFeedEntry[] = [];
+
+  for (const a of agentRows) {
+    const rows = db
+      .prepare(
+        `SELECT * FROM proof_entries WHERE subject_type='agent' AND subject_id=? ORDER BY entry_date DESC, id DESC LIMIT 10`
+      )
+      .all(a.id) as ProofEntryRow[];
+    for (const r of rows)
+      proofFeed.push({ ...r, subjectName: a.name, subjectSlug: a.slug, subjectKind: 'agent' });
+  }
+  for (const c of configRows) {
+    const rows = db
+      .prepare(
+        `SELECT * FROM proof_entries WHERE subject_type='configuration' AND subject_id=? ORDER BY entry_date DESC, id DESC LIMIT 10`
+      )
+      .all(c.id) as ProofEntryRow[];
+    for (const r of rows)
+      proofFeed.push({
+        ...r,
+        subjectName: c.name,
+        subjectSlug: c.slug,
+        subjectKind: 'configuration',
+      });
+  }
+
+  // Sort all entries newest-first, cap at 20 for the page feed
+  proofFeed.sort((a, b) => {
+    const dateCmp = b.entry_date.localeCompare(a.entry_date);
+    return dateCmp !== 0 ? dateCmp : b.id - a.id;
+  });
+  const cappedFeed = proofFeed.slice(0, 20);
+
+  return { owner, agents, configurations, proofFeed: cappedFeed };
 }
 
 // ---- compare --------------------------------------------------------------

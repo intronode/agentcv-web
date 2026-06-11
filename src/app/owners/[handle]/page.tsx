@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { getOwnerProfile } from '@/lib/db/queries';
 import AgentCard from '@/components/AgentCard';
 import ConfigurationCard from '@/components/ConfigurationCard';
 import ContactForm from '@/components/ContactForm';
+import { formatDate } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,15 +19,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return { title: profile ? `${profile.owner.display_name} — AgentCV` : 'Owner — AgentCV' };
 }
 
+// Proof type labels
+const PROOF_TYPE_LABELS: Record<string, string> = {
+  task: 'Task',
+  incident: 'Incident',
+  lesson: 'Lesson',
+  milestone: 'Milestone',
+  artifact: 'Artifact',
+};
+
 export default async function OwnerProfilePage({ params }: PageProps) {
   const { handle } = await params;
   const profile = getOwnerProfile(handle);
   if (!profile) notFound();
-  const { owner, agents, configurations } = profile;
+  const { owner, agents, configurations, proofFeed } = profile;
 
   const totalProof =
     agents.reduce((s, a) => s + a.proofCount, 0) +
     configurations.reduce((s, c) => s + c.proofCount, 0);
+
+  const evidenceLinked = proofFeed.filter((p) => p.evidence_url !== null).length;
 
   // Detect curated-owner disclosure embedded by seed.ts
   const isCurated =
@@ -35,6 +48,7 @@ export default async function OwnerProfilePage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="flex flex-wrap items-start justify-between gap-6">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
@@ -49,16 +63,6 @@ export default async function OwnerProfilePage({ params }: PageProps) {
               {owner.bio}
             </p>
           )}
-          {owner.website_url && (
-            <a
-              href={owner.website_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-block text-sm text-accent hover:underline"
-            >
-              {owner.website_url}
-            </a>
-          )}
         </div>
         <div className="w-full max-w-xs">
           <ContactForm
@@ -69,7 +73,34 @@ export default async function OwnerProfilePage({ params }: PageProps) {
         </div>
       </header>
 
-      {/* Compact summary strip — gives above-the-fold density */}
+      {/* ── Website link row (dedicated, visible) ──────────────────────────── */}
+      {owner.website_url && (
+        <div className="mt-4 flex items-center gap-2">
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="shrink-0 text-text-tertiary"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
+          <a
+            href={owner.website_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-accent hover:underline"
+          >
+            {owner.website_url.replace(/^https?:\/\//, '')}
+          </a>
+        </div>
+      )}
+
+      {/* ── Compact summary strip ──────────────────────────────────────────── */}
       <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg border border-border bg-surface-elevated px-4 py-3 text-sm">
         <span className="font-semibold text-text-primary">
           {configurations.length}{' '}
@@ -91,6 +122,15 @@ export default async function OwnerProfilePage({ params }: PageProps) {
             proof entr{totalProof === 1 ? 'y' : 'ies'}
           </span>
         </span>
+        {evidenceLinked > 0 && (
+          <>
+            <span className="text-border">·</span>
+            <span className="font-semibold text-blue-300">
+              {evidenceLinked}{' '}
+              <span className="font-normal text-text-tertiary">evidence-linked</span>
+            </span>
+          </>
+        )}
       </div>
 
       {isCurated && (
@@ -100,6 +140,42 @@ export default async function OwnerProfilePage({ params }: PageProps) {
         </p>
       )}
 
+      {/* ── Agent components (prominent section) ──────────────────────────── */}
+      <section className="mt-12">
+        <div className="flex items-baseline justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              Agent components{' '}
+              <span className="text-sm font-normal text-text-tertiary">({agents.length})</span>
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              Individual agents that make up this owner&apos;s configurations. Each card shows
+              model, platform, metrics, and proof count.
+            </p>
+          </div>
+          {agents.length > 0 && (
+            <Link
+              href={`/agents?owner=${owner.handle}`}
+              className="shrink-0 text-sm text-accent hover:underline"
+            >
+              View all agents →
+            </Link>
+          )}
+        </div>
+        {agents.length === 0 ? (
+          <p className="mt-5 rounded-lg border border-dashed border-border p-6 text-sm text-text-tertiary">
+            No agent components on record.
+          </p>
+        ) : (
+          <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {agents.map((agent) => (
+              <AgentCard key={agent.slug} agent={agent} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Configurations ────────────────────────────────────────────────── */}
       {configurations.length > 0 && (
         <section className="mt-12">
           <h2 className="text-xl font-semibold tracking-tight">
@@ -119,23 +195,72 @@ export default async function OwnerProfilePage({ params }: PageProps) {
         </section>
       )}
 
-      <section className="mt-12">
-        <h2 className="text-xl font-semibold tracking-tight">
-          Agent components{' '}
-          <span className="text-sm font-normal text-text-tertiary">({agents.length})</span>
-        </h2>
-        {agents.length === 0 ? (
-          <p className="mt-5 rounded-lg border border-dashed border-border p-6 text-sm text-text-tertiary">
-            No agent components on record.
-          </p>
-        ) : (
-          <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {agents.map((agent) => (
-              <AgentCard key={agent.slug} agent={agent} />
+      {/* ── Proof feed (aggregated across all subjects) ───────────────────── */}
+      {proofFeed.length > 0 && (
+        <section className="mt-12">
+          <div className="mb-5">
+            <h2 className="text-xl font-semibold tracking-tight">Proof feed</h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              Recent proof entries across all agents and configurations.{' '}
+              <span className="text-text-tertiary">{totalProof} total.</span>
+            </p>
+          </div>
+          <div className="space-y-3">
+            {proofFeed.map((entry) => (
+              <div
+                key={`${entry.subject_type}-${entry.id}`}
+                className="rounded-xl border border-border bg-surface-elevated px-5 py-4"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Subject attribution */}
+                  <Link
+                    href={`/${entry.subjectKind === 'agent' ? 'agents' : 'configurations'}/${entry.subjectSlug}`}
+                    className="inline-flex items-center gap-1 rounded border border-border bg-surface px-2 py-0.5 text-[11px] font-medium text-text-secondary hover:text-accent"
+                  >
+                    {entry.subjectKind === 'configuration' ? '⚙' : '🤖'} {entry.subjectName}
+                  </Link>
+                  {/* Entry type */}
+                  <span className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-text-tertiary">
+                    {PROOF_TYPE_LABELS[entry.type] ?? entry.type}
+                  </span>
+                  {/* Evidence link indicator */}
+                  {entry.evidence_url && (
+                    <a
+                      href={entry.evidence_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] text-blue-300 hover:underline"
+                    >
+                      <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 0 2 2h3" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                      evidence
+                    </a>
+                  )}
+                  <span className="ml-auto text-[10px] text-text-tertiary">
+                    {formatDate(entry.entry_date)}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm font-medium text-text-primary">{entry.title}</p>
+                {entry.body && (
+                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-text-tertiary">
+                    {entry.body}
+                  </p>
+                )}
+              </div>
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }

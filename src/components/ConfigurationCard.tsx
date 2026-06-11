@@ -1,10 +1,62 @@
 import Link from 'next/link';
 import type { ConfigurationCardData } from '@/lib/db/types';
+import type { MetricRow } from '@/lib/db/types';
 import TrustBadge from '@/components/TrustBadge';
 import LayerLabel from '@/components/LayerLabel';
 import TopologyGlyph, { TOPOLOGY_LABELS } from '@/components/TopologyGlyph';
 import { CompareToggle } from '@/components/CompareTray';
 import { formatMetricValue } from '@/lib/format';
+
+// ---------------------------------------------------------------------------
+// Metric slot assignment — deterministic, documented rule:
+//
+//   Slot 1 "Outcome": first metric whose key appears in OUTCOME_KEYS.
+//     Captures task-success, benchmark, accuracy, or win-rate figures.
+//     Signals "does this configuration actually work?"
+//
+//   Slot 2 "Economics": first metric whose key appears in ECONOMICS_KEYS.
+//     Captures cost, token, latency, or throughput figures.
+//     Signals "how expensive / fast is it?"
+//
+//   Fallback: if a slot has no matching metric, show an em-dash with the
+//   label "— not stated" so the card always has two labeled cells.
+//   Provenance tags are preserved when the metric has one.
+// ---------------------------------------------------------------------------
+const OUTCOME_KEYS = new Set([
+  'success_rate',
+  'gaia_score',
+  'webarena_score',
+  'human_eval_fix',
+  'win_rate_pct',
+  'trueskill_rating',
+  'executability_score',
+  'assistantbench_score',
+  'items_multiplier',
+  'tech_tree_speed',
+  'distance_multiplier',
+  'alfworld_gain',
+  'tool_tasks_completed',
+  'window_reconciliation_pct',
+  'uptime_pct',
+  'mbpp_score',
+  'gpt4_eval_win_rate',
+  'claude_35_both_score',
+  'cost_reduction_heterogeneous',
+  'prior_sota_pct',
+]);
+
+const ECONOMICS_KEYS = new Set([
+  'cost_per_task_usd',
+  'cost_reduction',
+  'tokens_per_loc',
+  'avg_response_ms',
+  'tasks_completed',
+  'codebase_loc',
+]);
+
+function pickSlot(metrics: MetricRow[], keySet: Set<string>): MetricRow | null {
+  return metrics.find((m) => keySet.has(m.key)) ?? null;
+}
 
 function IndustryTag({ label }: { label: string }) {
   return (
@@ -92,31 +144,27 @@ export default function ConfigurationCard({ config }: { config: ConfigurationCar
           </div>
         )}
 
-        {/* Metrics footer */}
+        {/* Metrics footer — two deterministic labeled slots: Outcome + Economics.
+            Slot assignment rule: see OUTCOME_KEYS / ECONOMICS_KEYS comment above. */}
         <div className="mt-auto pt-4">
           <div className="flex items-center gap-4 border-t border-border-subtle pt-3">
-            {config.metrics.slice(0, 2).map((metric) => {
-              const isUnknown = metric.value === null;
-              // For null metrics on cards: show a compact qualifier if the note is short
-              // enough to fit inline (≤40 chars), otherwise use a generic "windowed data" hint.
-              const noteShort = metric.note && metric.note.length <= 40 ? metric.note : null;
-              const unknownSubtext = noteShort ?? 'windowed data · see detail';
+            {(['Outcome', 'Economics'] as const).map((slotLabel) => {
+              const keySet = slotLabel === 'Outcome' ? OUTCOME_KEYS : ECONOMICS_KEYS;
+              const metric = pickSlot(config.metrics, keySet);
+              const isUnknown = metric === null || metric.value === null;
               return (
-                <div key={metric.key} className="flex flex-col">
-                  <span className="text-[10px] text-text-tertiary">{metric.label}</span>
-                  {isUnknown ? (
-                    <span
-                      className="text-[11px] font-medium text-text-tertiary"
-                      title={metric.note ?? 'Not on record — an honest gap.'}
-                    >
-                      <span className="font-mono text-[10px]">[unknown]</span>
-                      <span className="ml-1 text-[9px] text-text-tertiary/70">
-                        {unknownSubtext}
-                      </span>
+                <div key={slotLabel} className="flex flex-col">
+                  <span className="text-[10px] text-text-tertiary">{slotLabel}</span>
+                  {metric && !isUnknown ? (
+                    <span className="text-sm font-semibold text-text-primary" title={metric.label}>
+                      {formatMetricValue(metric.value, metric.unit)}
                     </span>
                   ) : (
-                    <span className="text-sm font-semibold text-text-primary">
-                      {formatMetricValue(metric.value, metric.unit)}
+                    <span
+                      className="text-[11px] font-medium text-text-tertiary"
+                      title="Not stated for this configuration"
+                    >
+                      — <span className="text-[9px] text-text-tertiary/70">not stated</span>
                     </span>
                   )}
                 </div>

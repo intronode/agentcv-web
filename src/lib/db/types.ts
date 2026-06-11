@@ -248,10 +248,17 @@ export interface ConfigurationProfile {
 // Keep TeamProfile as alias
 export type TeamProfile = ConfigurationProfile;
 
+export interface OwnerProofFeedEntry extends ProofEntryRow {
+  subjectName: string;
+  subjectSlug: string;
+  subjectKind: SubjectType;
+}
+
 export interface OwnerProfile {
   owner: OwnerRow;
   agents: AgentCardData[];
   configurations: ConfigurationCardData[];
+  proofFeed: OwnerProofFeedEntry[];
 }
 
 export interface SiteCounts {
