@@ -20,6 +20,9 @@
  * Console errors per page are written to console-log.txt in the out dir.
  * The deliberate /this-route-does-not-exist 404 is annotated in console-log.txt.
  * Animations are suppressed via prefers-reduced-motion for stable shots.
+ *
+ * Failed resource loads are captured via response/requestfailed events so that
+ * the failing URL is included in the log (not just the browser console text).
  */
 
 import { chromium } from 'playwright';
@@ -72,7 +75,66 @@ async function sleep(ms) {
 }
 
 /**
- * Open a new desktop context+page, wire console capture, navigate to url,
+ * Wire error listeners onto a page:
+ * - console errors (with text from msg.text())
+ * - pageerrors
+ * - failed HTTP responses (non-2xx/3xx subresources) — includes response.url()
+ * - network-level request failures — includes request.url()
+ */
+function wireErrorListeners(page, consoleEntries, routeSlug, viewport, isExpected) {
+  page.on('console', msg => {
+    if (msg.type() === 'error') {
+      consoleEntries.push({
+        route: routeSlug,
+        viewport,
+        text: msg.text(),
+        expected: isExpected,
+      });
+    }
+  });
+
+  page.on('pageerror', err => {
+    consoleEntries.push({
+      route: routeSlug,
+      viewport,
+      text: `[pageerror] ${err.message}`,
+      expected: isExpected,
+    });
+  });
+
+  page.on('response', response => {
+    const status = response.status();
+    const url = response.url();
+    // Capture failed subresource loads (4xx/5xx). Gives examiners the URL that
+    // the browser console would only show as "Failed to load resource".
+    // Exclude Next.js RSC prefetch requests (?_rsc=...) — these are speculative
+    // background prefetches that Next.js's <Link> initiates; ERR_ABORTED on them
+    // is expected when the browser de-prioritises or the page unmounts.
+    if (status >= 400 && !url.includes('_rsc=')) {
+      consoleEntries.push({
+        route: routeSlug,
+        viewport,
+        text: `[failed-resource] HTTP ${status} — ${url}`,
+        expected: isExpected,
+      });
+    }
+  });
+
+  page.on('requestfailed', request => {
+    const url = request.url();
+    // Exclude Next.js RSC prefetch aborts (same reason as above).
+    if (url.includes('_rsc=')) return;
+    consoleEntries.push({
+      route: routeSlug,
+      viewport,
+      text: `[request-failed] ${request.failure()?.errorText ?? 'unknown'} — ${url}`,
+      expected: isExpected,
+    });
+  });
+}
+
+/**
+ * Open a new desktop context+page, wire error capture, navigate to url,
  * settle, then return { page, context }.  Caller must context.close().
  */
 async function openDesktopPage(browser, url, consoleEntries, routeSlug) {
@@ -82,14 +144,7 @@ async function openDesktopPage(browser, url, consoleEntries, routeSlug) {
   });
   const page = await context.newPage();
 
-  page.on('console', msg => {
-    if (msg.type() === 'error') {
-      consoleEntries.push({ route: routeSlug, viewport: 'desktop', text: msg.text() });
-    }
-  });
-  page.on('pageerror', err => {
-    consoleEntries.push({ route: routeSlug, viewport: 'desktop', text: `[pageerror] ${err.message}` });
-  });
+  wireErrorListeners(page, consoleEntries, routeSlug, 'desktop', EXPECTED_404_SLUGS.has(routeSlug));
 
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
@@ -117,6 +172,7 @@ async function main() {
   for (const route of ROUTES) {
     const url = `${baseUrl}${route.path}`;
     console.log(`  → ${route.slug}  (${route.path})`);
+    const isExpected = EXPECTED_404_SLUGS.has(route.slug);
 
     // Desktop: full-page + fold
     {
@@ -126,24 +182,7 @@ async function main() {
       });
       const page = await context.newPage();
 
-      page.on('console', msg => {
-        if (msg.type() === 'error') {
-          consoleEntries.push({
-            route: route.slug,
-            viewport: 'desktop',
-            text: msg.text(),
-            expected: EXPECTED_404_SLUGS.has(route.slug),
-          });
-        }
-      });
-      page.on('pageerror', err => {
-        consoleEntries.push({
-          route: route.slug,
-          viewport: 'desktop',
-          text: `[pageerror] ${err.message}`,
-          expected: EXPECTED_404_SLUGS.has(route.slug),
-        });
-      });
+      wireErrorListeners(page, consoleEntries, route.slug, 'desktop', isExpected);
 
       try {
         await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
@@ -177,24 +216,7 @@ async function main() {
       });
       const page = await context.newPage();
 
-      page.on('console', msg => {
-        if (msg.type() === 'error') {
-          consoleEntries.push({
-            route: route.slug,
-            viewport: 'mobile',
-            text: msg.text(),
-            expected: EXPECTED_404_SLUGS.has(route.slug),
-          });
-        }
-      });
-      page.on('pageerror', err => {
-        consoleEntries.push({
-          route: route.slug,
-          viewport: 'mobile',
-          text: `[pageerror] ${err.message}`,
-          expected: EXPECTED_404_SLUGS.has(route.slug),
-        });
-      });
+      wireErrorListeners(page, consoleEntries, route.slug, 'mobile', isExpected);
 
       try {
         await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });

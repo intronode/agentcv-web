@@ -35,3 +35,22 @@ count. All timestamps KST.
   sheets fully populated, agent cards gain model + configuration-count
   chips, designed thin-slice notice on sparse filters.
 - **Fix commit:** bb40237 (2026-06-11 ~21:40)
+
+## Cycle 02
+
+- **Shot:** 2026-06-11 ~21:50 · docs/evidence/cycles/cycle-02/ (28 PNGs)
+- **Examiner (fresh subagent):** scores — credibility 4 · density 4 ·
+  depth 4 · interaction 3 · honesty 4 · soundness 3 · copy 4. Report:
+  docs/evidence/cycles/cycle-02/examiner-report.md
+- **Weakest thing named:** compare table informationally hollow —
+  non-flagship columns nearly all [unknown]. (Examiner's companion
+  claim "directory has only 4 entries" was checked and REFUTED — the
+  rendered page and screenshot show 25; tall full-page PNGs compress
+  illegibly for examiners, an evidence-quality defect fixed alongside.)
+- **Fix:** 33 source-stated evidence_linked metric rows across all 19
+  curated configurations (5 pattern-doc sources carry an honest
+  null+reason row); null metrics sort after valued ones; harness now
+  captures legible 1440x900 fold shots, submit-validation and
+  compare-tray interaction shots, and annotates the deliberate 404
+  console entry as expected.
+- **Fix commit:** 2c9fcc6 (2026-06-11 ~22:10)
