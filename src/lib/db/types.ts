@@ -204,7 +204,10 @@ export interface ConfigurationCardData {
   proofCount: number;
   seedLayer: SeedLayer;
   topologyType: TopologyType | null;
-  members: Pick<ConfigurationMemberData, 'slug' | 'name' | 'avatar' | 'role'>[];
+  agentCount: number | null;
+  platform: string | null;
+  industries: string[];
+  members: Pick<ConfigurationMemberData, 'slug' | 'name' | 'avatar' | 'role' | 'model'>[];
   metrics: MetricRow[];
 }
 

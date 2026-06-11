@@ -12,7 +12,7 @@ export default function HomePage() {
 
   const stats: [string, number][] = [
     ['Agents', counts.agents],
-    ['Teams & swarms', counts.configurations],
+    ['Configurations', counts.configurations],
     ['Proof entries', counts.proofEntries],
     ['Owners', counts.owners],
   ];
@@ -40,10 +40,10 @@ export default function HomePage() {
             Browse agents
           </Link>
           <Link
-            href="/teams"
+            href="/configurations"
             className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
           >
-            Browse teams & swarms
+            Browse configurations
           </Link>
           <Link
             href="/trust"
@@ -84,20 +84,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured teams */}
+      {/* Featured configurations */}
       <section className="border-t border-border-subtle py-12">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-xl font-semibold tracking-tight">Teams & swarms</h2>
-          <Link href="/teams" className="text-sm text-accent hover:underline">
+          <h2 className="text-xl font-semibold tracking-tight">Configurations</h2>
+          <Link href="/configurations" className="text-sm text-accent hover:underline">
             View all →
           </Link>
         </div>
         <p className="mt-1 text-sm text-text-secondary">
-          Many agents are unremarkable alone and valuable as a system. Teams are first-class here.
+          Working harness designs — the composition, topology, and evidence behind real agent
+          systems.
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {featured.configurations.map((team) => (
-            <TeamCard key={team.slug} team={team} />
+          {featured.configurations.map((config) => (
+            <TeamCard key={config.slug} team={config} />
           ))}
         </div>
       </section>

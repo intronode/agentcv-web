@@ -170,29 +170,95 @@ export function agentFilterOptions(): { categories: string[]; platforms: string[
 
 // ---- list: configurations (v3: teams) ------------------------------------
 
+export interface ConfigurationListFilters {
+  q?: string;
+  topology_type?: string;
+  platform?: string;
+  industry?: string;
+  tier?: TrustTier;
+  seed_layer?: string;
+  agent_count_band?: '1-2' | '3-5' | '6+';
+  sort?: 'recency' | 'tier' | 'agent_count';
+  ownerId?: number;
+}
+
 type ConfigListRow = ConfigurationRow &
   SubjectCounts & { owner_handle: string; owner_name: string };
 
-export function listConfigurations(ownerId?: number): ConfigurationCardData[] {
+export function listConfigurations(
+  ownerIdOrFilters?: number | ConfigurationListFilters
+): ConfigurationCardData[] {
+  const ownerId =
+    typeof ownerIdOrFilters === 'number' ? ownerIdOrFilters : ownerIdOrFilters?.ownerId;
+  const filters: ConfigurationListFilters =
+    typeof ownerIdOrFilters === 'object' ? ownerIdOrFilters : {};
+
+  const where: string[] = [];
+  const params: (string | number)[] = [];
+
+  if (ownerId !== undefined) {
+    where.push('c.owner_id = ?');
+    params.push(ownerId);
+  }
+  if (filters.q) {
+    where.push('(c.name LIKE ? OR c.tagline LIKE ? OR c.about LIKE ?)');
+    const like = `%${filters.q}%`;
+    params.push(like, like, like);
+  }
+  if (filters.topology_type) {
+    where.push('c.topology_type = ?');
+    params.push(filters.topology_type);
+  }
+  if (filters.platform) {
+    where.push('c.platform = ?');
+    params.push(filters.platform);
+  }
+  if (filters.industry) {
+    where.push('c.industries LIKE ?');
+    params.push(`%${filters.industry}%`);
+  }
+  if (filters.seed_layer) {
+    where.push('c.seed_layer = ?');
+    params.push(filters.seed_layer);
+  }
+  if (filters.agent_count_band) {
+    if (filters.agent_count_band === '1-2') {
+      where.push('c.agent_count BETWEEN 1 AND 2');
+    } else if (filters.agent_count_band === '3-5') {
+      where.push('c.agent_count BETWEEN 3 AND 5');
+    } else if (filters.agent_count_band === '6+') {
+      where.push('c.agent_count >= 6');
+    }
+  }
+
+  const orderBy =
+    filters.sort === 'recency'
+      ? 'c.operational_since IS NULL, c.operational_since DESC'
+      : filters.sort === 'agent_count'
+        ? 'c.agent_count DESC NULLS LAST'
+        : filters.sort === 'tier'
+          ? 'evidence_count DESC, attestation_count DESC'
+          : 'c.featured DESC, proof_count DESC, c.name COLLATE NOCASE ASC';
+
   const rows = getDb()
     .prepare(
       `SELECT c.*, o.handle AS owner_handle, o.display_name AS owner_name, ${COUNT_SELECTS('configuration', 'c')}
        FROM configurations c JOIN owners o ON o.id = c.owner_id
-       ${ownerId !== undefined ? 'WHERE c.owner_id = ?' : ''}
-       ORDER BY c.featured DESC, proof_count DESC, c.name COLLATE NOCASE ASC
+       ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+       ORDER BY ${orderBy}
        LIMIT 100`
     )
-    .all(...(ownerId !== undefined ? [ownerId] : [])) as ConfigListRow[];
+    .all(...params) as ConfigListRow[];
 
   const metrics = cardMetricsFor(
     'configuration',
     rows.map((r) => r.id)
   );
   const memberStmt = getDb().prepare(
-    `SELECT a.slug, a.name, a.avatar, m.role FROM configuration_members m
+    `SELECT a.slug, a.name, a.avatar, a.model, m.role FROM configuration_members m
      JOIN agents a ON a.id = m.agent_id WHERE m.configuration_id = ? ORDER BY m.ordinal`
   );
-  return rows.map(
+  const cards = rows.map(
     (r): ConfigurationCardData => ({
       slug: r.slug,
       name: r.name,
@@ -205,14 +271,37 @@ export function listConfigurations(ownerId?: number): ConfigurationCardData[] {
       proofCount: r.proof_count,
       seedLayer: r.seed_layer,
       topologyType: r.topology_type,
+      agentCount: r.agent_count,
+      platform: r.platform,
+      industries: r.industries ? (JSON.parse(r.industries) as string[]) : [],
       members: memberStmt.all(r.id) as ConfigurationCardData['members'],
       metrics: metrics.get(r.id) ?? [],
     })
   );
+  return filters.tier ? cards.filter((c) => c.tier === filters.tier) : cards;
 }
 
 /** Alias so /teams page keeps working without rename */
 export const listTeams = listConfigurations;
+
+export function configurationFilterOptions(): { platforms: string[]; topologyTypes: string[] } {
+  const db = getDb();
+  const platforms = (
+    db
+      .prepare(
+        'SELECT DISTINCT platform FROM configurations WHERE platform IS NOT NULL ORDER BY platform'
+      )
+      .all() as { platform: string }[]
+  ).map((r) => r.platform);
+  const topologyTypes = (
+    db
+      .prepare(
+        'SELECT DISTINCT topology_type FROM configurations WHERE topology_type IS NOT NULL ORDER BY topology_type'
+      )
+      .all() as { topology_type: string }[]
+  ).map((r) => r.topology_type);
+  return { platforms, topologyTypes };
+}
 
 // ---- profiles -------------------------------------------------------------
 

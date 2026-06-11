@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 
 const LINKS = [
   { href: '/agents', label: 'Agents' },
-  { href: '/teams', label: 'Teams & Swarms' },
+  { href: '/configurations', label: 'Configurations' },
   { href: '/trust', label: 'Trust Model' },
 ];
 
