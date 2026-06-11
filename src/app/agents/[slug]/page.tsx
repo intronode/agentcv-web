@@ -1,16 +1,19 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getAgentProfile } from '@/lib/db/queries';
+import { getAgentProfile, getConfigurationHeadlineMetrics } from '@/lib/db/queries';
+import type { MetricRow } from '@/lib/db/types';
 import TrustBadge from '@/components/TrustBadge';
 import LayerLabel from '@/components/LayerLabel';
-import { IllustrativeMark } from '@/components/ProvenanceTag';
+import { IllustrativeMark, ProvenanceTag } from '@/components/ProvenanceTag';
 import MetricGrid from '@/components/MetricGrid';
 import ProofFeed from '@/components/ProofFeed';
 import ProofForm from '@/components/ProofForm';
 import AttestationList from '@/components/AttestationList';
 import ContactForm from '@/components/ContactForm';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatMetricValue } from '@/lib/format';
+
+type ConfigHeadlineMetric = MetricRow & { configName: string };
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +43,16 @@ export default async function AgentProfilePage({ params }: PageProps) {
     lineageParent,
     lineageChildren,
   } = profile;
+
+  // For agents with no agent-level metrics, fetch headline metrics from their
+  // parent configurations so the empty state can surface them honestly.
+  const configHeadlineMetrics: Map<string, ConfigHeadlineMetric> =
+    metrics.length === 0 && teams.length > 0
+      ? (getConfigurationHeadlineMetrics(teams.map((t) => t.slug)) as Map<
+          string,
+          ConfigHeadlineMetric
+        >)
+      : new Map();
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
@@ -116,7 +129,43 @@ export default async function AgentProfilePage({ params }: PageProps) {
           <section>
             <h2 className="text-lg font-semibold tracking-tight">Metrics</h2>
             <div className="mt-3">
-              <MetricGrid metrics={metrics} />
+              {metrics.length > 0 ? (
+                <MetricGrid metrics={metrics} />
+              ) : teams.length > 0 ? (
+                <div className="rounded-lg border border-dashed border-border p-5">
+                  <p className="text-sm text-text-secondary">
+                    Metrics for this agent are tracked at the configuration level.
+                  </p>
+                  <ul className="mt-3 space-y-2.5">
+                    {teams.map((team) => {
+                      const headline: ConfigHeadlineMetric | undefined = configHeadlineMetrics.get(
+                        team.slug
+                      );
+                      return (
+                        <li key={team.slug} className="flex flex-wrap items-center gap-2">
+                          <Link
+                            href={`/configurations/${team.slug}`}
+                            className="text-sm font-medium text-accent hover:underline"
+                          >
+                            {team.avatar} {team.name}
+                          </Link>
+                          {headline && headline.value !== null && (
+                            <span className="inline-flex items-center gap-1.5 rounded border border-border bg-surface-elevated px-2 py-0.5 text-xs">
+                              <span className="text-text-tertiary">{headline.label}:</span>
+                              <span className="font-semibold text-text-primary">
+                                {formatMetricValue(headline.value, headline.unit)}
+                              </span>
+                              <ProvenanceTag provenance={headline.provenance} />
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : (
+                <MetricGrid metrics={[]} />
+              )}
             </div>
           </section>
 

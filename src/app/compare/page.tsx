@@ -256,7 +256,8 @@ export default async function ComparePage({ searchParams }: PageProps) {
                     <div className="min-w-0">
                       <Link
                         href={`/configurations/${c.configuration.slug}`}
-                        className="block text-sm font-semibold text-text-primary hover:text-accent"
+                        className="block line-clamp-2 overflow-hidden text-sm font-semibold text-text-primary hover:text-accent"
+                        title={c.configuration.name}
                       >
                         {c.configuration.name}
                       </Link>

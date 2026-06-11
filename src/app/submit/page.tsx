@@ -366,6 +366,7 @@ export default function SubmitPage() {
               name="operationalSince"
               type="date"
               className={`mt-1.5 ${inputClasses}`}
+              style={{ colorScheme: 'dark' }}
             />
           </div>
         </section>

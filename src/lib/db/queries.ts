@@ -391,6 +391,40 @@ export function getTeamProfile(slug: string): ConfigurationProfile | null {
   return getConfigurationProfile(slug);
 }
 
+/**
+ * Fetch the single best (non-null value preferred) headline metric for each
+ * of the given configuration slugs.  Used by the agent-profile page to surface
+ * configuration-level metrics when the agent itself has none.
+ */
+export function getConfigurationHeadlineMetrics(
+  slugs: string[]
+): Map<string, MetricRow & { configName: string }> {
+  const result = new Map<string, MetricRow & { configName: string }>();
+  if (slugs.length === 0) return result;
+  const db = getDb();
+  for (const slug of slugs) {
+    const config = db.prepare('SELECT id, name FROM configurations WHERE slug=?').get(slug) as
+      | { id: number; name: string }
+      | undefined;
+    if (!config) continue;
+    const keyPlaceholders = CARD_METRIC_KEYS.map(() => '?').join(',');
+    const metric = db
+      .prepare(
+        `SELECT * FROM metrics
+         WHERE subject_type='configuration' AND subject_id=? AND key IN (${keyPlaceholders})
+         ORDER BY CASE WHEN value IS NULL THEN 1 ELSE 0 END,
+                  CASE key WHEN 'window_reconciliation_pct' THEN 0 WHEN 'uptime_pct' THEN 1
+                           WHEN 'tasks_completed' THEN 2 ELSE 3 END
+         LIMIT 1`
+      )
+      .get(config.id, ...CARD_METRIC_KEYS) as MetricRow | undefined;
+    if (metric) {
+      result.set(slug, { ...metric, configName: config.name });
+    }
+  }
+  return result;
+}
+
 export function getOwnerProfile(handle: string): OwnerProfile | null {
   const owner = getDb().prepare('SELECT * FROM owners WHERE handle=?').get(handle) as
     | OwnerRow

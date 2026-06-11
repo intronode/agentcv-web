@@ -23,6 +23,10 @@ export default async function OwnerProfilePage({ params }: PageProps) {
   if (!profile) notFound();
   const { owner, agents, configurations } = profile;
 
+  const totalProof =
+    agents.reduce((s, a) => s + a.proofCount, 0) +
+    configurations.reduce((s, c) => s + c.proofCount, 0);
+
   // Detect curated-owner disclosure embedded by seed.ts
   const isCurated =
     !!owner.bio &&
@@ -65,8 +69,32 @@ export default async function OwnerProfilePage({ params }: PageProps) {
         </div>
       </header>
 
+      {/* Compact summary strip — gives above-the-fold density */}
+      <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg border border-border bg-surface-elevated px-4 py-3 text-sm">
+        <span className="font-semibold text-text-primary">
+          {configurations.length}{' '}
+          <span className="font-normal text-text-tertiary">
+            configuration{configurations.length === 1 ? '' : 's'}
+          </span>
+        </span>
+        <span className="text-border">·</span>
+        <span className="font-semibold text-text-primary">
+          {agents.length}{' '}
+          <span className="font-normal text-text-tertiary">
+            agent component{agents.length === 1 ? '' : 's'}
+          </span>
+        </span>
+        <span className="text-border">·</span>
+        <span className="font-semibold text-text-primary">
+          {totalProof}{' '}
+          <span className="font-normal text-text-tertiary">
+            proof entr{totalProof === 1 ? 'y' : 'ies'}
+          </span>
+        </span>
+      </div>
+
       {isCurated && (
-        <p className="mt-6 rounded-lg border border-blue-400/30 bg-blue-500/5 px-4 py-3 text-xs leading-relaxed text-blue-200">
+        <p className="mt-4 rounded-lg border border-blue-400/30 bg-blue-500/5 px-4 py-3 text-xs leading-relaxed text-blue-200">
           This owner profile was curated from cited public sources and has not been claimed by the
           organization. Data reflects what is publicly documented.
         </p>

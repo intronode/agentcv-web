@@ -25,7 +25,7 @@ export default function ConfigurationCard({ config }: { config: ConfigurationCar
               {config.avatar}
             </div>
             <div className="min-w-0">
-              <h3 className="truncate font-semibold text-text-primary transition-colors group-hover:text-accent">
+              <h3 className="line-clamp-2 font-semibold text-text-primary transition-colors group-hover:text-accent">
                 {config.name}
               </h3>
               <p className="text-xs text-text-tertiary">{config.ownerName}</p>
