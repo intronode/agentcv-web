@@ -27,7 +27,7 @@ import type {
  *   Evidence URLs use example.com so they cannot be mistaken for real proof.
  * - No subject is seeded at platform_verified — the platform has verified
  *   nothing, and the seed must not lie about that. (Tier is computed anyway.)
- * - subject_type: 'configuration' is used throughout (v3 'team' is gone).
+ * - subject_type: 'team' is used throughout for team subjects (v4.1 rename from 'configuration').
  */
 
 const REPO = 'https://github.com/intronode/agentcv-web';
@@ -1123,9 +1123,9 @@ export function seed(db: Database.Database): void {
     agentIds.set(a.slug, Number(res.lastInsertRowid));
   }
 
-  // ---- configurations (renamed from teams) ----
+  // ---- teams (v4.1 rename from configurations) ----
   const insConfig = db.prepare(
-    `INSERT INTO configurations (slug, name, avatar, kind, tagline, about, topology, oversight, how_built,
+    `INSERT INTO teams (slug, name, avatar, kind, tagline, about, topology, oversight, how_built,
        owner_id, operational_since, featured, topology_type, agent_count, platform, industries,
        task_kinds, why_it_works, seed_layer, source_url, source_name)
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
@@ -1144,7 +1144,7 @@ export function seed(db: Database.Database): void {
       about:
         'A real, operating agent configuration. Topology, role boundaries, lessons, and operating dates are real [verified-from-logs/rules]. Lifetime metrics are shown as [unknown] rather than invented; the windowed reconciliation metric is derived from the task registry. Entries with approximate dates are marked illustrative.',
       topology:
-        'Hub-and-spoke. Ari (hub) scopes and routes work; Stanley executes engineering; Arthur runs operations; Laplace audits independently. Acceptance flows through Laplace or the human owner — never through the agent that did the work.',
+        'Orchestrator–worker. Ari orchestrates and routes work; Stanley executes engineering; Arthur runs operations; Laplace audits independently. Acceptance flows through Laplace or the human owner — never through the agent that did the work.',
       oversight:
         'Human-on-the-loop. Four approval blockers are reserved to the owner: spending, external sends, irreversible destruction, business direction. Everything else is decide → execute → report.',
       howBuilt:
@@ -1153,13 +1153,13 @@ export function seed(db: Database.Database): void {
       operationalSince: '2026-03-22',
       featured: true,
       seedLayer: 'real',
-      topologyType: 'hub_and_spoke',
+      topologyType: 'orchestrator_worker',
       agentCount: 4,
       platform: 'OpenClaw',
       industries: ['software-delivery', 'ops'],
       taskKinds: ['product-engineering', 'deploy-verification', 'independent-qa', 'ops-monitoring'],
       whyItWorks:
-        'Role boundaries enforced by per-agent permissions make failures traceable. The hub-and-spoke topology keeps orchestration separate from execution. Independent audit (Laplace never QAs its own work) breaks the self-certification failure mode common in single-agent loops.',
+        'Role boundaries enforced by per-agent permissions make failures traceable. The orchestrator–worker topology keeps orchestration separate from execution. Independent audit (Laplace never QAs its own work) breaks the self-certification failure mode common in single-agent loops.',
       members: [
         ['ari', 'Orchestrator', 'Scoping, routing, exception drill-down, final synthesis'],
         ['stanley', 'Engineer', 'Implementation, refactors, build and test'],
@@ -1191,7 +1191,7 @@ export function seed(db: Database.Database): void {
       seedLayer: 'curated',
       sourceUrl: 'https://www.anthropic.com/research/building-effective-agents',
       sourceName: 'Anthropic — Building Effective Agents',
-      topologyType: 'hub_and_spoke',
+      topologyType: 'orchestrator_worker',
       agentCount: 2,
       platform: 'Claude API',
       industries: ['software-delivery', 'research', 'data-extraction'],
@@ -1263,7 +1263,7 @@ export function seed(db: Database.Database): void {
       seedLayer: 'curated',
       sourceUrl: 'https://code.claude.com/docs/en/sub-agents',
       sourceName: 'Claude Code Docs — Sub-agents',
-      topologyType: 'hub_and_spoke',
+      topologyType: 'orchestrator_worker',
       agentCount: 2,
       platform: 'Claude Code',
       industries: ['software-delivery'],
@@ -1296,7 +1296,7 @@ export function seed(db: Database.Database): void {
       seedLayer: 'curated',
       sourceUrl: 'https://arxiv.org/abs/2411.04468',
       sourceName: 'arXiv 2411.04468 — Magentic-One',
-      topologyType: 'hierarchical',
+      topologyType: 'supervisor',
       agentCount: 5,
       platform: 'AutoGen',
       industries: ['research', 'software-delivery', 'data-extraction'],
@@ -1435,7 +1435,7 @@ export function seed(db: Database.Database): void {
       seedLayer: 'curated',
       sourceUrl: 'https://code.claude.com/docs/en/agent-teams',
       sourceName: 'Claude Code Docs — Agent Teams',
-      topologyType: 'peer',
+      topologyType: 'swarm',
       agentCount: 3,
       platform: 'Claude Code',
       industries: ['software-delivery'],
@@ -1474,7 +1474,7 @@ export function seed(db: Database.Database): void {
       seedLayer: 'curated',
       sourceUrl: 'https://arxiv.org/abs/2303.17760',
       sourceName: 'arXiv 2303.17760 — CAMEL (NeurIPS 2023)',
-      topologyType: 'peer',
+      topologyType: 'swarm',
       agentCount: 2,
       platform: 'CAMEL',
       industries: ['research', 'education'],
@@ -1507,7 +1507,7 @@ export function seed(db: Database.Database): void {
       seedLayer: 'curated',
       sourceUrl: 'https://arxiv.org/abs/2304.03442',
       sourceName: 'arXiv 2304.03442 — Generative Agents',
-      topologyType: 'peer',
+      topologyType: 'swarm',
       agentCount: 25,
       platform: 'Custom (The Sims-inspired sandbox)',
       industries: ['research', 'gaming'],
@@ -1718,7 +1718,7 @@ export function seed(db: Database.Database): void {
       seedLayer: 'curated',
       sourceUrl: 'https://github.com/openai/swarm',
       sourceName: 'OpenAI Swarm GitHub',
-      topologyType: 'hub_and_spoke',
+      topologyType: 'orchestrator_worker',
       agentCount: 3,
       platform: 'OpenAI Swarm (deprecated)',
       industries: ['customer-support', 'operations'],
@@ -1759,7 +1759,7 @@ export function seed(db: Database.Database): void {
       seedLayer: 'curated',
       sourceUrl: 'https://arxiv.org/abs/2308.08155',
       sourceName: 'arXiv 2308.08155 — AutoGen',
-      topologyType: 'hierarchical',
+      topologyType: 'supervisor',
       agentCount: 3,
       platform: 'AutoGen',
       industries: ['software-delivery', 'research', 'data-extraction'],
@@ -1792,7 +1792,7 @@ export function seed(db: Database.Database): void {
       seedLayer: 'curated',
       sourceUrl: 'https://arxiv.org/abs/2308.10848',
       sourceName: 'arXiv 2308.10848 — AgentVerse',
-      topologyType: 'hierarchical',
+      topologyType: 'supervisor',
       agentCount: 4,
       platform: 'AgentVerse',
       industries: ['research', 'education'],
@@ -1828,7 +1828,7 @@ export function seed(db: Database.Database): void {
       seedLayer: 'curated',
       sourceUrl: 'https://arxiv.org/abs/2511.11788',
       sourceName: 'arXiv 2511.11788 — MALBO',
-      topologyType: 'hierarchical',
+      topologyType: 'supervisor',
       agentCount: 3,
       platform: 'MALBO',
       industries: ['research', 'software-delivery'],
@@ -1896,7 +1896,7 @@ export function seed(db: Database.Database): void {
       operationalSince: '2025-10-15',
       owner: 'helios-labs',
       seedLayer: 'illustrative',
-      topologyType: 'peer',
+      topologyType: 'swarm',
       agentCount: 3,
       platform: 'Custom',
       industries: ['data-extraction', 'research'],
@@ -1956,7 +1956,7 @@ export function seed(db: Database.Database): void {
         'Custom event-driven architecture. Agents subscribe to domain-specific event streams. Repricing engine uses competitor signal feeds and margin rules as inputs. (Fictional.)',
       owner: 'shopstream',
       seedLayer: 'illustrative',
-      topologyType: 'peer',
+      topologyType: 'swarm',
       agentCount: 3,
       platform: 'Custom',
       industries: ['e-commerce'],
@@ -1985,7 +1985,7 @@ export function seed(db: Database.Database): void {
         'LangGraph fan-out: PR diff dispatched to three parallel reviewers; findings collected into structured JSON; synthesis model merges and deduplicates. (Fictional.)',
       owner: 'dkraft',
       seedLayer: 'illustrative',
-      topologyType: 'peer',
+      topologyType: 'swarm',
       agentCount: 3,
       platform: 'LangGraph',
       industries: ['software-delivery'],
@@ -2000,7 +2000,7 @@ export function seed(db: Database.Database): void {
     },
   ];
   const insMember = db.prepare(
-    'INSERT INTO configuration_members (configuration_id, agent_id, role, role_detail, ordinal) VALUES (?,?,?,?,?)'
+    'INSERT INTO team_members (team_id, agent_id, role, role_detail, ordinal) VALUES (?,?,?,?,?)'
   );
   for (const c of configurations) {
     const ownerId = ownerIds.get(c.owner);
@@ -2043,7 +2043,7 @@ export function seed(db: Database.Database): void {
   const proofs: SeedProof[] = [
     // -- The Ari Collective (real content; illustrative flag marks approximations) --
     {
-      subject: ['configuration', 'ari-collective'],
+      subject: ['team', 'ari-collective'],
       date: '2026-06-08',
       type: 'milestone',
       title: 'Shipped AgentCV v2 (Sprints 1–5)',
@@ -2052,7 +2052,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'ari-collective'],
+      subject: ['team', 'ari-collective'],
       date: '2026-06-09',
       type: 'incident',
       title: 'Vercel CI builds broken by husky prepare script',
@@ -2062,7 +2062,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['configuration', 'ari-collective'],
+      subject: ['team', 'ari-collective'],
       date: '2026-04-02',
       type: 'lesson',
       title: 'Supabase SSR cookies vs browser-client localStorage',
@@ -2071,7 +2071,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['configuration', 'ari-collective'],
+      subject: ['team', 'ari-collective'],
       date: '2026-05-20',
       type: 'lesson',
       title: 'Measure multi-byte files in chars (wc -m), not bytes (wc -c)',
@@ -2080,7 +2080,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['configuration', 'ari-collective'],
+      subject: ['team', 'ari-collective'],
       date: '2026-06-11',
       type: 'task',
       title: 'AgentCV v3 rebuild — local-first, teams first-class',
@@ -2148,7 +2148,7 @@ export function seed(db: Database.Database): void {
 
     // -- CURATED configuration proof entries (evidence_linked to source URLs) --
     {
-      subject: ['configuration', 'anthropic-orchestrator-workers'],
+      subject: ['team', 'anthropic-orchestrator-workers'],
       date: '2025-01-01',
       type: 'artifact',
       title: 'Anthropic "Building Effective Agents" engineering guide published',
@@ -2157,7 +2157,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'anthropic-swe-bench-agent'],
+      subject: ['team', 'anthropic-swe-bench-agent'],
       date: '2024-10-22',
       type: 'milestone',
       title: 'Claude 3.5 Sonnet achieves 49% on SWE-bench Verified',
@@ -2166,7 +2166,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'claude-code-subagents'],
+      subject: ['team', 'claude-code-subagents'],
       date: '2025-06-01',
       type: 'artifact',
       title: 'Claude Code sub-agents documentation published',
@@ -2175,7 +2175,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'claude-code-agent-teams'],
+      subject: ['team', 'claude-code-agent-teams'],
       date: '2025-06-01',
       type: 'artifact',
       title: 'Claude Code Agent Teams documentation published (experimental)',
@@ -2184,7 +2184,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'magentic-one'],
+      subject: ['team', 'magentic-one'],
       date: '2024-11-07',
       type: 'artifact',
       title: 'Magentic-One paper published (arXiv 2411.04468)',
@@ -2193,7 +2193,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'metagpt-pipeline'],
+      subject: ['team', 'metagpt-pipeline'],
       date: '2023-08-01',
       type: 'artifact',
       title: 'MetaGPT paper published (arXiv 2308.00352)',
@@ -2202,7 +2202,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'chatdev-pipeline'],
+      subject: ['team', 'chatdev-pipeline'],
       date: '2023-07-14',
       type: 'artifact',
       title: 'ChatDev paper published (arXiv 2307.07924)',
@@ -2211,7 +2211,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'crewai-research-crew'],
+      subject: ['team', 'crewai-research-crew'],
       date: '2024-01-01',
       type: 'artifact',
       title: 'CrewAI sequential crew pattern documented in official docs',
@@ -2222,7 +2222,7 @@ export function seed(db: Database.Database): void {
 
     // -- New curated configuration proof entries (QA cycle-01 additions) --
     {
-      subject: ['configuration', 'camel-two-agent'],
+      subject: ['team', 'camel-two-agent'],
       date: '2023-03-31',
       type: 'artifact',
       title: 'CAMEL paper published — arXiv 2303.17760 (NeurIPS 2023)',
@@ -2231,7 +2231,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'generative-agents-smallville'],
+      subject: ['team', 'generative-agents-smallville'],
       date: '2023-04-07',
       type: 'artifact',
       title: 'Generative Agents paper published — arXiv 2304.03442',
@@ -2240,7 +2240,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'swe-agent-config'],
+      subject: ['team', 'swe-agent-config'],
       date: '2024-04-02',
       type: 'artifact',
       title: 'SWE-agent paper published — arXiv 2405.15793',
@@ -2249,7 +2249,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'voyager-minecraft'],
+      subject: ['team', 'voyager-minecraft'],
       date: '2023-05-25',
       type: 'artifact',
       title: 'Voyager paper published — arXiv 2305.16291',
@@ -2258,7 +2258,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'aider-architect-editor'],
+      subject: ['team', 'aider-architect-editor'],
       date: '2024-09-26',
       type: 'artifact',
       title: 'Aider architect/editor mode blog post published',
@@ -2267,7 +2267,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'openhands-dev'],
+      subject: ['team', 'openhands-dev'],
       date: '2024-07-23',
       type: 'artifact',
       title: 'OpenHands paper published — arXiv 2407.16741 (accepted ICLR 2025)',
@@ -2276,7 +2276,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'smolagents-code'],
+      subject: ['team', 'smolagents-code'],
       date: '2025-01-01',
       type: 'artifact',
       title: 'smolagents CodeAgent documented in Hugging Face docs',
@@ -2285,7 +2285,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'openai-swarm-triage'],
+      subject: ['team', 'openai-swarm-triage'],
       date: '2024-10-11',
       type: 'artifact',
       title: 'OpenAI Swarm GitHub repository published (educational, now deprecated)',
@@ -2294,7 +2294,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'autogen-group-chat'],
+      subject: ['team', 'autogen-group-chat'],
       date: '2023-08-16',
       type: 'artifact',
       title: 'AutoGen paper published — arXiv 2308.08155',
@@ -2303,7 +2303,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'agentverse-group'],
+      subject: ['team', 'agentverse-group'],
       date: '2023-08-21',
       type: 'artifact',
       title: 'AgentVerse paper published — arXiv 2308.10848',
@@ -2312,7 +2312,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'malbo-optimized-team'],
+      subject: ['team', 'malbo-optimized-team'],
       date: '2024-11-18',
       type: 'artifact',
       title: 'MALBO paper published — arXiv 2511.11788',
@@ -2419,7 +2419,7 @@ export function seed(db: Database.Database): void {
     },
     // -- Fictional configurations --
     {
-      subject: ['configuration', 'mira-support-desk'],
+      subject: ['team', 'mira-support-desk'],
       date: '2026-05-29',
       type: 'task',
       title: 'Bilingual launch for EU customer',
@@ -2428,7 +2428,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['configuration', 'mira-support-desk'],
+      subject: ['team', 'mira-support-desk'],
       date: '2026-05-02',
       type: 'milestone',
       title: 'Sub-2-minute median first response, 60 days',
@@ -2437,7 +2437,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['configuration', 'mira-support-desk'],
+      subject: ['team', 'mira-support-desk'],
       date: '2026-04-11',
       type: 'incident',
       title: 'Escalation queue overflow during outage spike',
@@ -2447,7 +2447,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['configuration', 'helios-swarm'],
+      subject: ['team', 'helios-swarm'],
       date: '2026-05-20',
       type: 'task',
       title: 'Scaled to 2 regional workers from one blueprint',
@@ -2456,7 +2456,7 @@ export function seed(db: Database.Database): void {
     },
     // -- new illustrative config proofs --
     {
-      subject: ['configuration', 'nexus-content-pipeline'],
+      subject: ['team', 'nexus-content-pipeline'],
       date: '2026-05-10',
       type: 'milestone',
       title: '500 articles published through the pipeline',
@@ -2465,7 +2465,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['configuration', 'nexus-content-pipeline'],
+      subject: ['team', 'nexus-content-pipeline'],
       date: '2026-04-20',
       type: 'incident',
       title: 'Brand-voice drift detected after writer system prompt update',
@@ -2474,7 +2474,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['configuration', 'shopstream-ops-collective'],
+      subject: ['team', 'shopstream-ops-collective'],
       date: '2026-05-15',
       type: 'task',
       title: 'Spring sale: 12,400 orders routed across 3 fulfillment centers',
@@ -2483,7 +2483,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['configuration', 'shopstream-ops-collective'],
+      subject: ['team', 'shopstream-ops-collective'],
       date: '2026-04-01',
       type: 'lesson',
       title: 'Repricing agent triggered margin breach on a clearance category',
@@ -2492,7 +2492,7 @@ export function seed(db: Database.Database): void {
       illustrative: true,
     },
     {
-      subject: ['configuration', 'dkraft-ci-reviewer'],
+      subject: ['team', 'dkraft-ci-reviewer'],
       date: '2026-05-25',
       type: 'milestone',
       title: '1,000 PRs reviewed with zero missed HIGH-severity findings',
@@ -2535,7 +2535,7 @@ export function seed(db: Database.Database): void {
     //    Per-agent registry counts deliberately not shown: the current window
     //    is control-plane biased and would misrepresent member history.
     {
-      subject: ['configuration', 'ari-collective'],
+      subject: ['team', 'ari-collective'],
       key: 'window_reconciliation_pct',
       label: 'Windowed reconciliation',
       value: 90.8,
@@ -2545,7 +2545,7 @@ export function seed(db: Database.Database): void {
       illustrative: false,
     },
     {
-      subject: ['configuration', 'ari-collective'],
+      subject: ['team', 'ari-collective'],
       key: 'tasks_completed',
       label: 'Lifetime tasks',
       value: null,
@@ -2555,7 +2555,7 @@ export function seed(db: Database.Database): void {
       illustrative: false,
     },
     {
-      subject: ['configuration', 'ari-collective'],
+      subject: ['team', 'ari-collective'],
       key: 'success_rate',
       label: 'Lifetime success rate',
       value: null,
@@ -2565,7 +2565,7 @@ export function seed(db: Database.Database): void {
       illustrative: false,
     },
     {
-      subject: ['configuration', 'ari-collective'],
+      subject: ['team', 'ari-collective'],
       key: 'cost_per_task_usd',
       label: 'Cost per task',
       value: null,
@@ -2577,7 +2577,7 @@ export function seed(db: Database.Database): void {
 
     // -- CURATED metrics (evidence_linked; only what the source states) --
     {
-      subject: ['configuration', 'anthropic-swe-bench-agent'],
+      subject: ['team', 'anthropic-swe-bench-agent'],
       key: 'success_rate',
       label: 'SWE-bench Verified score',
       value: 49,
@@ -2588,7 +2588,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'magentic-one'],
+      subject: ['team', 'magentic-one'],
       key: 'gaia_score',
       label: 'GAIA benchmark score',
       value: 32.33,
@@ -2599,7 +2599,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'magentic-one'],
+      subject: ['team', 'magentic-one'],
       key: 'webarena_score',
       label: 'WebArena score',
       value: 32.8,
@@ -2610,7 +2610,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'metagpt-pipeline'],
+      subject: ['team', 'metagpt-pipeline'],
       key: 'tokens_per_loc',
       label: 'Tokens per line of code',
       value: 124.3,
@@ -2621,7 +2621,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'metagpt-pipeline'],
+      subject: ['team', 'metagpt-pipeline'],
       key: 'success_rate',
       label: 'HumanEval Pass@1',
       value: 85.9,
@@ -2632,7 +2632,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'chatdev-pipeline'],
+      subject: ['team', 'chatdev-pipeline'],
       key: 'avg_response_ms',
       label: 'Avg task duration',
       value: 148200,
@@ -2643,7 +2643,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'chatdev-pipeline'],
+      subject: ['team', 'chatdev-pipeline'],
       key: 'tasks_completed',
       label: 'Avg tokens per task',
       value: 22949,
@@ -2656,7 +2656,7 @@ export function seed(db: Database.Database): void {
 
     // -- New curated metrics (QA cycle-01 additions, evidence_linked) --
     {
-      subject: ['configuration', 'swe-agent-config'],
+      subject: ['team', 'swe-agent-config'],
       key: 'success_rate',
       label: 'SWE-bench pass@1',
       value: 12.5,
@@ -2667,7 +2667,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'swe-agent-config'],
+      subject: ['team', 'swe-agent-config'],
       key: 'human_eval_fix',
       label: 'HumanEvalFix score',
       value: 87.7,
@@ -2678,7 +2678,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'voyager-minecraft'],
+      subject: ['team', 'voyager-minecraft'],
       key: 'items_multiplier',
       label: 'Unique items vs SOTA',
       value: 3.3,
@@ -2689,7 +2689,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'voyager-minecraft'],
+      subject: ['team', 'voyager-minecraft'],
       key: 'tech_tree_speed',
       label: 'Tech tree speed vs SOTA',
       value: 15.3,
@@ -2700,7 +2700,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'aider-architect-editor'],
+      subject: ['team', 'aider-architect-editor'],
       key: 'success_rate',
       label: 'SWE-bench score',
       value: 85.0,
@@ -2711,7 +2711,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'malbo-optimized-team'],
+      subject: ['team', 'malbo-optimized-team'],
       key: 'cost_reduction',
       label: 'Cost reduction vs random',
       value: 45,
@@ -2726,7 +2726,7 @@ export function seed(db: Database.Database): void {
 
     // anthropic-swe-bench-agent: add previous SOTA baseline for context
     {
-      subject: ['configuration', 'anthropic-swe-bench-agent'],
+      subject: ['team', 'anthropic-swe-bench-agent'],
       key: 'prior_sota_pct',
       label: 'Prior SOTA at publication',
       value: 45,
@@ -2739,7 +2739,7 @@ export function seed(db: Database.Database): void {
 
     // magentic-one: AssistantBench accuracy
     {
-      subject: ['configuration', 'magentic-one'],
+      subject: ['team', 'magentic-one'],
       key: 'assistantbench_score',
       label: 'AssistantBench accuracy',
       value: 25.3,
@@ -2752,7 +2752,7 @@ export function seed(db: Database.Database): void {
 
     // metagpt-pipeline: executability score and MBPP
     {
-      subject: ['configuration', 'metagpt-pipeline'],
+      subject: ['team', 'metagpt-pipeline'],
       key: 'executability_score',
       label: 'Executability score (SoftwareDev)',
       value: 3.75,
@@ -2763,7 +2763,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'metagpt-pipeline'],
+      subject: ['team', 'metagpt-pipeline'],
       key: 'mbpp_score',
       label: 'MBPP Pass@1',
       value: 87.7,
@@ -2776,7 +2776,7 @@ export function seed(db: Database.Database): void {
 
     // chatdev-pipeline: executability and win rate
     {
-      subject: ['configuration', 'chatdev-pipeline'],
+      subject: ['team', 'chatdev-pipeline'],
       key: 'executability_score',
       label: 'Executability score',
       value: 0.88,
@@ -2787,7 +2787,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'chatdev-pipeline'],
+      subject: ['team', 'chatdev-pipeline'],
       key: 'win_rate_pct',
       label: 'Win rate vs GPT-Engineer',
       value: 77,
@@ -2800,7 +2800,7 @@ export function seed(db: Database.Database): void {
 
     // aider-architect-editor: Claude 3.5 score alongside o1 score
     {
-      subject: ['configuration', 'aider-architect-editor'],
+      subject: ['team', 'aider-architect-editor'],
       key: 'claude_35_both_score',
       label: 'SWE-bench (Claude 3.5, both roles)',
       value: 80.5,
@@ -2813,7 +2813,7 @@ export function seed(db: Database.Database): void {
 
     // voyager-minecraft: distance multiplier
     {
-      subject: ['configuration', 'voyager-minecraft'],
+      subject: ['team', 'voyager-minecraft'],
       key: 'distance_multiplier',
       label: 'Exploration distance vs SOTA',
       value: 2.3,
@@ -2826,7 +2826,7 @@ export function seed(db: Database.Database): void {
 
     // malbo-optimized-team: heterogeneous cost reduction
     {
-      subject: ['configuration', 'malbo-optimized-team'],
+      subject: ['team', 'malbo-optimized-team'],
       key: 'cost_reduction_heterogeneous',
       label: 'Cost reduction (heterogeneous vs homogeneous)',
       value: 65.8,
@@ -2839,7 +2839,7 @@ export function seed(db: Database.Database): void {
 
     // openhands-dev: SWE-Bench Lite (Claude 3.5 Sonnet)
     {
-      subject: ['configuration', 'openhands-dev'],
+      subject: ['team', 'openhands-dev'],
       key: 'success_rate',
       label: 'SWE-bench Lite resolved',
       value: 26,
@@ -2850,7 +2850,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'openhands-dev'],
+      subject: ['team', 'openhands-dev'],
       key: 'human_eval_fix',
       label: 'HumanEvalFix score',
       value: 79.3,
@@ -2863,7 +2863,7 @@ export function seed(db: Database.Database): void {
 
     // autogen-group-chat: MATH dataset and ALFWorld
     {
-      subject: ['configuration', 'autogen-group-chat'],
+      subject: ['team', 'autogen-group-chat'],
       key: 'success_rate',
       label: 'MATH dataset accuracy',
       value: 69.48,
@@ -2874,7 +2874,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'autogen-group-chat'],
+      subject: ['team', 'autogen-group-chat'],
       key: 'alfworld_gain',
       label: 'ALFWorld 3-agent gain vs 2-agent',
       value: 15,
@@ -2887,7 +2887,7 @@ export function seed(db: Database.Database): void {
 
     // agentverse-group: HumanEval and tool utilization
     {
-      subject: ['configuration', 'agentverse-group'],
+      subject: ['team', 'agentverse-group'],
       key: 'success_rate',
       label: 'HumanEval Pass@1 (GPT-4, group)',
       value: 89,
@@ -2898,7 +2898,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'agentverse-group'],
+      subject: ['team', 'agentverse-group'],
       key: 'tool_tasks_completed',
       label: 'Complex tool tasks completed',
       value: 9,
@@ -2911,7 +2911,7 @@ export function seed(db: Database.Database): void {
 
     // camel-two-agent: win rate vs single agent
     {
-      subject: ['configuration', 'camel-two-agent'],
+      subject: ['team', 'camel-two-agent'],
       key: 'win_rate_pct',
       label: 'Win rate vs single-shot GPT-3.5',
       value: 76.3,
@@ -2922,7 +2922,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'camel-two-agent'],
+      subject: ['team', 'camel-two-agent'],
       key: 'gpt4_eval_win_rate',
       label: 'Win rate (GPT-4 evaluation)',
       value: 73,
@@ -2935,7 +2935,7 @@ export function seed(db: Database.Database): void {
 
     // generative-agents-smallville: TrueSkill and hallucination rate
     {
-      subject: ['configuration', 'generative-agents-smallville'],
+      subject: ['team', 'generative-agents-smallville'],
       key: 'trueskill_rating',
       label: 'TrueSkill believability (full arch)',
       value: 29.89,
@@ -2946,7 +2946,7 @@ export function seed(db: Database.Database): void {
       provenance: 'evidence_linked',
     },
     {
-      subject: ['configuration', 'generative-agents-smallville'],
+      subject: ['team', 'generative-agents-smallville'],
       key: 'hallucination_rate',
       label: 'Hallucination rate',
       value: 1.3,
@@ -2959,7 +2959,7 @@ export function seed(db: Database.Database): void {
 
     // smolagents-code: code size (stated as ~1000 LOC)
     {
-      subject: ['configuration', 'smolagents-code'],
+      subject: ['team', 'smolagents-code'],
       key: 'codebase_loc',
       label: 'Agent logic lines of code',
       value: 1000,
@@ -2971,7 +2971,7 @@ export function seed(db: Database.Database): void {
     },
     // smolagents: no benchmark scores published on main docs page; null metric as honest label
     {
-      subject: ['configuration', 'smolagents-code'],
+      subject: ['team', 'smolagents-code'],
       key: 'success_rate',
       label: 'Benchmark task success rate',
       value: null,
@@ -2984,7 +2984,7 @@ export function seed(db: Database.Database): void {
 
     // anthropic-orchestrator-workers: no quantitative figures in source
     {
-      subject: ['configuration', 'anthropic-orchestrator-workers'],
+      subject: ['team', 'anthropic-orchestrator-workers'],
       key: 'success_rate',
       label: 'Task success rate',
       value: null,
@@ -2997,7 +2997,7 @@ export function seed(db: Database.Database): void {
 
     // claude-code-subagents: no external benchmark figures
     {
-      subject: ['configuration', 'claude-code-subagents'],
+      subject: ['team', 'claude-code-subagents'],
       key: 'success_rate',
       label: 'Task success rate',
       value: null,
@@ -3010,7 +3010,7 @@ export function seed(db: Database.Database): void {
 
     // claude-code-agent-teams: no external benchmark figures
     {
-      subject: ['configuration', 'claude-code-agent-teams'],
+      subject: ['team', 'claude-code-agent-teams'],
       key: 'success_rate',
       label: 'Task success rate',
       value: null,
@@ -3023,7 +3023,7 @@ export function seed(db: Database.Database): void {
 
     // crewai-research-crew: no benchmark figures in tutorial source
     {
-      subject: ['configuration', 'crewai-research-crew'],
+      subject: ['team', 'crewai-research-crew'],
       key: 'success_rate',
       label: 'Task success rate',
       value: null,
@@ -3036,7 +3036,7 @@ export function seed(db: Database.Database): void {
 
     // openai-swarm-triage: no benchmark figures in source
     {
-      subject: ['configuration', 'openai-swarm-triage'],
+      subject: ['team', 'openai-swarm-triage'],
       key: 'success_rate',
       label: 'Task success rate',
       value: null,
@@ -3059,46 +3059,22 @@ export function seed(db: Database.Database): void {
     m(['agent', 'helios-extractor-eu'], 'tasks_completed', 'Records extracted', 1200000, 'count'),
     m(['agent', 'helios-extractor-us'], 'tasks_completed', 'Records extracted', 940000, 'count'),
     m(['agent', 'translate-flow'], 'tasks_completed', 'Messages localized', 84000, 'count'),
-    m(['configuration', 'mira-support-desk'], 'tasks_completed', 'Tickets handled', 23800, 'count'),
-    m(['configuration', 'mira-support-desk'], 'success_rate', 'Resolution rate', 91.3, 'pct'),
-    m(['configuration', 'helios-swarm'], 'tasks_completed', 'Records extracted', 2140000, 'count'),
-    m(['configuration', 'helios-swarm'], 'cost_per_task_usd', 'Cost per 1k records', 0.31, 'usd'),
+    m(['team', 'mira-support-desk'], 'tasks_completed', 'Tickets handled', 23800, 'count'),
+    m(['team', 'mira-support-desk'], 'success_rate', 'Resolution rate', 91.3, 'pct'),
+    m(['team', 'helios-swarm'], 'tasks_completed', 'Records extracted', 2140000, 'count'),
+    m(['team', 'helios-swarm'], 'cost_per_task_usd', 'Cost per 1k records', 0.31, 'usd'),
+    m(['team', 'nexus-content-pipeline'], 'tasks_completed', 'Articles published', 512, 'count'),
+    m(['team', 'nexus-content-pipeline'], 'success_rate', 'Human approval rate', 94.2, 'pct'),
+    m(['team', 'shopstream-ops-collective'], 'tasks_completed', 'Orders processed', 48600, 'count'),
     m(
-      ['configuration', 'nexus-content-pipeline'],
-      'tasks_completed',
-      'Articles published',
-      512,
-      'count'
-    ),
-    m(
-      ['configuration', 'nexus-content-pipeline'],
-      'success_rate',
-      'Human approval rate',
-      94.2,
-      'pct'
-    ),
-    m(
-      ['configuration', 'shopstream-ops-collective'],
-      'tasks_completed',
-      'Orders processed',
-      48600,
-      'count'
-    ),
-    m(
-      ['configuration', 'shopstream-ops-collective'],
+      ['team', 'shopstream-ops-collective'],
       'cost_per_task_usd',
       'Cost per 100 orders',
       0.18,
       'usd'
     ),
-    m(['configuration', 'dkraft-ci-reviewer'], 'tasks_completed', 'PRs reviewed', 1240, 'count'),
-    m(
-      ['configuration', 'dkraft-ci-reviewer'],
-      'success_rate',
-      'Finding acceptance rate',
-      89.4,
-      'pct'
-    ),
+    m(['team', 'dkraft-ci-reviewer'], 'tasks_completed', 'PRs reviewed', 1240, 'count'),
+    m(['team', 'dkraft-ci-reviewer'], 'success_rate', 'Finding acceptance rate', 89.4, 'pct'),
   ];
   for (const x of metrics) {
     insMetric.run(
@@ -3154,8 +3130,8 @@ export function seed(db: Database.Database): void {
      VALUES (?,?,?,?,?,?,?)`
   );
   insAtt.run(
-    'configuration',
-    subjectId(['configuration', 'mira-support-desk']),
+    'team',
+    subjectId(['team', 'mira-support-desk']),
     'Nordwind GmbH (fictional)',
     'https://example.com/nordwind',
     'Customer, 6 months',

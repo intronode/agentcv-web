@@ -7,7 +7,7 @@ import { getLayerCounts } from '@/lib/db/queries';
 export const metadata: Metadata = {
   title: 'Harness Engineering — AgentCV',
   description:
-    'What harness engineering is, why agent composition is the unsolved problem, and how AgentCV documents configurations with honest provenance.',
+    'What harness engineering is, why agent composition is the unsolved problem, and how AgentCV documents teams with honest provenance.',
 };
 
 // The trust-tier ladder data (absorbed from /trust)
@@ -215,16 +215,16 @@ export default function HarnessEngineeringPage() {
         token economics, outcomes, industry fit — and compared. Our scan found none.
       </p>
 
-      {/* ── (c) How AgentCV documents configurations ──────────────────────── */}
+      {/* ── (c) How AgentCV documents teams ───────────────────────────────── */}
       <h2
         id="how-agentcv-documents"
         className="mt-12 scroll-mt-24 text-xl font-semibold tracking-tight"
       >
-        How AgentCV documents configurations
+        How AgentCV documents teams
       </h2>
       <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-        Every configuration on AgentCV is documented with a consistent set of comparable fields —
-        not marketing copy, not taglines. The schema:
+        Every team on AgentCV is documented with a consistent set of comparable fields — not
+        marketing copy, not taglines. The schema:
       </p>
 
       <div className="mt-4 overflow-hidden rounded-xl border border-border">
@@ -429,7 +429,7 @@ export default function HarnessEngineeringPage() {
           know how it fails and what its team learned, not just what it claims on a good day.
         </p>
         <Link
-          href="/configurations/ari-collective"
+          href="/teams/ari-collective"
           className="mt-3 inline-block text-sm text-accent hover:underline"
         >
           See it in practice: The Ari Collective →
@@ -439,10 +439,10 @@ export default function HarnessEngineeringPage() {
       {/* ── (e) CTAs ──────────────────────────────────────────────────────── */}
       <div className="mt-12 grid gap-3 sm:grid-cols-3">
         <Link
-          href="/configurations"
+          href="/teams"
           className="flex flex-col gap-1 rounded-xl border border-border bg-surface-elevated p-5 transition-colors hover:border-accent"
         >
-          <span className="font-semibold text-text-primary">Browse configurations</span>
+          <span className="font-semibold text-text-primary">Browse teams</span>
           <span className="text-xs text-text-secondary">
             Explore the registry. Filter by topology, platform, industry.
           </span>
@@ -453,7 +453,7 @@ export default function HarnessEngineeringPage() {
         >
           <span className="font-semibold text-text-primary">Compare side by side</span>
           <span className="text-xs text-text-secondary">
-            Put 2–3 configurations next to each other. Differences highlighted, [unknown] honest.
+            Put 2–3 teams next to each other. Differences highlighted, [unknown] honest.
           </span>
         </Link>
         <Link

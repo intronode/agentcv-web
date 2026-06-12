@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getOwnerProfile, getOwnersStrip, getCounts } from '@/lib/db/queries';
 import AgentCard from '@/components/AgentCard';
-import ConfigurationCard from '@/components/ConfigurationCard';
+import TeamCard from '@/components/TeamCard';
 import ContactForm from '@/components/ContactForm';
 import { formatDate, formatMetricValue } from '@/lib/format';
 
@@ -32,15 +32,14 @@ export default async function OwnerProfilePage({ params }: PageProps) {
   const { handle } = await params;
   const profile = getOwnerProfile(handle);
   if (!profile) notFound();
-  const { owner, agents, configurations, proofFeed } = profile;
+  const { owner, agents, teams, proofFeed } = profile;
 
-  // Owners strip — all owners with configurations, for cross-owner discoverability
+  // Owners strip — all owners with teams, for cross-owner discoverability
   const ownersStrip = getOwnersStrip();
-  const totalConfigs = getCounts().configurations;
+  const totalTeams = getCounts().teams;
 
   const totalProof =
-    agents.reduce((s, a) => s + a.proofCount, 0) +
-    configurations.reduce((s, c) => s + c.proofCount, 0);
+    agents.reduce((s, a) => s + a.proofCount, 0) + teams.reduce((s, t) => s + t.proofCount, 0);
 
   const evidenceLinked = proofFeed.filter((p) => p.evidence_url !== null).length;
 
@@ -123,9 +122,9 @@ export default async function OwnerProfilePage({ params }: PageProps) {
       {/* ── Compact summary strip ──────────────────────────────────────────── */}
       <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg border border-border bg-surface-elevated px-4 py-3 text-sm">
         <span className="font-semibold text-text-primary">
-          {configurations.length}{' '}
+          {teams.length}{' '}
           <span className="font-normal text-text-tertiary">
-            configuration{configurations.length === 1 ? '' : 's'}
+            team{teams.length === 1 ? '' : 's'}
           </span>
         </span>
         <span className="text-border">·</span>
@@ -169,8 +168,8 @@ export default async function OwnerProfilePage({ params }: PageProps) {
               <span className="text-sm font-normal text-text-tertiary">({agents.length})</span>
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
-              Individual agents that make up this owner&apos;s configurations. Each card shows
-              model, platform, metrics, and proof count.
+              Individual agents that make up this owner&apos;s teams. Each card shows model,
+              platform, metrics, and proof count.
             </p>
           </div>
           {agents.length > 0 && (
@@ -217,22 +216,19 @@ export default async function OwnerProfilePage({ params }: PageProps) {
         )}
       </section>
 
-      {/* ── Configurations ────────────────────────────────────────────────── */}
-      {configurations.length > 0 && (
+      {/* ── Teams ──────────────────────────────────────────────────────────── */}
+      {teams.length > 0 && (
         <section className="mt-12">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h2 className="text-xl font-semibold tracking-tight">
-              Configurations{' '}
-              <span className="text-sm font-normal text-text-tertiary">
-                ({configurations.length})
-              </span>
+              Teams <span className="text-sm font-normal text-text-tertiary">({teams.length})</span>
             </h2>
-            {configurations.length < totalConfigs && (
+            {teams.length < totalTeams && (
               <span className="text-xs text-text-tertiary">
-                {configurations.length === 1
-                  ? `1 configuration · one of ${totalConfigs} on the registry —`
-                  : `${configurations.length} configurations · out of ${totalConfigs} on the registry —`}{' '}
-                <Link href="/configurations" className="text-accent hover:underline">
+                {teams.length === 1
+                  ? `1 team · one of ${totalTeams} on the registry —`
+                  : `${teams.length} teams · out of ${totalTeams} on the registry —`}{' '}
+                <Link href="/teams" className="text-accent hover:underline">
                   browse all
                 </Link>
               </span>
@@ -242,9 +238,9 @@ export default async function OwnerProfilePage({ params }: PageProps) {
             Agent harnesses published by this owner — topology, roster, and evidence.
           </p>
           <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {configurations.map((config) => (
-              <div key={config.slug} className="min-w-0">
-                <ConfigurationCard config={config} />
+            {teams.map((team) => (
+              <div key={team.slug} className="min-w-0">
+                <TeamCard team={team} />
               </div>
             ))}
           </div>
@@ -257,7 +253,7 @@ export default async function OwnerProfilePage({ params }: PageProps) {
           <div className="mb-5">
             <h2 className="text-xl font-semibold tracking-tight">Proof feed</h2>
             <p className="mt-1 text-sm text-text-secondary">
-              Recent proof entries across all agents and configurations.{' '}
+              Recent proof entries across all agents and teams.{' '}
               <span className="text-text-tertiary">{totalProof} total.</span>
             </p>
           </div>
@@ -271,10 +267,10 @@ export default async function OwnerProfilePage({ params }: PageProps) {
                   className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-elevated px-4 py-2.5"
                 >
                   <Link
-                    href={`/${entry.subjectKind === 'agent' ? 'agents' : 'configurations'}/${entry.subjectSlug}`}
+                    href={`/${entry.subjectKind === 'agent' ? 'agents' : 'teams'}/${entry.subjectSlug}`}
                     className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] font-medium text-text-secondary hover:text-accent"
                   >
-                    {entry.subjectKind === 'configuration' ? '⚙' : '🤖'} {entry.subjectName}
+                    {entry.subjectKind === 'team' ? '⚙' : '🤖'} {entry.subjectName}
                   </Link>
                   <span className="rounded border border-border px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-text-tertiary">
                     {PROOF_TYPE_LABELS[entry.type] ?? entry.type}
@@ -316,10 +312,10 @@ export default async function OwnerProfilePage({ params }: PageProps) {
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <Link
-                      href={`/${entry.subjectKind === 'agent' ? 'agents' : 'configurations'}/${entry.subjectSlug}`}
+                      href={`/${entry.subjectKind === 'agent' ? 'agents' : 'teams'}/${entry.subjectSlug}`}
                       className="inline-flex items-center gap-1 rounded border border-border bg-surface px-2 py-0.5 text-[11px] font-medium text-text-secondary hover:text-accent"
                     >
-                      {entry.subjectKind === 'configuration' ? '⚙' : '🤖'} {entry.subjectName}
+                      {entry.subjectKind === 'team' ? '⚙' : '🤖'} {entry.subjectName}
                     </Link>
                     <span className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-text-tertiary">
                       {PROOF_TYPE_LABELS[entry.type] ?? entry.type}
@@ -383,7 +379,7 @@ export default async function OwnerProfilePage({ params }: PageProps) {
               >
                 <span className="font-medium">{entry.displayName}</span>
                 <span className="text-text-tertiary">
-                  {entry.configCount} config{entry.configCount !== 1 ? 's' : ''}
+                  {entry.configCount} team{entry.configCount !== 1 ? 's' : ''}
                 </span>
                 {entry.layerMix && (
                   <span className="hidden text-text-tertiary sm:inline">

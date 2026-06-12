@@ -64,7 +64,7 @@ function LogoMark({ size = 28 }: { size?: number }) {
 }
 
 const LINKS = [
-  { href: '/configurations', label: 'Configurations' },
+  { href: '/teams', label: 'Teams' },
   { href: '/agents', label: 'Components' },
   { href: '/harness-engineering', label: 'Harness Engineering' },
 ];
@@ -133,7 +133,7 @@ function SubmitDropdown() {
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <path d="M12 8v8M8 12h8" />
             </svg>
-            Submit configuration
+            Submit team
           </Link>
           <Link
             href="/register"

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getCounts, getFeatured, getLayerCounts } from '@/lib/db/queries';
-import ConfigurationCard from '@/components/ConfigurationCard';
+import TeamCard from '@/components/TeamCard';
 import TrustBadge from '@/components/TrustBadge';
 import TopologyGlyph, { TOPOLOGY_LABELS } from '@/components/TopologyGlyph';
 import type { TopologyType } from '@/lib/db/types';
@@ -8,10 +8,11 @@ import type { TopologyType } from '@/lib/db/types';
 export const dynamic = 'force-dynamic';
 
 const TOPOLOGY_INDEX: { type: TopologyType; description: string }[] = [
-  { type: 'hub_and_spoke', description: 'One orchestrator, N specialist agents' },
+  { type: 'orchestrator_worker', description: 'One orchestrator, N specialist agents' },
+  { type: 'supervisor', description: 'Supervisor routes tasks to sub-agents' },
+  { type: 'swarm', description: 'Distributed agents, emergent coordination' },
   { type: 'pipeline', description: 'Sequential handoff, one direction' },
-  { type: 'peer', description: 'All agents equal, shared state' },
-  { type: 'hierarchical', description: 'Layered authority, delegated execution' },
+  { type: 'router', description: 'Single entry-point routes to specialists' },
   { type: 'solo_plus_tools', description: 'Single agent, rich tool surface' },
   { type: 'other', description: 'Custom or hybrid topology' },
 ];
@@ -41,15 +42,15 @@ export default function HomePage() {
               </span>
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-text-secondary">
-              AgentCV is the registry of working agent configurations, published with evidence.
-              Which roles, which topology, which models — and proof that it shipped.
+              AgentCV is the registry of working agent teams, published with evidence. Which roles,
+              which topology, which models — and proof that it shipped.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                href="/configurations"
+                href="/teams"
                 className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
               >
-                Browse configurations
+                Browse teams
               </Link>
               <Link
                 href="/request"
@@ -67,9 +68,9 @@ export default function HomePage() {
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-xl border border-border bg-surface-elevated px-4 py-4 sm:px-5">
                 <div className="text-3xl font-bold tabular-nums tracking-tight sm:text-2xl">
-                  {counts.configurations.toLocaleString('en-US')}
+                  {counts.teams.toLocaleString('en-US')}
                 </div>
-                <div className="mt-1 text-xs text-text-tertiary">configurations</div>
+                <div className="mt-1 text-xs text-text-tertiary">teams</div>
               </div>
               <div className="rounded-xl border border-border bg-surface-elevated px-4 py-4 sm:px-5">
                 <div className="text-3xl font-bold tabular-nums tracking-tight sm:text-2xl">
@@ -94,10 +95,10 @@ export default function HomePage() {
 
           {/* ── Right column: live registry preview — flagship card over topology glyph backdrop ── */}
           {/* Hidden below lg to prevent layout collapse; stacks above on small screens if flagship exists */}
-          {featured.configurations[0] && (
+          {featured.teams[0] && (
             <div className="hidden lg:flex lg:w-[360px] lg:shrink-0 lg:flex-col lg:items-stretch">
               <div className="relative">
-                {/* Faint hub-and-spoke constellation backdrop */}
+                {/* Faint orchestrator-worker constellation backdrop */}
                 <svg
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 h-full w-full text-accent/[0.07]"
@@ -146,70 +147,70 @@ export default function HomePage() {
                   />
                 </svg>
 
-                {/* Flagship config card — slightly elevated and rotated */}
+                {/* Flagship team card — slightly elevated and rotated */}
                 <div
                   className="relative z-10 -rotate-1 rounded-2xl border border-border bg-surface-elevated shadow-xl shadow-black/30"
                   style={{ transform: 'rotate(-1.5deg) translateY(-2px)' }}
                 >
-                  {/* Card inner content — compact variant of ConfigurationCard */}
+                  {/* Card inner content — compact variant of TeamCard */}
                   <Link
-                    href={`/configurations/${featured.configurations[0].slug}`}
+                    href={`/teams/${featured.teams[0].slug}`}
                     className="block rounded-2xl p-5 transition-all hover:bg-surface-hover"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface text-2xl">
-                          {featured.configurations[0].avatar}
+                          {featured.teams[0].avatar}
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-semibold text-text-primary">
-                            {featured.configurations[0].name}
+                            {featured.teams[0].name}
                           </h3>
                           <p className="text-xs text-text-tertiary">
-                            {featured.configurations[0].ownerName}
+                            {featured.teams[0].ownerName}
                           </p>
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-1.5">
-                        <TrustBadge tier={featured.configurations[0].tier} size="sm" />
+                        <TrustBadge tier={featured.teams[0].tier} size="sm" />
                       </div>
                     </div>
 
                     <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-text-secondary">
-                      {featured.configurations[0].tagline}
+                      {featured.teams[0].tagline}
                     </p>
 
                     {/* Spec row */}
                     <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border-subtle pt-3">
-                      {featured.configurations[0].topologyType && (
+                      {featured.teams[0].topologyType && (
                         <span className="inline-flex items-center gap-1 text-xs text-text-secondary">
                           <TopologyGlyph
-                            topology={featured.configurations[0].topologyType}
+                            topology={featured.teams[0].topologyType}
                             size={13}
                             className="shrink-0 text-accent"
                           />
-                          {TOPOLOGY_LABELS[featured.configurations[0].topologyType]}
+                          {TOPOLOGY_LABELS[featured.teams[0].topologyType]}
                         </span>
                       )}
-                      {featured.configurations[0].agentCount !== null && (
+                      {featured.teams[0].agentCount !== null && (
                         <span className="text-xs text-text-secondary">
                           <span className="font-medium text-text-primary">
-                            {featured.configurations[0].agentCount}
+                            {featured.teams[0].agentCount}
                           </span>{' '}
                           agents
                         </span>
                       )}
-                      {featured.configurations[0].platform && (
+                      {featured.teams[0].platform && (
                         <span className="text-xs text-text-tertiary">
-                          {featured.configurations[0].platform}
+                          {featured.teams[0].platform}
                         </span>
                       )}
                     </div>
 
                     {/* Role pills */}
-                    {featured.configurations[0].members.length > 0 && (
+                    {featured.teams[0].members.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-1.5">
-                        {featured.configurations[0].members.slice(0, 4).map((member) => (
+                        {featured.teams[0].members.slice(0, 4).map((member) => (
                           <span
                             key={member.slug}
                             className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-text-secondary"
@@ -238,23 +239,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Featured configurations ───────────────────────────────────────── */}
+      {/* ── Featured teams ───────────────────────────────────────── */}
       <section className="border-b border-border-subtle pt-10 pb-14">
         <div className="flex items-baseline justify-between">
           <div>
-            <h2 className="text-xl font-semibold tracking-tight">Featured configurations</h2>
+            <h2 className="text-xl font-semibold tracking-tight">Featured teams</h2>
             <p className="mt-1 text-sm text-text-secondary">
               The topology, roster, and evidence behind real working harnesses.
             </p>
           </div>
-          <Link href="/configurations" className="shrink-0 text-sm text-accent hover:underline">
+          <Link href="/teams" className="shrink-0 text-sm text-accent hover:underline">
             View all →
           </Link>
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {featured.configurations.map((config) => (
-            <div key={config.slug} className="min-w-0">
-              <ConfigurationCard config={config} />
+          {featured.teams.map((team) => (
+            <div key={team.slug} className="min-w-0">
+              <TeamCard team={team} />
             </div>
           ))}
         </div>
@@ -380,15 +381,14 @@ export default function HomePage() {
         <div className="mb-8">
           <h2 className="text-xl font-semibold tracking-tight">Browse by topology</h2>
           <p className="mt-1 text-sm text-text-secondary">
-            The structural pattern is the first design decision. Find configurations shaped like
-            yours.
+            The structural pattern is the first design decision. Find teams shaped like yours.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {TOPOLOGY_INDEX.map(({ type, description }) => (
             <Link
               key={type}
-              href={`/configurations?topology=${type}`}
+              href={`/teams?topology=${type}`}
               className="group flex min-h-[64px] items-center gap-3 rounded-xl border border-border bg-surface-elevated p-4 transition-all hover:border-accent/40 hover:bg-surface-hover"
             >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center opacity-70 transition-opacity group-hover:opacity-100">

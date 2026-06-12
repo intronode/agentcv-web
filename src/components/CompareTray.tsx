@@ -128,7 +128,7 @@ export function CompareTray() {
               {selected.length}
             </span>
             <span className="text-xs font-semibold text-text-primary">
-              {selected.length === 1 ? 'configuration' : 'configurations'} selected
+              {selected.length === 1 ? 'team' : 'teams'} selected
             </span>
           </div>
 
@@ -191,7 +191,7 @@ export function CompareToggle({ slug, name }: { slug: string; name: string }) {
       aria-pressed={isSelected}
       title={
         isFull
-          ? `Maximum ${MAX} configurations — remove one first`
+          ? `Maximum ${MAX} teams — remove one first`
           : isSelected
             ? 'Remove from comparison'
             : 'Add to comparison'

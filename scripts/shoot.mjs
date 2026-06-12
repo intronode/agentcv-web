@@ -15,7 +15,7 @@
  *
  * Interaction captures (desktop):
  *   submit-validation-errors.png   — /submit with empty form submitted
- *   compare-tray-selected.png      — /configurations with 2 items selected
+ *   compare-tray-selected.png      — /teams with 2 items selected
  *
  * Console errors per page are written to console-log.txt in the out dir.
  * The deliberate /this-route-does-not-exist 404 is annotated in console-log.txt.
@@ -36,11 +36,11 @@ const OVERFLOW_TOLERANCE_PX = 2;
 // ─── ROUTES LIST (edit this to add/remove surfaces) ─────────────────────────
 export const ROUTES = [
   { path: '/',                                                              slug: 'home' },
-  { path: '/configurations',                                               slug: 'configurations-directory' },
-  { path: '/configurations?topology=hub_and_spoke',                       slug: 'configurations-filtered-hub-spoke' },
-  { path: '/configurations/ari-collective',                                slug: 'configurations-ari-collective' },
-  { path: '/configurations/magentic-one',                                  slug: 'configurations-magentic-one' },
-  { path: '/configurations/helios-swarm',                                  slug: 'configurations-helios-swarm' },
+  { path: '/teams',                                                         slug: 'teams-directory' },
+  { path: '/teams?topology=orchestrator_worker',                           slug: 'teams-filtered-orchestrator-worker' },
+  { path: '/teams/ari-collective',                                          slug: 'teams-ari-collective' },
+  { path: '/teams/magentic-one',                                            slug: 'teams-magentic-one' },
+  { path: '/teams/helios-swarm',                                            slug: 'teams-helios-swarm' },
   { path: '/compare?ids=ari-collective,magentic-one,metagpt-pipeline',    slug: 'compare-three' },
   { path: '/agents',                                                        slug: 'agents-directory' },
   { path: '/agents/ari',                                                    slug: 'agents-ari' },
@@ -323,9 +323,9 @@ async function main() {
   {
     const { page, context } = await openDesktopPage(
       browser,
-      `${baseUrl}/configurations?compare=ari-collective,magentic-one`,
+      `${baseUrl}/teams?compare=ari-collective,magentic-one`,
       consoleEntries,
-      'configurations-compare-interaction',
+      'teams-compare-interaction',
     );
 
     // The floating tray (CompareTray) appears when compare param has ≥1 slug.

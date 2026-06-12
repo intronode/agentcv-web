@@ -6,10 +6,10 @@ import type {
   AttestationRow,
   CapabilityRow,
   ConfigKind,
-  ConfigurationCardData,
-  ConfigurationMemberData,
-  ConfigurationProfile,
-  ConfigurationRow,
+  TeamCardData,
+  TeamMemberData,
+  TeamProfile,
+  TeamRow,
   ContactSubjectType,
   MetricRow,
   OwnerProfile,
@@ -22,10 +22,19 @@ import type {
   TrustTier,
 } from './types';
 
-// Re-export aliases so existing call-sites using the old names keep compiling.
-export type TeamCardData = ConfigurationCardData;
-export type TeamProfile = ConfigurationProfile;
-export type TeamMemberData = ConfigurationMemberData;
+// Deprecated type aliases — kept so old import sites keep compiling.
+export type ConfigurationCardData = TeamCardData;
+export type ConfigurationProfile = {
+  configuration: TeamRow;
+  owner: OwnerRow;
+  tier: TrustTier;
+  members: TeamMemberData[];
+  metrics: MetricRow[];
+  proof: ProofEntryRow[];
+  attestations: AttestationRow[];
+};
+export type ConfigurationMemberData = TeamMemberData;
+export type ConfigurationRow = TeamRow;
 export type TeamKind = ConfigKind;
 
 // ---- trust tier -----------------------------------------------------------
@@ -125,7 +134,7 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
     .prepare(
       `SELECT a.*, o.handle AS owner_handle, o.display_name AS owner_name,
               ${COUNT_SELECTS('agent', 'a')},
-              (SELECT COUNT(*) FROM configuration_members cm WHERE cm.agent_id = a.id) AS config_count
+              (SELECT COUNT(*) FROM team_members cm WHERE cm.agent_id = a.id) AS config_count
        FROM agents a JOIN owners o ON o.id = a.owner_id
        ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
        ORDER BY ${orderBy}
@@ -139,8 +148,8 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
   );
 
   // For agents with no own card metrics, surface a headline metric from one of
-  // their parent configurations (batched — not N+1).  We collect the config slugs
-  // for metric-less agents in a single pass, call getConfigurationHeadlineMetrics
+  // their parent teams (batched — not N+1).  We collect the team slugs
+  // for metric-less agents in a single pass, call getTeamHeadlineMetrics
   // once, then stitch the result back by agent slug.
   const agentSlugToConfigSlug = new Map<string, string>();
   const configSlugsNeeded = new Set<string>();
@@ -148,8 +157,8 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
     if ((metrics.get(r.id) ?? []).length === 0 && r.config_count > 0) {
       const firstConfig = getDb()
         .prepare(
-          `SELECT c.slug FROM configurations c
-           JOIN configuration_members cm ON cm.configuration_id = c.id
+          `SELECT c.slug FROM teams c
+           JOIN team_members cm ON cm.team_id = c.id
            JOIN agents a ON a.id = cm.agent_id
            WHERE a.id = ?
            ORDER BY c.featured DESC, c.id ASC
@@ -162,7 +171,7 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
       }
     }
   }
-  const configHeadlines = getConfigurationHeadlineMetrics([...configSlugsNeeded]);
+  const configHeadlines = getTeamHeadlineMetrics([...configSlugsNeeded]);
 
   const cards = rows.map((r): AgentCardData => {
     const ownMetrics = metrics.get(r.id) ?? [];
@@ -214,9 +223,9 @@ export function agentFilterOptions(): { categories: string[]; platforms: string[
   return { categories, platforms };
 }
 
-// ---- list: configurations (v3: teams) ------------------------------------
+// ---- list: teams (v4.1: first-class entity) ---------------------------------
 
-export interface ConfigurationListFilters {
+export interface TeamListFilters {
   q?: string;
   topology_type?: string;
   platform?: string;
@@ -228,16 +237,15 @@ export interface ConfigurationListFilters {
   ownerId?: number;
 }
 
-type ConfigListRow = ConfigurationRow &
-  SubjectCounts & { owner_handle: string; owner_name: string };
+// Deprecated alias — kept for call-sites not yet migrated.
+export type ConfigurationListFilters = TeamListFilters;
 
-export function listConfigurations(
-  ownerIdOrFilters?: number | ConfigurationListFilters
-): ConfigurationCardData[] {
+type TeamListRow = TeamRow & SubjectCounts & { owner_handle: string; owner_name: string };
+
+export function listTeams(ownerIdOrFilters?: number | TeamListFilters): TeamCardData[] {
   const ownerId =
     typeof ownerIdOrFilters === 'number' ? ownerIdOrFilters : ownerIdOrFilters?.ownerId;
-  const filters: ConfigurationListFilters =
-    typeof ownerIdOrFilters === 'object' ? ownerIdOrFilters : {};
+  const filters: TeamListFilters = typeof ownerIdOrFilters === 'object' ? ownerIdOrFilters : {};
 
   const where: string[] = [];
   const params: (string | number)[] = [];
@@ -288,24 +296,24 @@ export function listConfigurations(
 
   const rows = getDb()
     .prepare(
-      `SELECT c.*, o.handle AS owner_handle, o.display_name AS owner_name, ${COUNT_SELECTS('configuration', 'c')}
-       FROM configurations c JOIN owners o ON o.id = c.owner_id
+      `SELECT c.*, o.handle AS owner_handle, o.display_name AS owner_name, ${COUNT_SELECTS('team', 'c')}
+       FROM teams c JOIN owners o ON o.id = c.owner_id
        ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
        ORDER BY ${orderBy}
        LIMIT 100`
     )
-    .all(...params) as ConfigListRow[];
+    .all(...params) as TeamListRow[];
 
   const metrics = cardMetricsFor(
-    'configuration',
+    'team',
     rows.map((r) => r.id)
   );
   const memberStmt = getDb().prepare(
-    `SELECT a.slug, a.name, a.avatar, a.model, m.role FROM configuration_members m
-     JOIN agents a ON a.id = m.agent_id WHERE m.configuration_id = ? ORDER BY m.ordinal`
+    `SELECT a.slug, a.name, a.avatar, a.model, m.role FROM team_members m
+     JOIN agents a ON a.id = m.agent_id WHERE m.team_id = ? ORDER BY m.ordinal`
   );
   const cards = rows.map(
-    (r): ConfigurationCardData => ({
+    (r): TeamCardData => ({
       slug: r.slug,
       name: r.name,
       avatar: r.avatar,
@@ -320,34 +328,35 @@ export function listConfigurations(
       agentCount: r.agent_count,
       platform: r.platform,
       industries: r.industries ? (JSON.parse(r.industries) as string[]) : [],
-      members: memberStmt.all(r.id) as ConfigurationCardData['members'],
+      members: memberStmt.all(r.id) as TeamCardData['members'],
       metrics: metrics.get(r.id) ?? [],
     })
   );
   return filters.tier ? cards.filter((c) => c.tier === filters.tier) : cards;
 }
 
-/** Alias so /teams page keeps working without rename */
-export const listTeams = listConfigurations;
+/** Deprecated alias — kept for call-sites not yet migrated. */
+export const listConfigurations = listTeams;
 
-export function configurationFilterOptions(): { platforms: string[]; topologyTypes: string[] } {
+export function teamFilterOptions(): { platforms: string[]; topologyTypes: string[] } {
   const db = getDb();
   const platforms = (
     db
-      .prepare(
-        'SELECT DISTINCT platform FROM configurations WHERE platform IS NOT NULL ORDER BY platform'
-      )
+      .prepare('SELECT DISTINCT platform FROM teams WHERE platform IS NOT NULL ORDER BY platform')
       .all() as { platform: string }[]
   ).map((r) => r.platform);
   const topologyTypes = (
     db
       .prepare(
-        'SELECT DISTINCT topology_type FROM configurations WHERE topology_type IS NOT NULL ORDER BY topology_type'
+        'SELECT DISTINCT topology_type FROM teams WHERE topology_type IS NOT NULL ORDER BY topology_type'
       )
       .all() as { topology_type: string }[]
   ).map((r) => r.topology_type);
   return { platforms, topologyTypes };
 }
+
+/** Deprecated alias — kept for call-sites not yet migrated. */
+export const configurationFilterOptions = teamFilterOptions;
 
 // ---- profiles -------------------------------------------------------------
 
@@ -381,8 +390,8 @@ export function getAgentProfile(slug: string): AgentProfile | null {
     .all(agent.id) as CapabilityRow[];
   const configurations = db
     .prepare(
-      `SELECT c.slug, c.name, c.avatar, c.kind, m.role FROM configuration_members m
-       JOIN configurations c ON c.id = m.configuration_id WHERE m.agent_id=? ORDER BY c.name`
+      `SELECT c.slug, c.name, c.avatar, c.kind, m.role FROM team_members m
+       JOIN teams c ON c.id = m.team_id WHERE m.agent_id=? ORDER BY c.name`
     )
     .all(agent.id) as AgentProfile['configurations'];
   const lineageParent = agent.lineage_of
@@ -407,66 +416,78 @@ export function getAgentProfile(slug: string): AgentProfile | null {
   };
 }
 
-export function getConfigurationProfile(slug: string): ConfigurationProfile | null {
+export function getTeamProfile(slug: string): TeamProfile | null {
   const db = getDb();
-  const configuration = db.prepare('SELECT * FROM configurations WHERE slug=?').get(slug) as
-    | ConfigurationRow
-    | undefined;
-  if (!configuration) return null;
-  const owner = db
-    .prepare('SELECT * FROM owners WHERE id=?')
-    .get(configuration.owner_id) as OwnerRow;
-  const { metrics, proof, attestations, tier } = subjectExtras('configuration', configuration.id);
+  const team = db.prepare('SELECT * FROM teams WHERE slug=?').get(slug) as TeamRow | undefined;
+  if (!team) return null;
+  const owner = db.prepare('SELECT * FROM owners WHERE id=?').get(team.owner_id) as OwnerRow;
+  const { metrics, proof, attestations, tier } = subjectExtras('team', team.id);
   const members = db
     .prepare(
       `SELECT a.slug, a.name, a.avatar, a.tagline, a.model, m.role, m.role_detail AS roleDetail, m.ordinal
-       FROM configuration_members m JOIN agents a ON a.id = m.agent_id
-       WHERE m.configuration_id=? ORDER BY m.ordinal`
+       FROM team_members m JOIN agents a ON a.id = m.agent_id
+       WHERE m.team_id=? ORDER BY m.ordinal`
     )
-    .all(configuration.id) as ConfigurationMemberData[];
-  return { configuration, owner, tier, members, metrics, proof, attestations };
+    .all(team.id) as TeamMemberData[];
+  return { team, owner, tier, members, metrics, proof, attestations };
 }
 
-/** Alias so /teams/[slug] page keeps working without rename */
-export function getTeamProfile(slug: string): ConfigurationProfile | null {
-  return getConfigurationProfile(slug);
+/**
+ * Deprecated alias — returns shape with .configuration field for backward compat.
+ * New code should use getTeamProfile().
+ */
+export function getConfigurationProfile(slug: string): ConfigurationProfile | null {
+  const profile = getTeamProfile(slug);
+  if (!profile) return null;
+  return {
+    configuration: profile.team,
+    owner: profile.owner,
+    tier: profile.tier,
+    members: profile.members,
+    metrics: profile.metrics,
+    proof: profile.proof,
+    attestations: profile.attestations,
+  };
 }
 
 /**
  * Fetch the single best (non-null value preferred) headline metric for each
- * of the given configuration slugs.  Used by the agent-profile page to surface
- * configuration-level metrics when the agent itself has none.
+ * of the given team slugs.  Used by the agent-profile page to surface
+ * team-level metrics when the agent itself has none.
  */
-export function getConfigurationHeadlineMetrics(
+export function getTeamHeadlineMetrics(
   slugs: string[]
 ): Map<string, MetricRow & { configName: string }> {
   const result = new Map<string, MetricRow & { configName: string }>();
   if (slugs.length === 0) return result;
   const db = getDb();
   for (const slug of slugs) {
-    const config = db.prepare('SELECT id, name FROM configurations WHERE slug=?').get(slug) as
+    const team = db.prepare('SELECT id, name FROM teams WHERE slug=?').get(slug) as
       | { id: number; name: string }
       | undefined;
-    if (!config) continue;
-    // Query ALL metrics for this configuration — do NOT restrict to CARD_METRIC_KEYS.
-    // The CARD_METRIC_KEYS filter was designed for the configurations card grid and only
-    // included Ari-specific keys, silently producing no headline for curated configs
+    if (!team) continue;
+    // Query ALL metrics for this team — do NOT restrict to CARD_METRIC_KEYS.
+    // The CARD_METRIC_KEYS filter was designed for the team card grid and only
+    // included Ari-specific keys, silently producing no headline for curated teams
     // (e.g. magentic-one uses gaia_score, webarena_score).  Here we want the first
     // non-null metric regardless of key; non-null rows are ranked first.
     const metric = db
       .prepare(
         `SELECT * FROM metrics
-         WHERE subject_type='configuration' AND subject_id=?
+         WHERE subject_type='team' AND subject_id=?
          ORDER BY CASE WHEN value IS NULL THEN 1 ELSE 0 END, id ASC
          LIMIT 1`
       )
-      .get(config.id) as MetricRow | undefined;
+      .get(team.id) as MetricRow | undefined;
     if (metric) {
-      result.set(slug, { ...metric, configName: config.name });
+      result.set(slug, { ...metric, configName: team.name });
     }
   }
   return result;
 }
+
+/** Deprecated alias — kept for call-sites not yet migrated. */
+export const getConfigurationHeadlineMetrics = getTeamHeadlineMetrics;
 
 export function getOwnerProfile(handle: string): OwnerProfile | null {
   const db = getDb();
@@ -476,15 +497,15 @@ export function getOwnerProfile(handle: string): OwnerProfile | null {
   if (!owner) return null;
 
   const agents = listAgents({ ownerId: owner.id });
-  const configurations = listConfigurations(owner.id);
+  const teams = listTeams(owner.id);
 
   // Build proof feed: aggregate proof entries across all subjects owned by this owner.
   // Each entry is annotated with the subject name + slug so the feed can link back.
   const agentRows = db
     .prepare('SELECT id, slug, name FROM agents WHERE owner_id=?')
     .all(owner.id) as { id: number; slug: string; name: string }[];
-  const configRows = db
-    .prepare('SELECT id, slug, name FROM configurations WHERE owner_id=?')
+  const teamRows = db
+    .prepare('SELECT id, slug, name FROM teams WHERE owner_id=?')
     .all(owner.id) as { id: number; slug: string; name: string }[];
 
   const proofFeed: OwnerProofFeedEntry[] = [];
@@ -498,10 +519,10 @@ export function getOwnerProfile(handle: string): OwnerProfile | null {
     for (const r of rows)
       proofFeed.push({ ...r, subjectName: a.name, subjectSlug: a.slug, subjectKind: 'agent' });
   }
-  for (const c of configRows) {
+  for (const c of teamRows) {
     const rows = db
       .prepare(
-        `SELECT * FROM proof_entries WHERE subject_type='configuration' AND subject_id=? ORDER BY entry_date DESC, id DESC LIMIT 10`
+        `SELECT * FROM proof_entries WHERE subject_type='team' AND subject_id=? ORDER BY entry_date DESC, id DESC LIMIT 10`
       )
       .all(c.id) as ProofEntryRow[];
     for (const r of rows)
@@ -509,7 +530,7 @@ export function getOwnerProfile(handle: string): OwnerProfile | null {
         ...r,
         subjectName: c.name,
         subjectSlug: c.slug,
-        subjectKind: 'configuration',
+        subjectKind: 'team',
       });
   }
 
@@ -520,47 +541,54 @@ export function getOwnerProfile(handle: string): OwnerProfile | null {
   });
   const cappedFeed = proofFeed.slice(0, 20);
 
-  return { owner, agents, configurations, proofFeed: cappedFeed };
+  return { owner, agents, teams, proofFeed: cappedFeed };
 }
 
 // ---- compare --------------------------------------------------------------
 
-export interface ConfigurationCompareData {
-  configuration: ConfigurationRow;
+export interface TeamCompareData {
+  team: TeamRow;
   owner: OwnerRow;
   tier: TrustTier;
-  members: ConfigurationMemberData[];
+  members: TeamMemberData[];
+  metrics: MetricRow[];
+  proofCount: number;
+  evidenceCount: number;
+}
+
+/** Deprecated alias — kept for call-sites not yet migrated. */
+export interface ConfigurationCompareData {
+  configuration: TeamRow;
+  owner: OwnerRow;
+  tier: TrustTier;
+  members: TeamMemberData[];
   metrics: MetricRow[];
   proofCount: number;
   evidenceCount: number;
 }
 
 /**
- * Fetch 2–3 configurations by slug for the /compare page.
+ * Fetch 2–3 teams by slug for the /compare page.
  * Returns only found slugs (invalid slugs are silently dropped).
  * Order preserves the input slug order.
  */
-export function getConfigurationsForCompare(slugs: string[]): ConfigurationCompareData[] {
+export function getTeamsForCompare(slugs: string[]): ConfigurationCompareData[] {
   const db = getDb();
   const results: ConfigurationCompareData[] = [];
   const memberStmt = db.prepare(
     `SELECT a.slug, a.name, a.avatar, a.tagline, a.model, m.role, m.role_detail AS roleDetail, m.ordinal
-     FROM configuration_members m JOIN agents a ON a.id = m.agent_id
-     WHERE m.configuration_id=? ORDER BY m.ordinal`
+     FROM team_members m JOIN agents a ON a.id = m.agent_id
+     WHERE m.team_id=? ORDER BY m.ordinal`
   );
   for (const slug of slugs) {
-    const configuration = db.prepare('SELECT * FROM configurations WHERE slug=?').get(slug) as
-      | ConfigurationRow
-      | undefined;
-    if (!configuration) continue;
-    const owner = db
-      .prepare('SELECT * FROM owners WHERE id=?')
-      .get(configuration.owner_id) as OwnerRow;
-    const { metrics, proof, attestations, tier } = subjectExtras('configuration', configuration.id);
+    const team = db.prepare('SELECT * FROM teams WHERE slug=?').get(slug) as TeamRow | undefined;
+    if (!team) continue;
+    const owner = db.prepare('SELECT * FROM owners WHERE id=?').get(team.owner_id) as OwnerRow;
+    const { metrics, proof, attestations, tier } = subjectExtras('team', team.id);
     const evidenceCount = proof.filter((p) => p.evidence_url !== null).length;
-    const members = memberStmt.all(configuration.id) as ConfigurationMemberData[];
+    const members = memberStmt.all(team.id) as TeamMemberData[];
     results.push({
-      configuration,
+      configuration: team,
       owner,
       tier,
       members,
@@ -572,6 +600,9 @@ export function getConfigurationsForCompare(slugs: string[]): ConfigurationCompa
   return results;
 }
 
+/** Deprecated alias — kept for call-sites not yet migrated. */
+export const getConfigurationsForCompare = getTeamsForCompare;
+
 // ---- landing --------------------------------------------------------------
 
 export function getCounts(): SiteCounts {
@@ -579,7 +610,7 @@ export function getCounts(): SiteCounts {
   const one = (sql: string): number => (db.prepare(sql).get() as { n: number }).n;
   return {
     agents: one('SELECT COUNT(*) AS n FROM agents'),
-    configurations: one('SELECT COUNT(*) AS n FROM configurations'),
+    teams: one('SELECT COUNT(*) AS n FROM teams'),
     owners: one('SELECT COUNT(*) AS n FROM owners'),
     proofEntries: one('SELECT COUNT(*) AS n FROM proof_entries'),
   };
@@ -592,20 +623,20 @@ export interface LayerCounts {
   evidenceLinked: number;
 }
 
-/** Counts across both configurations + agents per seed layer, plus evidence-linked proof. */
+/** Counts across both teams + agents per seed layer, plus evidence-linked proof. */
 export function getLayerCounts(): LayerCounts {
   const db = getDb();
   const one = (sql: string, ...params: (string | number)[]): number =>
     (db.prepare(sql).get(...params) as { n: number }).n;
   return {
     real:
-      one("SELECT COUNT(*) AS n FROM configurations WHERE seed_layer='real'") +
+      one("SELECT COUNT(*) AS n FROM teams WHERE seed_layer='real'") +
       one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='real'"),
     curated:
-      one("SELECT COUNT(*) AS n FROM configurations WHERE seed_layer='curated'") +
+      one("SELECT COUNT(*) AS n FROM teams WHERE seed_layer='curated'") +
       one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='curated'"),
     illustrative:
-      one("SELECT COUNT(*) AS n FROM configurations WHERE seed_layer='illustrative'") +
+      one("SELECT COUNT(*) AS n FROM teams WHERE seed_layer='illustrative'") +
       one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='illustrative'"),
     evidenceLinked: one('SELECT COUNT(*) AS n FROM proof_entries WHERE evidence_url IS NOT NULL'),
   };
@@ -613,32 +644,32 @@ export function getLayerCounts(): LayerCounts {
 
 export function getFeatured(): {
   agents: AgentCardData[];
-  configurations: ConfigurationCardData[];
-  /** @deprecated use configurations */
-  teams: ConfigurationCardData[];
+  teams: TeamCardData[];
+  /** @deprecated use teams */
+  configurations: TeamCardData[];
 } {
   const slugsOf = (sql: string): Set<string> =>
     new Set((getDb().prepare(sql).all() as { slug: string }[]).map((r) => r.slug));
   const featuredAgents = slugsOf('SELECT slug FROM agents WHERE featured=1');
-  const featuredConfigs = slugsOf('SELECT slug FROM configurations WHERE featured=1');
+  const featuredTeams = slugsOf('SELECT slug FROM teams WHERE featured=1');
 
-  // Ensure flagship Ari Collective is first; then fill to at least 3 from all configs.
-  const allConfigs = listConfigurations();
-  const flagship = allConfigs.find((c) => c.slug === 'ari-collective');
-  const otherFeatured = allConfigs.filter(
-    (c) => featuredConfigs.has(c.slug) && c.slug !== 'ari-collective'
+  // Ensure flagship Ari Collective is first; then fill to at least 3 from all teams.
+  const allTeams = listTeams();
+  const flagship = allTeams.find((c) => c.slug === 'ari-collective');
+  const otherFeatured = allTeams.filter(
+    (c) => featuredTeams.has(c.slug) && c.slug !== 'ari-collective'
   );
-  const remainder = allConfigs.filter(
-    (c) => !featuredConfigs.has(c.slug) && c.slug !== 'ari-collective'
+  const remainder = allTeams.filter(
+    (c) => !featuredTeams.has(c.slug) && c.slug !== 'ari-collective'
   );
-  const configs = [...(flagship ? [flagship] : []), ...otherFeatured, ...remainder].slice(0, 3);
+  const teams = [...(flagship ? [flagship] : []), ...otherFeatured, ...remainder].slice(0, 3);
 
   return {
     agents: listAgents({ limit: 100 })
       .filter((a) => featuredAgents.has(a.slug))
       .slice(0, 6),
-    configurations: configs,
-    teams: configs, // backward-compat alias
+    teams,
+    configurations: teams, // backward-compat alias
   };
 }
 
@@ -654,8 +685,8 @@ export interface OwnerStripEntry {
 
 /**
  * Compact owner list for the "Owners on the registry" strip shown on every
- * owner profile page.  Returns all owners that have at least one configuration,
- * ordered by config count descending, then name.
+ * owner profile page.  Returns all owners that have at least one team,
+ * ordered by team count descending, then name.
  */
 export function getOwnersStrip(): OwnerStripEntry[] {
   const db = getDb();
@@ -665,7 +696,7 @@ export function getOwnersStrip(): OwnerStripEntry[] {
               COUNT(c.id) AS config_count,
               GROUP_CONCAT(DISTINCT c.seed_layer) AS layer_mix
        FROM owners o
-       JOIN configurations c ON c.owner_id = o.id
+       JOIN teams c ON c.owner_id = o.id
        GROUP BY o.id
        ORDER BY config_count DESC, o.display_name COLLATE NOCASE ASC`
     )
@@ -688,7 +719,7 @@ function slugify(name: string): string {
     .slice(0, 60);
 }
 
-function uniqueSlug(table: 'agents' | 'configurations', base: string): string {
+function uniqueSlug(table: 'agents' | 'teams', base: string): string {
   const db = getDb();
   const stmt = db.prepare(`SELECT 1 FROM ${table} WHERE slug=?`);
   let slug = base || 'agent';
@@ -762,7 +793,7 @@ export interface AddProofInput {
 
 export function addProofEntry(input: AddProofInput): { id: number; tier: TrustTier } {
   const db = getDb();
-  const table = input.subjectType === 'agent' ? 'agents' : 'configurations';
+  const table = input.subjectType === 'agent' ? 'agents' : 'teams';
   const subject = db.prepare(`SELECT id FROM ${table} WHERE slug=?`).get(input.subjectSlug) as
     | { id: number }
     | undefined;
@@ -798,7 +829,7 @@ export interface AddAttestationInput {
 
 export function addAttestation(input: AddAttestationInput): { id: number; tier: TrustTier } {
   const db = getDb();
-  const table = input.subjectType === 'agent' ? 'agents' : 'configurations';
+  const table = input.subjectType === 'agent' ? 'agents' : 'teams';
   const subject = db.prepare(`SELECT id FROM ${table} WHERE slug=?`).get(input.subjectSlug) as
     | { id: number }
     | undefined;
@@ -838,11 +869,7 @@ export function createContactRequest(input: ContactInput): { id: number } {
 
   if (input.subjectType && input.subjectSlug) {
     const table =
-      input.subjectType === 'agent'
-        ? 'agents'
-        : input.subjectType === 'configuration'
-          ? 'configurations'
-          : 'owners';
+      input.subjectType === 'agent' ? 'agents' : input.subjectType === 'team' ? 'teams' : 'owners';
     const column = input.subjectType === 'owner' ? 'handle' : 'slug';
     const subject = db
       .prepare(`SELECT id FROM ${table} WHERE ${column}=?`)
@@ -855,7 +882,7 @@ export function createContactRequest(input: ContactInput): { id: number } {
   // For general requests with no subject, we allow null subject.
   // The schema CHECK requires subject_type to be in the enum — use a sentinel approach:
   // we store subjectType as 'owner' and subjectId as 0 for subjectless general requests.
-  // For request_setup with no config ref, same sentinel.
+  // For request_setup with no team ref, same sentinel.
   const storeType = subjectType ?? 'owner';
   const storeId = subjectId ?? 0;
 
@@ -868,9 +895,9 @@ export function createContactRequest(input: ContactInput): { id: number } {
   return { id: Number(res.lastInsertRowid) };
 }
 
-// ---- register configuration -----------------------------------------------
+// ---- register team -----------------------------------------------
 
-export interface RegisterConfigurationInput {
+export interface RegisterTeamInput {
   name: string;
   tagline: string;
   topologyType?: string;
@@ -889,7 +916,10 @@ export interface RegisterConfigurationInput {
   members?: { agentSlug: string; role: string }[];
 }
 
-export function registerConfiguration(input: RegisterConfigurationInput): {
+/** Deprecated alias — kept for call-sites not yet migrated. */
+export type RegisterConfigurationInput = RegisterTeamInput;
+
+export function registerTeam(input: RegisterTeamInput): {
   slug: string;
   id: number;
 } {
@@ -906,10 +936,10 @@ export function registerConfiguration(input: RegisterConfigurationInput): {
       owner = db.prepare('SELECT * FROM owners WHERE id=?').get(res.lastInsertRowid) as OwnerRow;
     }
 
-    const slug = uniqueSlug('configurations', slugify(input.name));
+    const slug = uniqueSlug('teams', slugify(input.name));
     const res = db
       .prepare(
-        `INSERT INTO configurations
+        `INSERT INTO teams
           (slug, name, tagline, topology_type, platform, agent_count,
            industries, task_kinds, topology, why_it_works, how_built, oversight,
            operational_since, owner_id, seed_layer)
@@ -931,24 +961,27 @@ export function registerConfiguration(input: RegisterConfigurationInput): {
         input.operationalSince ?? null,
         owner.id
       );
-    const configId = Number(res.lastInsertRowid);
+    const teamId = Number(res.lastInsertRowid);
 
     // Attach members if provided.
     if (input.members && input.members.length > 0) {
       const agentStmt = db.prepare('SELECT id FROM agents WHERE slug=?');
       const memberStmt = db.prepare(
-        `INSERT INTO configuration_members (configuration_id, agent_id, role, ordinal)
+        `INSERT INTO team_members (team_id, agent_id, role, ordinal)
          VALUES (?, ?, ?, ?)`
       );
       let ordinal = 0;
       for (const m of input.members) {
         const agent = agentStmt.get(m.agentSlug) as { id: number } | undefined;
         if (!agent) throw new Error(`Unknown agent: ${m.agentSlug}`);
-        memberStmt.run(configId, agent.id, m.role, ordinal++);
+        memberStmt.run(teamId, agent.id, m.role, ordinal++);
       }
     }
 
-    return { slug, id: configId };
+    return { slug, id: teamId };
   });
   return tx();
 }
+
+/** Deprecated alias — kept for call-sites not yet migrated. */
+export const registerConfiguration = registerTeam;

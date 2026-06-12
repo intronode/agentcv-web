@@ -86,9 +86,9 @@ export default function RequestForm({ refConfig }: RequestFormProps) {
             Routed to Intronode.{' '}
             {refConfig && (
               <>
-                Referenced configuration:{' '}
+                Referenced team:{' '}
                 <Link
-                  href={`/configurations/${refConfig.slug}`}
+                  href={`/teams/${refConfig.slug}`}
                   className="font-medium underline underline-offset-2 hover:text-emerald-100"
                 >
                   {refConfig.name}
@@ -100,7 +100,7 @@ export default function RequestForm({ refConfig }: RequestFormProps) {
           </p>
         </div>
         <Link
-          href="/configurations"
+          href="/teams"
           className="inline-flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-secondary"
         >
           <svg
@@ -115,7 +115,7 @@ export default function RequestForm({ refConfig }: RequestFormProps) {
           >
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          Browse more configurations
+          Browse more teams
         </Link>
       </div>
     );
@@ -123,28 +123,28 @@ export default function RequestForm({ refConfig }: RequestFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="mt-8 space-y-6" noValidate>
-      {/* Referenced configuration card */}
+      {/* Referenced team card */}
       {refConfig && (
         <div className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
-          <p className="text-xs text-text-tertiary">Referencing configuration</p>
+          <p className="text-xs text-text-tertiary">Referencing team</p>
           <Link
-            href={`/configurations/${refConfig.slug}`}
+            href={`/teams/${refConfig.slug}`}
             className="mt-0.5 block text-sm font-semibold text-text-primary hover:text-accent"
           >
             {refConfig.name}
           </Link>
           <p className="mt-1 text-[11px] text-text-tertiary">
-            This request will be linked to the configuration above.
+            This request will be linked to the team above.
           </p>
         </div>
       )}
 
       {!refConfig && (
         <div className="rounded-lg border border-dashed border-border px-4 py-3 text-xs leading-relaxed text-text-tertiary">
-          No specific configuration referenced. Describe what you need and Intronode will suggest
-          the best fit.{' '}
-          <Link href="/configurations" className="text-accent hover:underline">
-            Browse configurations
+          No specific team referenced. Describe what you need and Intronode will suggest the best
+          fit.{' '}
+          <Link href="/teams" className="text-accent hover:underline">
+            Browse teams
           </Link>{' '}
           to reference one.
         </div>

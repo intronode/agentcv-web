@@ -6,7 +6,7 @@ import { useTransition } from 'react';
 import { TOPOLOGY_LABELS } from '@/components/TopologyGlyph';
 import type { TopologyType, TrustTier } from '@/lib/db/types';
 
-interface ConfigurationFilterBarProps {
+interface TeamFilterBarProps {
   platforms: string[];
   topologyTypes: string[];
 }
@@ -50,10 +50,7 @@ const KNOWN_INDUSTRIES = [
 const selectClasses =
   'rounded-lg border border-border bg-surface-elevated px-3 py-2 text-sm text-text-secondary focus:border-accent focus:outline-none';
 
-export default function ConfigurationFilterBar({
-  platforms,
-  topologyTypes,
-}: ConfigurationFilterBarProps) {
+export default function TeamFilterBar({ platforms, topologyTypes }: TeamFilterBarProps) {
   const router = useRouter();
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
@@ -75,14 +72,14 @@ export default function ConfigurationFilterBar({
     const next = new URLSearchParams(params.toString());
     if (value) next.set(key, value);
     else next.delete(key);
-    startTransition(() => router.push(`/configurations?${next.toString()}`));
+    startTransition(() => router.push(`/teams?${next.toString()}`));
   }
 
   const filterControls = (
     <div className={`flex flex-wrap items-center gap-2 ${pending ? 'opacity-60' : ''}`}>
       <input
         type="search"
-        placeholder="Search configurations…"
+        placeholder="Search teams…"
         defaultValue={params.get('q') ?? ''}
         onKeyDown={(e) => {
           if (e.key === 'Enter') setParam('q', e.currentTarget.value);

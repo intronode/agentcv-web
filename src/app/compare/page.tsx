@@ -12,9 +12,8 @@ import { formatMetricValue, formatDate } from '@/lib/format';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Compare Configurations — AgentCV',
-  description:
-    'Side-by-side comparison of agent configurations — topology, roster, metrics, and evidence.',
+  title: 'Compare Teams — AgentCV',
+  description: 'Side-by-side comparison of agent teams — topology, roster, metrics, and evidence.',
 };
 
 interface PageProps {
@@ -88,7 +87,7 @@ function MetricCell({ metric, differs }: { metric: MetricRow | undefined; differ
   if (!metric) {
     return (
       <td className={VALUE_CELL}>
-        <UnknownCell reason="No metric on record for this configuration." />
+        <UnknownCell reason="No metric on record for this team." />
       </td>
     );
   }
@@ -115,7 +114,7 @@ function MetricCell({ metric, differs }: { metric: MetricRow | undefined; differ
 // ---- Mobile metric cell (div-based, used in the stacked mobile layout) -----
 function MetricCellMobile({ metric }: { metric: MetricRow | undefined }) {
   if (!metric) {
-    return <UnknownCell reason="No metric on record for this configuration." />;
+    return <UnknownCell reason="No metric on record for this team." />;
   }
   const displayValue = formatMetricValue(metric.value, metric.unit);
   const isUnknown = metric.value === null;
@@ -285,13 +284,11 @@ export default async function ComparePage({ searchParams }: PageProps) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-16">
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">Compare</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight">
-          Side-by-side configuration comparison
-        </h1>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight">Side-by-side team comparison</h1>
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-text-secondary">
-          Select 2–3 configurations from the directory and compare their topology, roster,
-          industries, metrics, and evidence head-to-head. Honest [unknown] cells are never hidden —
-          a gap in a comparison row is as informative as a number.
+          Select 2–3 teams from the directory and compare their topology, roster, industries,
+          metrics, and evidence head-to-head. Honest [unknown] cells are never hidden — a gap in a
+          comparison row is as informative as a number.
         </p>
 
         <h2 className="mt-10 text-sm font-semibold text-text-primary">Try a comparison</h2>
@@ -309,7 +306,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
 
         <div className="mt-8">
           <Link
-            href="/configurations"
+            href="/teams"
             className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
           >
             <svg
@@ -324,7 +321,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
             >
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            Browse configurations to build your own comparison
+            Browse teams to build your own comparison
           </Link>
         </div>
       </div>
@@ -341,9 +338,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
       {/* Page header */}
       <div className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">Compare</p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight">
-          Comparing {configs.length} configurations
-        </h1>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight">Comparing {configs.length} teams</h1>
         <p className="mt-1.5 max-w-2xl text-sm text-text-secondary">
           Row-aligned side-by-side. Highlighted cells differ across columns.{' '}
           <span className="text-text-tertiary">[unknown] cells are honest gaps, never hidden.</span>
@@ -395,7 +390,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
                 {c.configuration.avatar}
               </div>
               <Link
-                href={`/configurations/${c.configuration.slug}`}
+                href={`/teams/${c.configuration.slug}`}
                 className="line-clamp-2 text-[11px] font-semibold leading-tight text-text-primary hover:text-accent"
               >
                 {c.configuration.name}
@@ -654,7 +649,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
         {/* Action row */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <Link
-            href="/configurations"
+            href="/teams"
             className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary"
           >
             <svg
@@ -675,7 +670,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
             {configs.map((c) => (
               <Link
                 key={c.configuration.slug}
-                href={`/configurations/${c.configuration.slug}`}
+                href={`/teams/${c.configuration.slug}`}
                 className="rounded border border-border px-3 py-1.5 hover:text-text-primary"
               >
                 Open {c.configuration.name} →
@@ -715,7 +710,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
                         </div>
                         <div className="min-w-0">
                           <Link
-                            href={`/configurations/${c.configuration.slug}`}
+                            href={`/teams/${c.configuration.slug}`}
                             className="block line-clamp-2 overflow-hidden text-sm font-semibold text-text-primary hover:text-accent"
                             title={c.configuration.name}
                           >
@@ -1064,7 +1059,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
         {/* Action row */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <Link
-            href="/configurations"
+            href="/teams"
             className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary"
           >
             <svg
@@ -1085,7 +1080,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
             {configs.map((c) => (
               <Link
                 key={c.configuration.slug}
-                href={`/configurations/${c.configuration.slug}`}
+                href={`/teams/${c.configuration.slug}`}
                 className="rounded border border-border px-3 py-1.5 hover:text-text-primary"
               >
                 Open {c.configuration.name} →

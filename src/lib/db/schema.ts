@@ -3,7 +3,7 @@
 
 // Bump on any schema change: a seeded demo DB with an older version is
 // dropped and rebuilt automatically on next access (data/ is disposable).
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const SCHEMA_SQL = `
 PRAGMA user_version = ${SCHEMA_VERSION};
@@ -43,9 +43,9 @@ CREATE TABLE agents (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- v3 "teams" renamed to "configurations" (conceptual reframe: the configuration
+-- v4.1 "configurations" renamed to "teams" (conceptual reframe: the team
 -- is the first-class unit; agents are components within it).
-CREATE TABLE configurations (
+CREATE TABLE teams (
   id INTEGER PRIMARY KEY,
   slug TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE configurations (
   operational_since TEXT,
   featured INTEGER NOT NULL DEFAULT 0,
   -- v4 comparable fields (D3 benchmark schema)
-  topology_type TEXT CHECK (topology_type IN ('hub_and_spoke','pipeline','peer','hierarchical','solo_plus_tools','other')),
+  topology_type TEXT CHECK (topology_type IN ('supervisor','orchestrator_worker','swarm','pipeline','router','solo_plus_tools','other')),
   agent_count INTEGER,
   platform TEXT,
   industries TEXT,
@@ -74,20 +74,20 @@ CREATE TABLE configurations (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- v3 "team_members" renamed to "configuration_members".
+-- team_members: the role-to-model mapping for agents within a team.
 -- role-to-model mapping is obtained via JOIN to agents.model -- no duplication needed.
-CREATE TABLE configuration_members (
-  configuration_id INTEGER NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
+CREATE TABLE team_members (
+  team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
   agent_id INTEGER NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   role TEXT NOT NULL,
   role_detail TEXT,
   ordinal INTEGER NOT NULL DEFAULT 0,
-  PRIMARY KEY (configuration_id, agent_id)
+  PRIMARY KEY (team_id, agent_id)
 );
 
 CREATE TABLE proof_entries (
   id INTEGER PRIMARY KEY,
-  subject_type TEXT NOT NULL CHECK (subject_type IN ('agent','configuration')),
+  subject_type TEXT NOT NULL CHECK (subject_type IN ('agent','team')),
   subject_id INTEGER NOT NULL,
   entry_date TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('task','incident','lesson','milestone','artifact')),
@@ -105,7 +105,7 @@ CREATE INDEX idx_proof_subject ON proof_entries(subject_type, subject_id, entry_
 -- annotations (e.g. "[derived-from-registry, window-scoped]").
 CREATE TABLE metrics (
   id INTEGER PRIMARY KEY,
-  subject_type TEXT NOT NULL CHECK (subject_type IN ('agent','configuration')),
+  subject_type TEXT NOT NULL CHECK (subject_type IN ('agent','team')),
   subject_id INTEGER NOT NULL,
   key TEXT NOT NULL,
   label TEXT NOT NULL,
@@ -128,7 +128,7 @@ CREATE TABLE capabilities (
 
 CREATE TABLE attestations (
   id INTEGER PRIMARY KEY,
-  subject_type TEXT NOT NULL CHECK (subject_type IN ('agent','configuration')),
+  subject_type TEXT NOT NULL CHECK (subject_type IN ('agent','team')),
   subject_id INTEGER NOT NULL,
   author_name TEXT NOT NULL,
   author_url TEXT,
@@ -140,7 +140,7 @@ CREATE TABLE attestations (
 
 CREATE TABLE contact_requests (
   id INTEGER PRIMARY KEY,
-  subject_type TEXT NOT NULL CHECK (subject_type IN ('agent','configuration','owner')),
+  subject_type TEXT NOT NULL CHECK (subject_type IN ('agent','team','owner')),
   subject_id INTEGER NOT NULL,
   requester_name TEXT NOT NULL,
   requester_email TEXT NOT NULL,

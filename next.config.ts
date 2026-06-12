@@ -5,13 +5,13 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: '/teams',
-        destination: '/configurations',
+        source: '/configurations',
+        destination: '/teams',
         permanent: true,
       },
       {
-        source: '/teams/:slug',
-        destination: '/configurations/:slug',
+        source: '/configurations/:slug',
+        destination: '/teams/:slug',
         permanent: true,
       },
       {

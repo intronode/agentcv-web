@@ -1,80 +1,186 @@
 import Link from 'next/link';
-import type { TeamCardData } from '@/lib/db/types';
+import type { TeamCardData, MetricRow } from '@/lib/db/types';
 import TrustBadge from '@/components/TrustBadge';
-import { IllustrativeMark } from '@/components/ProvenanceTag';
+import LayerLabel from '@/components/LayerLabel';
+import TopologyGlyph, { TOPOLOGY_LABELS } from '@/components/TopologyGlyph';
+import { CompareToggle } from '@/components/CompareTray';
 import { formatMetricValue } from '@/lib/format';
+
+// ---------------------------------------------------------------------------
+// Metric slot assignment — deterministic, documented rule:
+//
+//   Slot 1 "Outcome": first metric whose key appears in OUTCOME_KEYS.
+//   Slot 2 "Economics": first metric whose key appears in ECONOMICS_KEYS.
+//   Fallback: [unknown] label so the card always has two labeled cells.
+// ---------------------------------------------------------------------------
+const OUTCOME_KEYS = new Set([
+  'success_rate',
+  'gaia_score',
+  'webarena_score',
+  'human_eval_fix',
+  'win_rate_pct',
+  'trueskill_rating',
+  'executability_score',
+  'assistantbench_score',
+  'items_multiplier',
+  'tech_tree_speed',
+  'distance_multiplier',
+  'alfworld_gain',
+  'tool_tasks_completed',
+  'window_reconciliation_pct',
+  'uptime_pct',
+  'mbpp_score',
+  'gpt4_eval_win_rate',
+  'claude_35_both_score',
+  'cost_reduction_heterogeneous',
+  'prior_sota_pct',
+]);
+
+const ECONOMICS_KEYS = new Set([
+  'cost_per_task_usd',
+  'cost_reduction',
+  'tokens_per_loc',
+  'avg_response_ms',
+  'tasks_completed',
+  'codebase_loc',
+]);
+
+function pickSlot(metrics: MetricRow[], keySet: Set<string>): MetricRow | null {
+  return metrics.find((m) => keySet.has(m.key)) ?? null;
+}
+
+function IndustryTag({ label }: { label: string }) {
+  return (
+    <span className="rounded bg-surface px-1.5 py-px text-[10px] font-medium text-text-tertiary">
+      {label}
+    </span>
+  );
+}
 
 export default function TeamCard({ team }: { team: TeamCardData }) {
   return (
-    <Link href={`/teams/${team.slug}`}>
-      <div className="group h-full rounded-xl border border-border bg-surface-elevated p-6 transition-all duration-200 hover:bg-surface-hover hover:shadow-lg hover:shadow-accent/5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface text-2xl">
+    <Link href={`/teams/${team.slug}`} className="group block h-full">
+      <article className="flex h-full flex-col rounded-xl border border-border bg-surface-elevated p-4 sm:p-5 transition-all duration-200 hover:border-border hover:bg-surface-hover hover:shadow-lg hover:shadow-accent/5">
+        {/* Header row */}
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface text-2xl">
               {team.avatar}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-text-primary transition-colors group-hover:text-accent">
-                  {team.name}
-                </h3>
-                <span className="rounded border border-border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-text-tertiary">
-                  {team.kind}
-                </span>
-              </div>
+            <div className="min-w-0">
+              <h3 className="line-clamp-2 font-semibold text-text-primary transition-colors group-hover:text-accent">
+                {team.name}
+              </h3>
               <p className="text-xs text-text-tertiary">{team.ownerName}</p>
             </div>
           </div>
-          <TrustBadge tier={team.tier} size="sm" />
+          <div className="flex min-w-0 flex-col items-end gap-1.5">
+            <TrustBadge tier={team.tier} size="sm" />
+            <LayerLabel layer={team.seedLayer} size="sm" />
+          </div>
         </div>
 
+        {/* Tagline */}
         <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-text-secondary">
           {team.tagline}
         </p>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {team.members.map((member) => (
-            <span
-              key={member.slug}
-              className="inline-flex items-center gap-1.5 rounded-md bg-surface px-2 py-1 text-xs text-text-secondary"
-            >
-              <span>{member.avatar}</span>
-              <span>{member.name}</span>
-              <span className="text-text-tertiary">· {member.role}</span>
+        {/* Comparable spec row */}
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border-subtle pt-3">
+          {team.topologyType && (
+            <span className="inline-flex items-center gap-1 text-xs text-text-secondary">
+              <TopologyGlyph
+                topology={team.topologyType}
+                size={14}
+                className="shrink-0 text-accent"
+              />
+              {TOPOLOGY_LABELS[team.topologyType]}
             </span>
-          ))}
-          {team.seedLayer === 'illustrative' && <IllustrativeMark />}
+          )}
+          {team.agentCount !== null && (
+            <span className="text-xs text-text-secondary">
+              <span className="font-medium text-text-primary">{team.agentCount}</span>{' '}
+              {team.agentCount === 1 ? 'agent' : 'agents'}
+            </span>
+          )}
+          {team.platform && <span className="text-xs text-text-tertiary">{team.platform}</span>}
         </div>
 
-        <div className="mt-4 flex items-center gap-4 border-t border-border-subtle pt-4">
-          {team.metrics.slice(0, 2).map((metric) => (
-            <div key={metric.key} className="flex flex-col">
-              <span className="text-xs text-text-tertiary">{metric.label}</span>
-              <span className="text-sm font-medium">
-                {formatMetricValue(metric.value, metric.unit)}
+        {/* Role → model pills (up to 4 members) */}
+        {team.members.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {team.members.slice(0, 4).map((member) => (
+              <span
+                key={member.slug}
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-text-secondary"
+              >
+                <span className="font-medium text-text-primary">{member.role}</span>
+                {member.model && <span className="text-text-tertiary">· {member.model}</span>}
               </span>
-            </div>
-          ))}
-          <div className="flex flex-col">
-            <span className="text-xs text-text-tertiary">Members</span>
-            <span className="text-sm font-medium">{team.members.length}</span>
+            ))}
+            {team.members.length > 4 && (
+              <span className="inline-flex items-center rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-text-tertiary">
+                +{team.members.length - 4} more
+              </span>
+            )}
           </div>
-          <div className="ml-auto flex items-center gap-1 text-xs text-accent">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
-            {team.proofCount} proof
+        )}
+
+        {/* Industries */}
+        {team.industries.length > 0 && (
+          <div className="mt-2.5 flex flex-wrap gap-1">
+            {team.industries.slice(0, 4).map((ind) => (
+              <IndustryTag key={ind} label={ind} />
+            ))}
+          </div>
+        )}
+
+        {/* Metrics footer — two deterministic labeled slots: Outcome + Economics. */}
+        <div className="mt-auto pt-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border-subtle pt-3">
+            {(['Outcome', 'Economics'] as const).map((slotLabel) => {
+              const keySet = slotLabel === 'Outcome' ? OUTCOME_KEYS : ECONOMICS_KEYS;
+              const metric = pickSlot(team.metrics, keySet);
+              const isUnknown = metric === null || metric.value === null;
+              return (
+                <div key={slotLabel} className="flex shrink-0 flex-col">
+                  <span className="text-[10px] text-text-tertiary">{slotLabel}</span>
+                  {metric && !isUnknown ? (
+                    <span className="text-sm font-semibold text-text-primary" title={metric.label}>
+                      {formatMetricValue(metric.value, metric.unit)}
+                    </span>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1 rounded border border-dashed border-border px-1.5 py-0.5 text-[11px] font-medium text-text-tertiary"
+                      title="Not stated for this team"
+                    >
+                      [unknown]
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+            <div className="ml-auto flex shrink-0 items-center gap-1 text-xs text-accent">
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              {team.proofCount} proof
+            </div>
+          </div>
+          {/* Compare toggle — client state, does not navigate the card link */}
+          <div className="mt-2.5">
+            <CompareToggle slug={team.slug} name={team.name} />
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }

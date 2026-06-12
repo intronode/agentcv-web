@@ -18,10 +18,11 @@ const selectClasses =
 // ── Topology options ───────────────────────────────────────────────────────
 
 const TOPOLOGY_TYPES: TopologyType[] = [
-  'hub_and_spoke',
+  'orchestrator_worker',
+  'supervisor',
+  'swarm',
   'pipeline',
-  'peer',
-  'hierarchical',
+  'router',
   'solo_plus_tools',
   'other',
 ];
@@ -333,7 +334,7 @@ export default function SubmitPage() {
     if (opSince) payload['operationalSince'] = opSince;
 
     try {
-      const res = await fetch('/api/configurations', {
+      const res = await fetch('/api/teams', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -352,7 +353,7 @@ export default function SubmitPage() {
         setSubmitting(false);
         return;
       }
-      router.push(`/configurations/${data.slug}`);
+      router.push(`/teams/${data.slug}`);
     } catch {
       setGlobalError('Network error');
       setSubmitting(false);
@@ -362,11 +363,11 @@ export default function SubmitPage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
-        Submit your configuration
+        Submit your team
       </p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">Register a configuration</h1>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight">Register a team</h1>
       <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-        Document a working agent harness — the role topology, platform, and evidence that makes it
+        Document a working agent team — the role topology, platform, and evidence that makes it
         real.{' '}
         <span className="text-text-tertiary">
           6–8 minutes — most fields are short; the blueprint prose is the work.
@@ -440,7 +441,7 @@ export default function SubmitPage() {
 
           <div>
             <label htmlFor="name" className={labelClasses}>
-              Configuration name *
+              Team name *
             </label>
             <input
               id="name"
@@ -507,8 +508,8 @@ export default function SubmitPage() {
         >
           <h2 className="text-sm font-semibold">Comparable fields</h2>
           <p className="text-[11px] text-text-tertiary">
-            These are the benchmark fields — structured so configurations can be compared across
-            topologies, platforms, and industries.
+            These are the benchmark fields — structured so teams can be compared across topologies,
+            platforms, and industries.
           </p>
 
           {/* Topology type */}
@@ -709,8 +710,8 @@ export default function SubmitPage() {
           </div>
 
           <p className="text-xs text-text-tertiary">
-            Existing handles attach this configuration to that owner. New handles create a new owner
-            page. Auth and ownership claiming are a later phase.
+            Existing handles attach this team to that owner. New handles create a new owner page.
+            Auth and ownership claiming are a later phase.
           </p>
         </section>
 
@@ -726,7 +727,7 @@ export default function SubmitPage() {
             disabled={submitting}
             className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
           >
-            {submitting ? 'Submitting…' : 'Submit configuration'}
+            {submitting ? 'Submitting…' : 'Submit team'}
           </button>
           <p className="text-xs text-text-tertiary">
             Lands as{' '}

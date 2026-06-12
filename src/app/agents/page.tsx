@@ -46,8 +46,8 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
     <div className="mx-auto max-w-6xl px-6 py-12">
       <h1 className="text-3xl font-bold tracking-tight">Agent Components</h1>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
-        Agents are the components configurations are built from — each with its own role, model,
-        platform, and track record.{' '}
+        Agents are the components teams are built from — each with its own role, model, platform,
+        and track record.{' '}
         <span className="text-text-tertiary">
           {agents.length} component{agents.length === 1 ? '' : 's'} on record.
         </span>{' '}

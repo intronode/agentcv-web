@@ -15,10 +15,10 @@ export default function NotFound() {
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link
-          href="/configurations"
+          href="/teams"
           className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
         >
-          Browse configurations
+          Browse teams
         </Link>
         <Link
           href="/agents"

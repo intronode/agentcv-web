@@ -135,17 +135,17 @@ export default async function AgentProfilePage({ params }: PageProps) {
               ) : teams.length > 0 ? (
                 <div className="rounded-lg border border-border bg-surface-elevated/50 p-5">
                   <p className="text-sm leading-relaxed text-text-secondary">
-                    Performance is measured where the work happens — at the configuration level.{' '}
-                    {agent.name} runs inside{' '}
+                    Performance is measured where the work happens — at the team level. {agent.name}{' '}
+                    runs inside{' '}
                     {teams.length === 1 && teams[0] ? (
                       <Link
-                        href={`/configurations/${teams[0].slug}`}
+                        href={`/teams/${teams[0].slug}`}
                         className="font-medium text-accent hover:underline"
                       >
                         {teams[0].avatar} {teams[0].name}
                       </Link>
                     ) : (
-                      'the configurations below'
+                      'the teams below'
                     )}
                     , whose windowed metrics are the honest unit of account.
                   </p>
@@ -157,7 +157,7 @@ export default async function AgentProfilePage({ params }: PageProps) {
                       return (
                         <li key={team.slug} className="flex flex-wrap items-center gap-2">
                           <Link
-                            href={`/configurations/${team.slug}`}
+                            href={`/teams/${team.slug}`}
                             className="text-sm font-medium text-accent hover:underline"
                           >
                             {team.avatar} {team.name}
@@ -326,13 +326,13 @@ export default async function AgentProfilePage({ params }: PageProps) {
           {teams.length > 0 && (
             <div className="rounded-xl border border-border bg-surface-elevated p-4">
               <h3 className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
-                Member of configurations
+                Member of teams
               </h3>
               <ul className="mt-3 space-y-2">
                 {teams.map((team) => (
                   <li key={team.slug}>
                     <Link
-                      href={`/configurations/${team.slug}`}
+                      href={`/teams/${team.slug}`}
                       className="flex items-center gap-2 rounded-lg p-2 text-sm transition-colors hover:bg-surface-hover"
                     >
                       <span className="text-lg">{team.avatar}</span>
