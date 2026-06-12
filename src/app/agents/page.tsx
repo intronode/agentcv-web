@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { agentFilterOptions, listAgents } from '@/lib/db/queries';
 import type { TrustTier } from '@/lib/db/types';
-import AgentCard from '@/components/AgentCard';
+import AgentGrid from '@/components/AgentGrid';
 import FilterBar from '@/components/FilterBar';
 import BackToTop from '@/components/BackToTop';
 
@@ -66,13 +66,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
           </a>
         </p>
       ) : (
-        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {agents.map((agent) => (
-            <div key={agent.slug} className="min-w-0">
-              <AgentCard agent={agent} />
-            </div>
-          ))}
-        </div>
+        <AgentGrid agents={agents} />
       )}
       <BackToTop />
     </div>

@@ -20,16 +20,31 @@ function todayIso(): string {
   return `${y}-${m}-${day}`;
 }
 
+// ISO date validation — cycle-09 / cycle-13 pattern: no native date picker
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+function isValidISODate(val: string): boolean {
+  if (!ISO_DATE_RE.test(val)) return false;
+  const d = new Date(val);
+  return !isNaN(d.getTime());
+}
+
 export default function ProofForm({ subjectType, subjectSlug }: ProofFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  // Controlled ISO date field (prefilled with today) — avoids native date-picker chrome
+  const [entryDateDraft, setEntryDateDraft] = useState(todayIso());
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    // Validate the controlled date field before submitting
+    if (!isValidISODate(entryDateDraft.trim())) {
+      setError('Entry date must be a valid date in YYYY-MM-DD format — e.g. 2024-03-15');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -43,7 +58,7 @@ export default function ProofForm({ subjectType, subjectSlug }: ProofFormProps) 
           title: form.get('title'),
           body: form.get('body') || undefined,
           evidenceUrl: form.get('evidenceUrl') || undefined,
-          entryDate: form.get('entryDate'),
+          entryDate: entryDateDraft.trim(),
         }),
       });
       const data = (await res.json()) as { id?: number; tier?: string; error?: string };
@@ -73,6 +88,7 @@ export default function ProofForm({ subjectType, subjectSlug }: ProofFormProps) 
           onClick={() => {
             setOpen(true);
             setNotice('');
+            setEntryDateDraft(todayIso());
           }}
           className="rounded-lg border border-border px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
         >
@@ -88,7 +104,7 @@ export default function ProofForm({ subjectType, subjectSlug }: ProofFormProps) 
             or <span className="text-blue-300">evidence-linked</span> if you attach a public
             evidence URL. Tiers are recomputed from the record.
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <select name="type" required className={inputClasses} defaultValue="task">
               {['task', 'incident', 'lesson', 'milestone', 'artifact'].map((t) => (
                 <option key={t} value={t}>
@@ -96,13 +112,23 @@ export default function ProofForm({ subjectType, subjectSlug }: ProofFormProps) 
                 </option>
               ))}
             </select>
-            <input
-              name="entryDate"
-              required
-              type="date"
-              defaultValue={todayIso()}
-              className={inputClasses}
-            />
+            <div className="flex-1">
+              {/* type=text — avoids native date-picker chrome (cycle-13 fix, same as cycle-09) */}
+              <input
+                name="entryDate"
+                required
+                type="text"
+                inputMode="numeric"
+                placeholder="YYYY-MM-DD"
+                maxLength={10}
+                value={entryDateDraft}
+                onChange={(e) => setEntryDateDraft(e.target.value)}
+                className={`font-mono ${inputClasses}`}
+              />
+              <p className="mt-0.5 text-[11px] text-text-tertiary">
+                ISO format — e.g. 2024-03-15. Day is required.
+              </p>
+            </div>
           </div>
           <input name="title" required placeholder="What happened?" className={inputClasses} />
           <textarea

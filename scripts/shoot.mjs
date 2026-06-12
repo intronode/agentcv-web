@@ -52,6 +52,7 @@ export const ROUTES = [
   { path: '/harness-engineering',                                           slug: 'harness-engineering' },
   { path: '/register',                                                       slug: 'register-chooser' },
   { path: '/register/agent',                                                 slug: 'register-agent' },
+  { path: '/signin',                                                         slug: 'signin' },
   { path: '/submit',                                                         slug: 'submit' },
   { path: '/request?config=ari-collective',                                slug: 'request' },
   { path: '/this-route-does-not-exist',                                    slug: 'not-found' },

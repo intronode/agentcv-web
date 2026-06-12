@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { teamFilterOptions, listTeams } from '@/lib/db/queries';
 import type { TrustTier } from '@/lib/db/types';
-import TeamCard from '@/components/TeamCard';
+import TeamGrid from '@/components/TeamGrid';
 import TeamFilterBar from '@/components/TeamFilterBar';
 import { CompareTray } from '@/components/CompareTray';
 import BackToTop from '@/components/BackToTop';
@@ -128,13 +128,7 @@ export default async function TeamsPage({ searchParams }: PageProps) {
               </div>
             </div>
           )}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {teams.map((team) => (
-              <div key={team.slug} className="min-w-0">
-                <TeamCard team={team} />
-              </div>
-            ))}
-          </div>
+          <TeamGrid teams={teams} />
         </>
       )}
       <BackToTop />

@@ -9,6 +9,14 @@ const inputClasses =
 
 const labelClasses = 'block text-xs font-medium uppercase tracking-wide text-text-tertiary';
 
+// ISO date validation — identical pattern to /submit cycle-09 solution
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+function isValidISODate(val: string): boolean {
+  if (!ISO_DATE_RE.test(val)) return false;
+  const d = new Date(val);
+  return !isNaN(d.getTime());
+}
+
 export interface SessionUser {
   id?: string;
   name: string | null;
@@ -25,6 +33,8 @@ export default function RegisterAgentClient({ sessionUser }: Props) {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [ownerName, setOwnerName] = useState(sessionUser?.name ?? '');
+  // Controlled state for the ISO date field (cycle-09 pattern — no native date picker)
+  const [opSinceDraft, setOpSinceDraft] = useState('');
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -34,6 +44,8 @@ export default function RegisterAgentClient({ sessionUser }: Props) {
       if (typeof value === 'string' && value.trim()) payload[key] = value.trim();
     }
     if (ownerName.trim()) payload['ownerName'] = ownerName.trim();
+    // Inject controlled date value (not in FormData because it's controlled)
+    if (opSinceDraft.trim()) payload['operationalSince'] = opSinceDraft.trim();
 
     // Client-side required field check
     const errs: Record<string, string> = {};
@@ -43,8 +55,17 @@ export default function RegisterAgentClient({ sessionUser }: Props) {
     if (!payload['platform']) errs['platform'] = 'Platform is required';
     if (!payload['ownerName']) errs['ownerName'] = 'Owner display name is required';
     if (!payload['ownerHandle']) errs['ownerHandle'] = 'Owner handle is required';
+    if (opSinceDraft.trim() && !isValidISODate(opSinceDraft.trim())) {
+      errs['operationalSince'] = 'Use YYYY-MM-DD format — e.g. 2024-03-15';
+    }
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
+      // Scroll to the first errored field so it's visible below the sticky nav
+      const firstErrKey = Object.keys(errs)[0] ?? '';
+      if (firstErrKey) {
+        const el = document.getElementById(firstErrKey);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       return;
     }
     setFieldErrors({});
@@ -115,7 +136,10 @@ export default function RegisterAgentClient({ sessionUser }: Props) {
       )}
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6" noValidate>
-        <section className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5">
+        <section
+          id="section-identity"
+          className="scroll-mt-32 space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
+        >
           <h2 className="text-sm font-semibold">Identity</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -202,12 +226,26 @@ export default function RegisterAgentClient({ sessionUser }: Props) {
               <label htmlFor="operationalSince" className={labelClasses}>
                 Operating since
               </label>
+              {/* type=text instead of type=date — avoids native date-picker chrome that
+                  breaks the dark design language. Cycle-09 pattern: ISO text input. */}
               <input
                 id="operationalSince"
                 name="operationalSince"
-                type="date"
-                className={`mt-1.5 ${inputClasses}`}
+                type="text"
+                inputMode="numeric"
+                placeholder="YYYY-MM-DD"
+                maxLength={10}
+                value={opSinceDraft}
+                onChange={(e) => setOpSinceDraft(e.target.value)}
+                className={`mt-1.5 font-mono ${inputClasses} ${fieldErrors['operationalSince'] ? 'border-red-500/50' : ''}`}
               />
+              {fieldErrors['operationalSince'] ? (
+                <p className="mt-0.5 text-[11px] text-red-400">{fieldErrors['operationalSince']}</p>
+              ) : (
+                <p className="mt-0.5 text-[11px] text-text-tertiary">
+                  ISO format — e.g. 2024-03-15. Day is required.
+                </p>
+              )}
             </div>
           </div>
 
@@ -226,7 +264,10 @@ export default function RegisterAgentClient({ sessionUser }: Props) {
           </div>
         </section>
 
-        <section className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5">
+        <section
+          id="section-how-built"
+          className="scroll-mt-32 space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
+        >
           <h2 className="text-sm font-semibold">How it&apos;s built</h2>
           <div>
             <label htmlFor="howBuilt" className={labelClasses}>
@@ -256,7 +297,10 @@ export default function RegisterAgentClient({ sessionUser }: Props) {
           </div>
         </section>
 
-        <section className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5">
+        <section
+          id="section-owner"
+          className="scroll-mt-32 space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5"
+        >
           <h2 className="text-sm font-semibold">Owner</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

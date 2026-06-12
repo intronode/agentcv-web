@@ -374,9 +374,19 @@ export default async function ComparePage({ searchParams }: PageProps) {
           MOBILE LAYOUT  (< md breakpoint, i.e. < 768 px)
           Per-field grouped rows — all configs visible simultaneously,
           no horizontal scroll required at 390 px.
+
+          DELIBERATE DESIGN DECISION (cycle-08, confirmed cycle-13):
+          Mobile uses a STACKED layout (all configs in a grid per field row)
+          rather than a horizontal side-by-side scroll. This was a deliberate
+          legibility-first choice: at 390 px, a horizontal scroll of 3 configs
+          would obscure data and break the comparison mental model. The stacked
+          approach keeps every field value visible simultaneously. Do NOT change
+          this to a horizontally scrollable layout without re-evaluating at
+          320 px, 360 px, and 390 px viewports.
           ================================================================ */}
       <div className="block md:hidden">
-        {/* Config identity strip — sticky so column identity is always visible while scrolling */}
+        {/* Config identity strip — sticky so column identity is always visible while scrolling.
+            Shows: avatar + topology glyph + name + trust badge for at-a-glance column recognition. */}
         <div
           className="sticky top-28 z-10 mb-4 grid gap-2 rounded-xl border border-border bg-surface-elevated/95 p-3 backdrop-blur-sm sm:top-16"
           style={{ gridTemplateColumns: `repeat(${configs.length}, minmax(0, 1fr))` }}
@@ -386,8 +396,18 @@ export default async function ComparePage({ searchParams }: PageProps) {
               key={c.configuration.slug}
               className="flex flex-col items-center gap-1 text-center"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface text-xl">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-surface text-xl">
                 {c.configuration.avatar}
+                {/* Topology glyph badge — bottom-right corner of the avatar tile */}
+                {c.configuration.topology_type && (
+                  <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-surface-elevated">
+                    <TopologyGlyph
+                      topology={c.configuration.topology_type}
+                      size={10}
+                      className="text-accent"
+                    />
+                  </span>
+                )}
               </div>
               <Link
                 href={`/teams/${c.configuration.slug}`}

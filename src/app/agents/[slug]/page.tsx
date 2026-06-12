@@ -236,6 +236,44 @@ export default async function AgentProfilePage({ params }: PageProps) {
             <div className="mt-5">
               <ProofForm subjectType="agent" subjectSlug={agent.slug} />
             </div>
+            {/* Next-steps guidance — shown only on fresh profiles with no evidence yet */}
+            {proof.length === 0 && metrics.length === 0 && (
+              <div className="mt-6 rounded-xl border border-accent/20 bg-accent/5 p-5">
+                <p className="text-sm font-semibold text-text-primary">
+                  Build this profile&apos;s evidence
+                </p>
+                <p className="mt-1 text-xs text-text-tertiary">
+                  Self-Reported is the honest starting tier. The computed tier upgrades
+                  automatically as you add evidence.
+                </p>
+                <ul className="mt-4 space-y-2 text-xs text-text-secondary">
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 text-accent">→</span>
+                    <span>
+                      <a href="#proof" className="font-medium text-accent hover:underline">
+                        Add a proof entry
+                      </a>{' '}
+                      — tasks, incidents, lessons, milestones, or artifacts with an evidence URL
+                      upgrade the tier to Evidence-Linked.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 text-accent">→</span>
+                    <span>
+                      Request attestations from colleagues with first-hand experience — required for
+                      Peer-Attested.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 text-accent">→</span>
+                    <span>
+                      The tier upgrades automatically at 3 evidence-linked entries. Nothing here is
+                      self-assignable.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            )}
           </section>
 
           {(agent.how_built || agent.oversight) && (
