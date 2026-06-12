@@ -5,7 +5,8 @@
 // dropped and rebuilt automatically on next access (data/ is disposable).
 // v5: users table + owners.user_id for Auth.js v5 account ownership.
 // v6: operational files per agent/team (files, file_findings, file_scan_log).
-export const SCHEMA_VERSION = 6;
+// v7: owner_confidential_terms table for per-owner deny-list (AES-256-GCM encrypted).
+export const SCHEMA_VERSION = 7;
 
 export const SCHEMA_SQL = `
 PRAGMA user_version = ${SCHEMA_VERSION};
@@ -215,4 +216,17 @@ CREATE TABLE file_findings (
   stale           INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX idx_file_findings_file ON file_findings(file_id, stale, status);
+
+-- v7: per-owner deny-list for the business-confidential detector.
+-- Terms are encrypted with AES-256-GCM using SANITIZER_KEY env var.
+-- term_encrypted, iv, auth_tag stored as hex strings.
+CREATE TABLE owner_confidential_terms (
+  id              INTEGER PRIMARY KEY,
+  owner_id        INTEGER NOT NULL REFERENCES owners(id) ON DELETE CASCADE,
+  term_encrypted  TEXT NOT NULL,
+  iv              TEXT NOT NULL,
+  auth_tag        TEXT NOT NULL,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_oct_owner ON owner_confidential_terms(owner_id);
 `;

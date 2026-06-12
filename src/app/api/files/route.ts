@@ -4,6 +4,7 @@ import { getDb } from '@/lib/db';
 import { createFile, validateFilePath } from '@/lib/db/queries';
 import type { AgentRow, TeamRow, OwnerRow } from '@/lib/db/types';
 import { ValidationError, readJsonBody, reqStr } from '@/lib/validate';
+import { runScan } from '@/lib/sanitizer';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,6 +61,15 @@ export async function POST(request: Request): Promise<NextResponse> {
       contentPrivate,
       uploadedBy: userId,
     });
+
+    // Trigger scan immediately after create (fail-closed: scan_error blocks publish)
+    try {
+      runScan(result.id, 'content_change');
+    } catch (scanErr) {
+      // runScan itself is fail-closed and writes scan_error to the DB.
+      // Log but do not fail the file creation response.
+      console.error('POST /api/files — scan failed for file', result.id, scanErr);
+    }
 
     return NextResponse.json({ id: result.id, path, visibility: 'private' }, { status: 201 });
   } catch (error) {

@@ -381,31 +381,73 @@ knows their clients' names enters them; the scanner enforces them.
 
 **5.3.2 Deal/contract language proximity**
 
-Primary elements (amount or counterparty patterns):
+Primary elements: **currency amounts only** — these are the tokens that get
+masked as `[amount]`.
 
 ```
 currency amounts:  /\$[\d,]+(?:\.\d{2})?(?:[KkMmBb])?|\b\d+(?:\.\d+)?\s*(?:USD|KRW|EUR|GBP)\b/
-counterparty refs: /\b(?:client|customer|partner|vendor|contractor|agency)\b/i
 ```
 
-Supporting elements (contract vocabulary, within 250-character window):
+Supporting elements (within 250-character window — increase confidence but
+are NOT themselves masked by this sub-pass):
 
 ```
-deal terms: contract, NDA, non-disclosure, agreement, SLA, retainer,
-            invoice, payment, deliverable, milestone, scope, SOW,
-            statement of work, engagement, confidential, proprietary
+deal terms:          contract, NDA, non-disclosure, agreement, SLA, retainer,
+                     invoice, payment, deliverable, milestone, scope, SOW,
+                     statement of work, engagement, confidential, proprietary
+counterparty roles:  client, customer, partner, vendor, contractor, agency
 ```
+
+**Span contract:** A finding from this sub-pass spans exactly the currency
+amount token (e.g. `$40,000`). Counterparty role words are supporting context
+only; they increase the confidence level of a nearby currency amount but do not
+generate their own findings. This prevents the "misplaced mask" failure mode
+where a role word like "client" was incorrectly flagged as `[amount]`.
 
 Confidence levels (following Purview's model):
 
-- **Low (advisory):** primary element found but no supporting element in
+- **Low (advisory):** currency amount found but no supporting element in
   window → logged, shown in review UI as low-severity advisory, not blocking
-- **Medium (blocking-dismissible):** primary element + one supporting
+- **Medium (blocking-dismissible):** currency amount + one supporting
   element in 250-char window → blocking, dismissible with reason
-- **High (blocking):** primary element + two or more supporting elements
-  OR deny-list term found → blocking, requires reason to dismiss
+- **High (blocking):** currency amount + two or more supporting elements
+  → blocking, requires reason to dismiss
 
-**5.3.3 Internal URL / hostname detection**
+**5.3.3 Counterparty-name detection**
+
+Detects capitalized proper-noun sequences near counterparty context words —
+the "cold-start" complement to the deny-list. When a client name is not yet
+in the owner's deny-list, this sub-pass provides a catch based on naming
+shape and linguistic proximity.
+
+**Algorithm:**
+
+1. Find all counterparty context words (client|customer|partner|vendor|account|agency) in the segment.
+2. Find all capitalized proper-noun sequences (1–3 consecutive `[A-Z][a-z]+` words) in the segment.
+3. For each proper-noun sequence, check whether it falls within ±60 characters of any context word.
+4. If yes, and the sequence is not in the common-word stoplist, emit a `confidential.counterparty-name` finding with suggested mask `[client]`.
+
+**Stoplist:** Common English words that happen to be title-cased (The, This,
+Our, January, Monday, Report, Summary, etc.) are excluded. The full stoplist
+is approximately 60 entries; see `src/lib/sanitizer/detectors/confidential.ts`.
+
+**Scope exclusion:** Code block segments are skipped entirely (same as all
+other sub-passes).
+
+**Deduplication:** The `seen` set (keyed on `spanStart`) ensures that if both
+the deny-list and the counterparty-name sub-pass fire on the same token (e.g.
+"Initech" was added to the deny-list AND matches the proper-noun heuristic),
+only the deny-list finding is kept. Sub-pass priority: deny-list →
+deal-proximity → counterparty-name → internal-url.
+
+**Known false-positive rate:** Moderate. Product names, feature names,
+and proper nouns in technical writing that happen to appear near a role word
+will fire. The review UI dismiss-with-reason is the safety valve; after a few
+dismissals the owner typically adds a more precise deny-list term or adjusts
+the probe content. This is by design: the heuristic errs on the side of
+disclosure prevention.
+
+**5.3.4 Internal URL / hostname detection**
 
 ```
 internal indicators:
@@ -419,7 +461,7 @@ pattern: extract all URLs (href, bare URLs in prose), check against above
 Severity: BLOCKING (internal URLs reveal infrastructure topology; an
 unintentional `.internal` hostname leaks more than it appears to).
 
-**5.3.4 Cold-start dictionary**
+**5.3.5 Cold-start coverage**
 
 The deny-list is empty for new accounts. Mitigation:
 
@@ -427,7 +469,8 @@ The deny-list is empty for new accounts. Mitigation:
    before scanning" with examples (client names, project codenames).
 2. The disclosure copy (§8) states explicitly that the business-confidential
    detector relies on your deny-list and will miss terms you have not entered.
-3. Medium-confidence proximity heuristics fire even without the deny-list.
+3. **Medium-confidence proximity heuristics (§5.3.2) fire even without the deny-list** — currency amounts near deal vocabulary are still caught.
+4. **The counterparty-name heuristic (§5.3.3) provides additional cold-start coverage** — proper-noun sequences near role words are flagged for owner review even before the deny-list is populated.
 
 **Severity:** BLOCKING but dismissible with reason (false-positive rate is
 higher here than for secrets/PII — a dollar amount in a lesson about cost

@@ -1,9 +1,17 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { auth } from '@/lib/auth';
-import { getTeamProfile, getFilesForSubject, getFileByPath } from '@/lib/db/queries';
+import {
+  getTeamProfile,
+  getFilesForSubject,
+  getFileByPath,
+  getFileFindings,
+  getFileScanLog,
+} from '@/lib/db/queries';
 import { getDb } from '@/lib/db';
 import { FileViewer } from '@/components/FileViewer';
+import { ReviewUI } from '@/components/ReviewUI';
+import { ScanLogPanel } from '@/components/ScanLogPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,13 +21,18 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug, path } = await params;
-  const filePath = path.join('/');
-  return { title: `${filePath} — ${slug} — AgentCV` };
+  const isReview = path[path.length - 1] === 'review';
+  const filePath = isReview ? path.slice(0, -1).join('/') : path.join('/');
+  const suffix = isReview ? ' — Review' : '';
+  return { title: `${filePath}${suffix} — ${slug} — AgentCV` };
 }
 
 export default async function TeamFilePage({ params }: PageProps) {
   const { slug, path } = await params;
-  const filePath = path.join('/');
+
+  // Detect review mode: last segment === 'review'
+  const isReview = path[path.length - 1] === 'review';
+  const filePath = isReview ? path.slice(0, -1).join('/') : path.join('/');
 
   const profile = getTeamProfile(slug);
   if (!profile) notFound();
@@ -44,7 +57,30 @@ export default async function TeamFilePage({ params }: PageProps) {
     notFound();
   }
 
-  // Content to render: public files use content_public, owner sees content_private
+  // Review page: owner-only
+  if (isReview) {
+    if (!isOwner) notFound();
+
+    const findings = getFileFindings(file.id);
+    // canPublish = "scan completed successfully" — the client handles allResolved tracking.
+    // The API route (/api/files/[id]/visibility) has its own canMakeFilePublic() gate
+    // that enforces no-unresolved-findings at publish time (server-side security).
+    // Passing canMakeFilePublic() here would permanently disable Publish in the client
+    // because the prop is set at page-load time (before the user resolves findings).
+    const publishable = file.sanitization_state === 'scan_complete';
+
+    return (
+      <ReviewUI
+        fileId={file.id}
+        filePath={filePath}
+        backUrl={`/teams/${slug}/files/${filePath}`}
+        initialFindings={findings}
+        canPublish={publishable}
+      />
+    );
+  }
+
+  // Normal file viewer
   const content =
     file.visibility === 'public' && file.content_public !== null
       ? file.content_public
@@ -52,10 +88,11 @@ export default async function TeamFilePage({ params }: PageProps) {
         ? file.content_private
         : '';
 
-  // File list for sidebar tree
   const files = isOwner
     ? getFilesForSubject('team', team.id, false)
     : getFilesForSubject('team', team.id, true);
+
+  const scanLog = isOwner ? getFileScanLog(file.id, 5) : [];
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10 overflow-hidden">
@@ -69,7 +106,14 @@ export default async function TeamFilePage({ params }: PageProps) {
         selectedPath={filePath}
         content={content}
         baseUrl={`/teams/${slug}/files`}
+        fileId={file.id}
+        sanitizationState={file.sanitization_state}
+        visibility={file.visibility}
+        isOwner={isOwner}
+        reviewUrl={isOwner ? `/teams/${slug}/files/${filePath}/review` : undefined}
+        publicDisclosure={file.visibility === 'public'}
       />
+      {isOwner && scanLog.length > 0 && <ScanLogPanel entries={scanLog} />}
     </div>
   );
 }

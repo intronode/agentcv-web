@@ -268,6 +268,18 @@ export function seed(db: Database.Database): void {
     ownerIds.set(handle, Number(insOwner.run(handle, name, kind, bio, url).lastInsertRowid));
   }
 
+  // ---- QA user → owner linkage ----
+  // Create a fixed-identity user for the `intronode` owner so that DEV_LOGIN=1
+  // QA sign-ins (handle="intronode") can pass ownership checks in the file API.
+  // This is only for local QA pipelines; production requires real auth.
+  const insUser = db.prepare(
+    'INSERT INTO users (email, name, image, provider) VALUES (?, ?, ?, ?)'
+  );
+  const introQaUserId = Number(
+    insUser.run('intronode@dev.agentcv.local', 'Intronode', null, 'dev-credentials').lastInsertRowid
+  );
+  db.prepare('UPDATE owners SET user_id=? WHERE handle=?').run(introQaUserId, 'intronode');
+
   // ---- agents ----
   const insAgent = db.prepare(
     `INSERT INTO agents (slug, name, avatar, tagline, about, category, platform, model, owner_id,

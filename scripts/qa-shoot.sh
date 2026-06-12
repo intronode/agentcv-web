@@ -103,7 +103,9 @@ rm -f "${PID_FILE}"
 
 # Start next start in background; redirect output to a tmp log
 SERVER_LOG="/tmp/agentcv-server-${PORT}.log"
-PORT="${PORT}" npm start > "${SERVER_LOG}" 2>&1 &
+# SANITIZER_KEY: QA-local key so deny-list term storage is testable in the
+# pipeline (local-only; production requires a real secret per docs/SANITIZER.md)
+AUTH_URL="http://localhost:${PORT}" DEV_LOGIN=1 SANITIZER_KEY="qa-local-sanitizer-key" PORT="${PORT}" npm start > "${SERVER_LOG}" 2>&1 &
 NPM_WRAPPER_PID=$!
 echo "    npm wrapper PID: ${NPM_WRAPPER_PID}"
 
@@ -252,6 +254,12 @@ REQUIRED_CAPTURES=(
   "agents-filtered-openclaw-desktop.png"
   "teams-ari-collective-files-lessons-desktop.png"
   "teams-ari-collective-files-lessons-mobile.png"
+  "auth-signin.png"
+  "deny-list-terms.png"
+  "sanitizer-scan-log.png"
+  "sanitizer-block.png"
+  "sanitizer-masked-published.png"
+  "sanitizer-evidence.txt"
 )
 MISSING_CAPTURES=()
 for cap in "${REQUIRED_CAPTURES[@]}"; do
@@ -273,7 +281,7 @@ fi
 
 echo "================================================================"
 echo "  PASS  |  ${SHOT_COUNT} shots captured  |  ${UNEXPECTED_COUNT} unexpected console error(s)"
-echo "  Interaction captures: register-team-success ✓  register-chooser ✓  request-success ✓  agents-filtered ✓"
+echo "  Interaction captures: register-team-success ✓  register-chooser ✓  request-success ✓  agents-filtered ✓  sanitizer ✓"
 echo "  Output: ${OUT_DIR}"
 echo "  Console log: ${CONSOLE_LOG}"
 echo "================================================================"

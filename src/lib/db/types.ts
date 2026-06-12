@@ -334,3 +334,32 @@ export interface FileListItem {
   updated_at: string;
   last_scan_ts: string | null;
 }
+
+export interface FileFindingRow {
+  id: number;
+  file_id: number;
+  scan_log_id: number;
+  detector_id: string;
+  detector_version: string;
+  finding_type: FindingType;
+  severity: FindingSeverity;
+  span_start: number;
+  span_end: number;
+  excerpt: string;
+  suggested_mask: string;
+  status: FindingStatus;
+  resolved_mask: string | null;
+  dismiss_reason: string | null;
+  resolved_by: number | null;
+  resolved_at: string | null;
+  stale: number;
+}
+
+export interface OwnerConfidentialTermRow {
+  id: number;
+  owner_id: number;
+  term_encrypted: string;
+  iv: string;
+  auth_tag: string;
+  created_at: string;
+}

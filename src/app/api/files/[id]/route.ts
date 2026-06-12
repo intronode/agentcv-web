@@ -4,6 +4,7 @@ import { getDb } from '@/lib/db';
 import { getFileById, updateFile } from '@/lib/db/queries';
 import type { OwnerRow } from '@/lib/db/types';
 import { ValidationError, readJsonBody, reqStr } from '@/lib/validate';
+import { runScan } from '@/lib/sanitizer';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,6 +93,21 @@ export async function PUT(request: Request, { params }: Params): Promise<NextRes
     const contentPrivate = reqStr(body, 'content', { max: 65536 });
 
     updateFile(id, { contentPrivate });
+
+    // Revert to private if currently public (content changed — re-review required)
+    const refreshed = getFileById(id);
+    if (refreshed?.visibility === 'public') {
+      getDb()
+        .prepare(`UPDATE files SET visibility='private', updated_at=datetime('now') WHERE id=?`)
+        .run(id);
+    }
+
+    // Trigger rescan (fail-closed)
+    try {
+      runScan(id, 'content_change');
+    } catch (scanErr) {
+      console.error('PUT /api/files/[id] — scan failed for file', id, scanErr);
+    }
 
     return NextResponse.json({ id, updated: true });
   } catch (error) {

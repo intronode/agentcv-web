@@ -67,11 +67,15 @@ function buildProviders(): NextAuthConfig['providers'] {
           const displayName = (credentials?.displayName as string | undefined)?.trim();
           if (!handle || handle.length < 1) return null;
           const name = displayName || handle;
-          const user = upsertUser({ name, provider: 'dev-credentials' });
+          // Use a deterministic synthetic email so that repeated dev sign-ins
+          // with the same handle reuse the same users row (enabling owner linkage
+          // set up in the seed for QA pipelines with DEV_LOGIN=1).
+          const syntheticEmail = `${handle}@dev.agentcv.local`;
+          const user = upsertUser({ email: syntheticEmail, name, provider: 'dev-credentials' });
           return {
             id: String(user.id),
             name,
-            email: null,
+            email: syntheticEmail,
             image: null,
           };
         },

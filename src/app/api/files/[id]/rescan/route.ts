@@ -1,15 +1,20 @@
+/**
+ * POST /api/files/[id]/rescan
+ * Manual rescan trigger. Owner-only. Queues an immediate in-process scan.
+ * Spec: SANITIZER.md §10.1
+ */
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/db';
-import { getFileById, canMakeFilePublic, setFileVisibility, publishFile } from '@/lib/db/queries';
+import { getFileById } from '@/lib/db/queries';
 import type { OwnerRow } from '@/lib/db/types';
-import { ValidationError, readJsonBody, reqStr } from '@/lib/validate';
+import { runScan } from '@/lib/sanitizer';
 
 export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ id: string }> };
 
-export async function PATCH(request: Request, { params }: Params): Promise<NextResponse> {
+export async function POST(_request: Request, { params }: Params): Promise<NextResponse> {
   try {
     const { id: idStr } = await params;
     const id = parseInt(idStr, 10);
@@ -25,7 +30,7 @@ export async function PATCH(request: Request, { params }: Params): Promise<NextR
 
     const file = getFileById(id);
     if (!file) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
 
     // Verify ownership
@@ -44,36 +49,15 @@ export async function PATCH(request: Request, { params }: Params): Promise<NextR
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const body = await readJsonBody(request);
-    const visibility = reqStr(body, 'visibility', { oneOf: ['private', 'public'] }) as
-      | 'private'
-      | 'public';
+    const result = runScan(id, 'manual_rescan');
 
-    if (visibility === 'public') {
-      // Sanitization gate: scan_complete + no unresolved findings
-      if (!canMakeFilePublic(id)) {
-        return NextResponse.json(
-          {
-            error:
-              'Cannot publish: file must be scanned with no unresolved findings. ' +
-              'Complete the sanitization review at /review before publishing.',
-          },
-          { status: 403 }
-        );
-      }
-      // publishFile applies masks → content_public and sets visibility='public'
-      publishFile(id);
-    } else {
-      // Reverting to private: simple visibility update (no mask application needed)
-      setFileVisibility(id, visibility);
-    }
-
-    return NextResponse.json({ id, visibility });
+    return NextResponse.json({
+      scanLogId: result.scanLogId,
+      findingCount: result.findings.length,
+      error: result.error ?? null,
+    });
   } catch (error) {
-    if (error instanceof ValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    console.error('PATCH /api/files/[id]/visibility failed:', error);
+    console.error('POST /api/files/[id]/rescan failed:', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

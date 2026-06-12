@@ -24,6 +24,7 @@ import type {
   FileRow,
   FileListItem,
   FileVisibility,
+  FileFindingRow,
 } from './types';
 
 // Deprecated type aliases — kept so old import sites keep compiling.
@@ -1292,25 +1293,170 @@ export function updateFile(id: number, input: UpdateFileInput): void {
     .run(input.contentPrivate, id);
 }
 
-/**
- * Check whether a file can be made public: it must have at least one completed
- * (non-error, error_message IS NULL) scan log row with triggered_by='seed_review'
- * OR a completed scan with no findings.
- * Returns true if allowed, false if blocked.
- */
-export function canMakeFilePublic(fileId: number): boolean {
-  const row = getDb()
-    .prepare(
-      `SELECT id FROM file_scan_log
-       WHERE file_id=? AND error_message IS NULL
-       LIMIT 1`
-    )
-    .get(fileId) as { id: number } | undefined;
-  return row !== undefined;
-}
-
 export function setFileVisibility(id: number, visibility: FileVisibility): void {
   getDb()
     .prepare(`UPDATE files SET visibility=?, updated_at=datetime('now') WHERE id=?`)
     .run(visibility, id);
+}
+
+/**
+ * Publish gate:
+ * - sanitization_state='scan_complete'
+ * - no unresolved findings (stale=0 and status='unresolved')
+ */
+export function canMakeFilePublic(fileId: number): boolean {
+  const db = getDb();
+  const file = db.prepare('SELECT sanitization_state FROM files WHERE id=?').get(fileId) as
+    | { sanitization_state: string }
+    | undefined;
+  if (!file || file.sanitization_state !== 'scan_complete') return false;
+
+  const unresolved = db
+    .prepare(
+      "SELECT COUNT(*) AS n FROM file_findings WHERE file_id=? AND stale=0 AND status='unresolved'"
+    )
+    .get(fileId) as { n: number };
+  return unresolved.n === 0;
+}
+
+/** Get all non-stale findings for a file, ordered by span_start. */
+export function getFileFindings(fileId: number): FileFindingRow[] {
+  return getDb()
+    .prepare(`SELECT * FROM file_findings WHERE file_id=? AND stale=0 ORDER BY span_start ASC`)
+    .all(fileId) as FileFindingRow[];
+}
+
+/** Get a single finding by ID. */
+export function getFileFinding(findingId: number): FileFindingRow | null {
+  return (
+    (getDb().prepare('SELECT * FROM file_findings WHERE id=?').get(findingId) as
+      | FileFindingRow
+      | undefined) ?? null
+  );
+}
+
+export interface ResolveFindingInput {
+  status: 'masked' | 'dismissed';
+  resolvedMask?: string; // required when status='masked'
+  dismissReason?: string; // required when status='dismissed'; ≥20 chars for secrets
+  resolvedBy: number;
+}
+
+export function resolveFileFinding(findingId: number, input: ResolveFindingInput): void {
+  getDb()
+    .prepare(
+      `UPDATE file_findings
+       SET status=?, resolved_mask=?, dismiss_reason=?, resolved_by=?, resolved_at=datetime('now')
+       WHERE id=?`
+    )
+    .run(
+      input.status,
+      input.resolvedMask ?? null,
+      input.dismissReason ?? null,
+      input.resolvedBy,
+      findingId
+    );
+}
+
+/** Get scan log rows for a file, newest first. */
+export function getFileScanLog(fileId: number, limit = 20) {
+  return getDb()
+    .prepare(`SELECT * FROM file_scan_log WHERE file_id=? ORDER BY scan_ts DESC LIMIT ?`)
+    .all(fileId, limit) as import('./types').FileScanLogRow[];
+}
+
+/**
+ * Publish a file: apply resolved masks to produce content_public, set visibility='public'.
+ * Only call after canMakeFilePublic() returns true.
+ */
+export function publishFile(fileId: number): void {
+  const db = getDb();
+  const file = db.prepare('SELECT content_private FROM files WHERE id=?').get(fileId) as
+    | { content_private: string }
+    | undefined;
+  if (!file) throw new Error('File not found');
+
+  const findings = db
+    .prepare(
+      `SELECT span_start, span_end, resolved_mask, suggested_mask, status
+       FROM file_findings WHERE file_id=? AND stale=0 AND status IN ('masked')`
+    )
+    .all(fileId) as Array<{
+    span_start: number;
+    span_end: number;
+    resolved_mask: string | null;
+    suggested_mask: string;
+    status: string;
+  }>;
+
+  // Apply masks in reverse order (end→start) to avoid offset drift
+  const masks = findings
+    .map((f) => ({
+      spanStart: f.span_start,
+      spanEnd: f.span_end,
+      maskToken: f.resolved_mask ?? f.suggested_mask,
+    }))
+    .sort((a, b) => b.spanStart - a.spanStart);
+
+  let content = file.content_private;
+  for (const m of masks) {
+    content = content.slice(0, m.spanStart) + m.maskToken + content.slice(m.spanEnd);
+  }
+
+  db.prepare(
+    `UPDATE files SET content_public=?, visibility='public', updated_at=datetime('now') WHERE id=?`
+  ).run(content, fileId);
+}
+
+// ---- v7: owner confidential terms (deny-list) --------------------------------
+
+export interface OwnerConfidentialTermInput {
+  ownerId: number;
+  termEncrypted: string;
+  iv: string;
+  authTag: string;
+}
+
+export function addConfidentialTerm(input: OwnerConfidentialTermInput): { id: number } {
+  const res = getDb()
+    .prepare(
+      `INSERT INTO owner_confidential_terms (owner_id, term_encrypted, iv, auth_tag)
+       VALUES (?, ?, ?, ?)`
+    )
+    .run(input.ownerId, input.termEncrypted, input.iv, input.authTag);
+  return { id: Number(res.lastInsertRowid) };
+}
+
+export function deleteConfidentialTerm(id: number, ownerId: number): void {
+  getDb()
+    .prepare('DELETE FROM owner_confidential_terms WHERE id=? AND owner_id=?')
+    .run(id, ownerId);
+}
+
+export function getConfidentialTermCount(ownerId: number): number {
+  return (
+    getDb()
+      .prepare('SELECT COUNT(*) AS n FROM owner_confidential_terms WHERE owner_id=?')
+      .get(ownerId) as { n: number }
+  ).n;
+}
+
+export function getRawConfidentialTerms(ownerId: number): Array<{
+  id: number;
+  term_encrypted: string;
+  iv: string;
+  auth_tag: string;
+  created_at: string;
+}> {
+  return getDb()
+    .prepare(
+      'SELECT id, term_encrypted, iv, auth_tag, created_at FROM owner_confidential_terms WHERE owner_id=? ORDER BY id'
+    )
+    .all(ownerId) as Array<{
+    id: number;
+    term_encrypted: string;
+    iv: string;
+    auth_tag: string;
+    created_at: string;
+  }>;
 }

@@ -2,11 +2,18 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
-import { getOwnerProfile, getOwnersStrip, getCounts } from '@/lib/db/queries';
+import {
+  getOwnerProfile,
+  getOwnersStrip,
+  getCounts,
+  getConfidentialTermCount,
+  getRawConfidentialTerms,
+} from '@/lib/db/queries';
 import AgentCard from '@/components/AgentCard';
 import TeamCard from '@/components/TeamCard';
 import ContactForm from '@/components/ContactForm';
 import ClaimOwnerButton from '@/components/ClaimOwnerButton';
+import ConfidentialTermsManager from '@/components/ConfidentialTermsManager';
 import { formatDate, formatMetricValue } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -43,6 +50,13 @@ export default async function OwnerProfilePage({ params }: PageProps) {
   const isOwnedByMe = isClaimed && sessionUserId !== null && owner.user_id === sessionUserId;
   // Unclaimed + signed-in + not already owned by this user → show claim button
   const canClaim = !isClaimed && sessionUserId !== null;
+
+  // Confidential terms — only loaded for the owner themselves
+  // getConfidentialTermCount / getRawConfidentialTerms require the DB owner.id
+  const confidentialTermCount = isOwnedByMe ? getConfidentialTermCount(owner.id) : 0;
+  const confidentialTerms = isOwnedByMe
+    ? getRawConfidentialTerms(owner.id).map(({ id, created_at }) => ({ id, created_at }))
+    : [];
 
   // Owners strip — all owners with teams, for cross-owner discoverability
   const ownersStrip = getOwnersStrip();
@@ -223,6 +237,15 @@ export default async function OwnerProfilePage({ params }: PageProps) {
           to claim this profile if it belongs to you.
         </div>
       ) : null}
+
+      {/* ── Confidential terms deny-list (owner only) ─────────────────────── */}
+      {isOwnedByMe && (
+        <ConfidentialTermsManager
+          ownerHandle={owner.handle}
+          initialCount={confidentialTermCount}
+          initialTerms={confidentialTerms}
+        />
+      )}
 
       {/* ── Agent components (prominent section) ──────────────────────────── */}
       <section className="mt-12">
