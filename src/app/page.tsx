@@ -60,6 +60,56 @@ export default function HomePage() {
               </Link>
             </div>
 
+            {/* Mobile flagship card — shown below CTAs on small screens; hidden at lg (right rail takes over) */}
+            {featured.teams[0] && (
+              <div className="mt-6 lg:hidden">
+                <Link
+                  href={`/teams/${featured.teams[0].slug}`}
+                  className="block rounded-xl border border-border bg-surface-elevated p-4 transition-colors hover:bg-surface-hover"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface text-xl">
+                      {featured.teams[0].avatar}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-text-primary">
+                          {featured.teams[0].name}
+                        </span>
+                        <TrustBadge tier={featured.teams[0].tier} size="sm" />
+                      </div>
+                      <p className="mt-0.5 text-xs text-text-tertiary">
+                        {featured.teams[0].ownerName}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-2.5 line-clamp-2 text-sm leading-relaxed text-text-secondary">
+                    {featured.teams[0].tagline}
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border-subtle pt-2.5">
+                    {featured.teams[0].topologyType && (
+                      <span className="inline-flex items-center gap-1 text-xs text-text-secondary">
+                        <TopologyGlyph
+                          topology={featured.teams[0].topologyType}
+                          size={12}
+                          className="shrink-0 text-accent"
+                        />
+                        {TOPOLOGY_LABELS[featured.teams[0].topologyType]}
+                      </span>
+                    )}
+                    {featured.teams[0].agentCount !== null && (
+                      <span className="text-xs text-text-secondary">
+                        <span className="font-medium text-text-primary">
+                          {featured.teams[0].agentCount}
+                        </span>{' '}
+                        agents
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              </div>
+            )}
+
             {/* Live DB stats — 2×2 at mobile fold, 4-col on larger viewports */}
             <div className="mt-8 flex items-center gap-1.5 text-[11px] text-text-tertiary">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />

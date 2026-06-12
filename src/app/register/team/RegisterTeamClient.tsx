@@ -442,7 +442,7 @@ export default function RegisterTeamClient({ sessionUser }: { sessionUser?: Sess
         setSubmitting(false);
         return;
       }
-      router.push(`/teams/${data.slug}`);
+      router.push(`/teams/${data.slug}?created=1`);
     } catch {
       setGlobalError('Network error — please try again.');
       setSubmitting(false);
@@ -641,19 +641,6 @@ export default function RegisterTeamClient({ sessionUser }: { sessionUser?: Sess
             );
           })}
         </div>
-
-        {/* Live glyph preview */}
-        {form.topologyType && (
-          <div className="flex items-center gap-3 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3">
-            <TopologyGlyph topology={form.topologyType} size={40} className="text-accent" />
-            <div>
-              <p className="text-sm font-semibold text-accent">
-                {TOPOLOGY_LABELS[form.topologyType]}
-              </p>
-              <p className="text-[11px] text-text-tertiary">Selected topology</p>
-            </div>
-          </div>
-        )}
       </div>
     );
   }

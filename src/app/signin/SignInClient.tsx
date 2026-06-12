@@ -67,26 +67,8 @@ export default function SignInClient({ googleEnabled, devEnabled }: Props) {
         </div>
       )}
 
-      {!hasAnyProvider && (
-        <div className="rounded-lg border border-border bg-surface-elevated px-5 py-6 text-sm text-text-secondary">
-          <p className="font-medium text-text-primary">No sign-in providers configured</p>
-          <p className="mt-2 leading-relaxed text-text-tertiary">
-            This environment has neither Google OAuth nor the dev sign-in enabled. To enable dev
-            sign-in, run in a non-production environment (default) or set{' '}
-            <code className="rounded bg-surface px-1 py-px font-mono text-xs text-accent">
-              DEV_LOGIN=1
-            </code>
-            . To enable Google OAuth, follow the steps in{' '}
-            <code className="rounded bg-surface px-1 py-px font-mono text-xs text-accent">
-              docs/AUTH.md
-            </code>
-            .
-          </p>
-        </div>
-      )}
-
-      {/* ── Google button ── */}
-      {googleEnabled ? (
+      {/* ── Google button (primary when configured) ── */}
+      {googleEnabled && (
         <button
           type="button"
           onClick={handleGoogle}
@@ -113,27 +95,44 @@ export default function SignInClient({ googleEnabled, devEnabled }: Props) {
           </svg>
           Continue with Google
         </button>
-      ) : (
-        <div className="rounded-lg border border-dashed border-border bg-surface-elevated/40 px-4 py-4 text-sm text-text-tertiary">
-          <span className="font-medium text-text-secondary">Google sign-in not configured</span>
-          <p className="mt-1 text-xs">
-            Set{' '}
-            <code className="rounded bg-surface px-1 py-px font-mono text-[11px] text-accent">
-              AUTH_GOOGLE_ID
-            </code>{' '}
-            +{' '}
-            <code className="rounded bg-surface px-1 py-px font-mono text-[11px] text-accent">
-              AUTH_GOOGLE_SECRET
-            </code>{' '}
-            in{' '}
-            <code className="rounded bg-surface px-1 py-px font-mono text-[11px] text-accent">
-              .env.local
-            </code>{' '}
-            — see{' '}
-            <code className="rounded bg-surface px-1 py-px font-mono text-[11px] text-accent">
-              docs/AUTH.md
-            </code>{' '}
-            for setup steps.
+      )}
+
+      {/* ── Invite-gated notice (Google not configured, production-facing state) ── */}
+      {!googleEnabled && !devEnabled && (
+        <div className="space-y-2 py-2">
+          <p className="text-base font-medium text-text-primary">
+            Sign-in is invite-gated while the registry is in early access.
+          </p>
+          <p className="text-sm text-text-secondary">
+            Operators:{' '}
+            <a href="/request" className="text-accent hover:underline">
+              request a setup
+            </a>{' '}
+            or{' '}
+            <a href="/register" className="text-accent hover:underline">
+              submit your team
+            </a>{' '}
+            — no account needed.
+          </p>
+        </div>
+      )}
+
+      {/* Invite-gated notice when Google is absent but dev is present */}
+      {!googleEnabled && devEnabled && (
+        <div className="space-y-1 pb-1">
+          <p className="text-base font-medium text-text-primary">
+            Sign-in is invite-gated while the registry is in early access.
+          </p>
+          <p className="text-sm text-text-secondary">
+            Operators:{' '}
+            <a href="/request" className="text-accent hover:underline">
+              request a setup
+            </a>{' '}
+            or{' '}
+            <a href="/register" className="text-accent hover:underline">
+              submit your team
+            </a>{' '}
+            — no account needed.
           </p>
         </div>
       )}
@@ -147,23 +146,14 @@ export default function SignInClient({ googleEnabled, devEnabled }: Props) {
         </div>
       )}
 
-      {/* ── Dev sign-in form ── */}
+      {/* ── Dev sign-in form — labeled environment tool, not warning ── */}
       {devEnabled && (
-        <div className="rounded-xl border border-dashed border-amber-500/30 bg-amber-500/5 p-5">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="rounded border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-400">
-              Dev only
+        <div className="rounded-lg border border-border bg-surface-elevated p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="rounded border border-border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-text-tertiary">
+              Development environment sign-in
             </span>
-            <p className="text-xs font-medium text-text-secondary">
-              Local development sign-in — not for production
-            </p>
           </div>
-          <p className="mb-4 text-[11px] leading-relaxed text-text-tertiary">
-            Creates a local account without email verification. Available because{' '}
-            <code className="font-mono text-amber-400/80">NODE_ENV !== production</code> (or{' '}
-            <code className="font-mono text-amber-400/80">DEV_LOGIN=1</code> is set). This provider
-            is disabled in production.
-          </p>
 
           <form onSubmit={handleDevSignIn} className="space-y-3">
             <div>
@@ -200,9 +190,9 @@ export default function SignInClient({ googleEnabled, devEnabled }: Props) {
             <button
               type="submit"
               disabled={devLoading}
-              className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-300 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary disabled:opacity-50"
             >
-              {devLoading ? 'Signing in…' : 'Sign in (dev)'}
+              {devLoading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
         </div>

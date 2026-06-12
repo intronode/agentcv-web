@@ -13,6 +13,7 @@ import ProofForm from '@/components/ProofForm';
 import AttestationList from '@/components/AttestationList';
 import AttestationForm from '@/components/AttestationForm';
 import ContactForm from '@/components/ContactForm';
+import CopyButton from '@/components/CopyButton';
 import { formatDate, formatMetricValue } from '@/lib/format';
 import type { TopologyType, MetricRow } from '@/lib/db/types';
 
@@ -113,6 +114,7 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
   const { slug } = await params;
   const sp = searchParams ? await searchParams : {};
   const openProofForm = sp['action'] === 'add-proof';
+  const justCreated = sp['created'] === '1';
   const profile = getTeamProfile(slug);
   if (!profile) notFound();
 
@@ -135,8 +137,57 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
   const taskKinds: string[] = team.task_kinds ? (JSON.parse(team.task_kinds) as string[]) : [];
   const performanceMetrics = metrics.filter((m) => !COST_KEYS.includes(m.key));
 
+  // Fresh-page detection: no evidence means we restructure section order
+  const isFreshPage = proof.length === 0 && metrics.length === 0 && attestations.length === 0;
+
+  // The public URL for this team profile
+  const publicUrl = `https://agentcv.ai/teams/${team.slug}`;
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
+      {/* ── Post-registration success band ── */}
+      {justCreated && (
+        <div className="mb-8 rounded-xl border border-emerald-500/30 bg-emerald-500/8 px-5 py-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="shrink-0 text-emerald-400"
+              aria-hidden="true"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span className="font-semibold text-emerald-300">
+              {team.name} is live on the registry
+            </span>
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <span className="min-w-0 flex-1 truncate rounded border border-border bg-surface px-3 py-1.5 font-mono text-xs text-text-secondary">
+              {publicUrl}
+            </span>
+            <CopyButton value={publicUrl} label="profile URL" />
+          </div>
+          <p className="mt-3 text-xs text-text-tertiary">
+            It starts at <span className="font-medium text-text-secondary">self-reported</span> —
+            evidence raises the tier.
+          </p>
+          <div className="mt-3">
+            <a
+              href="?action=add-proof#add-proof"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-accent-button px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover"
+            >
+              Add your first proof entry
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <header className="flex flex-wrap items-start gap-5">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-4xl">
@@ -290,20 +341,22 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
             </div>
           </section>
 
-          {/* 3. Performance metrics */}
-          <section>
-            <SectionHeading>Performance metrics</SectionHeading>
-            <p className="mt-1 text-xs text-text-tertiary">
-              Windowed metrics with provenance. [unknown] means it was not tracked — an honest hole
-              beats an invented figure.
-            </p>
-            <div className="mt-3">
-              <MetricGrid metrics={performanceMetrics} />
-            </div>
-          </section>
+          {/* 3. Performance metrics — hidden on fresh pages (absorbed into NextSteps) */}
+          {!isFreshPage && (
+            <section>
+              <SectionHeading>Performance metrics</SectionHeading>
+              <p className="mt-1 text-xs text-text-tertiary">
+                Windowed metrics with provenance. [unknown] means it was not tracked — an honest
+                hole beats an invented figure.
+              </p>
+              <div className="mt-3">
+                <MetricGrid metrics={performanceMetrics} />
+              </div>
+            </section>
+          )}
 
-          {/* 4. Token economics */}
-          <TokenEconomicsSection metrics={metrics} />
+          {/* 4. Token economics — hidden on fresh pages (absorbed into NextSteps) */}
+          {!isFreshPage && <TokenEconomicsSection metrics={metrics} />}
 
           {/* 5. Blueprint */}
           {(team.why_it_works || team.how_built || team.oversight) && (
@@ -363,8 +416,8 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
             <div className="mt-5" id="add-proof">
               <ProofForm subjectType="team" subjectSlug={team.slug} defaultOpen={openProofForm} />
             </div>
-            {/* Next-steps guidance — shown only on fresh profiles with no evidence yet */}
-            {proof.length === 0 && metrics.length === 0 && (
+            {/* Next-steps guidance — on fresh pages also absorbs Performance/Economics/Attestations */}
+            {isFreshPage && (
               <div className="mt-6 rounded-xl border border-accent/20 bg-accent/5 p-5">
                 <p className="text-sm font-semibold text-text-primary">
                   Build this profile&apos;s evidence
@@ -390,6 +443,13 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
                   <li className="flex items-start gap-2">
                     <span className="mt-0.5 text-accent">→</span>
                     <span>
+                      Add metrics — performance and token-economics sections appear as data is
+                      recorded.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 text-accent">→</span>
+                    <span>
                       Request attestations from colleagues with first-hand experience — required for
                       Peer-Attested.
                     </span>
@@ -406,30 +466,32 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
             )}
           </section>
 
-          {/* 7. Attestations */}
-          <section>
-            <SectionHeading>
-              Attestations{' '}
-              <span className="text-sm font-normal text-text-tertiary">
-                ({attestations.length})
-              </span>
-            </SectionHeading>
-            <p className="mt-1 text-xs text-text-tertiary">
-              Named third-party statements from people with first-hand experience. Attestations are
-              what separates Peer-Attested from Evidence-Linked.
-            </p>
-            <div className="mt-4">
-              <AttestationList attestations={attestations} />
-            </div>
-            <div className="mt-4">
-              <AttestationForm
-                subjectType="team"
-                subjectSlug={team.slug}
-                subjectLabel="team"
-                evidenceCount={proof.filter((p) => p.evidence_url !== null).length}
-              />
-            </div>
-          </section>
+          {/* 7. Attestations — hidden on fresh pages (absorbed into NextSteps) */}
+          {!isFreshPage && (
+            <section>
+              <SectionHeading>
+                Attestations{' '}
+                <span className="text-sm font-normal text-text-tertiary">
+                  ({attestations.length})
+                </span>
+              </SectionHeading>
+              <p className="mt-1 text-xs text-text-tertiary">
+                Named third-party statements from people with first-hand experience. Attestations
+                are what separates Peer-Attested from Evidence-Linked.
+              </p>
+              <div className="mt-4">
+                <AttestationList attestations={attestations} />
+              </div>
+              <div className="mt-4">
+                <AttestationForm
+                  subjectType="team"
+                  subjectSlug={team.slug}
+                  subjectLabel="team"
+                  evidenceCount={proof.filter((p) => p.evidence_url !== null).length}
+                />
+              </div>
+            </section>
+          )}
 
           {/* 8. Files */}
           {files.length > 0 && (

@@ -360,7 +360,7 @@ export default async function OwnerProfilePage({ params }: PageProps) {
                   >
                     {entry.subjectKind === 'team' ? '⚙' : '🤖'} {entry.subjectName}
                   </Link>
-                  <span className="rounded border border-border px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-text-tertiary">
+                  <span className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-text-tertiary">
                     {PROOF_TYPE_LABELS[entry.type] ?? entry.type}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-primary">
@@ -434,8 +434,8 @@ export default async function OwnerProfilePage({ params }: PageProps) {
                       {formatDate(entry.entry_date)}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm font-medium text-text-primary">{entry.title}</p>
-                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-text-tertiary">
+                  <p className="mt-2 text-sm font-semibold text-text-primary">{entry.title}</p>
+                  <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-text-secondary">
                     {entry.body}
                   </p>
                 </div>
@@ -448,11 +448,15 @@ export default async function OwnerProfilePage({ params }: PageProps) {
       {/* ── Owners on the registry strip ───────────────────────────────────── */}
       {ownersStrip.length > 1 && (
         <section className="mt-16 border-t border-border pt-8">
-          <div className="flex items-baseline gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-text-tertiary">
-              Owners on the registry
-            </h2>
-            <span className="text-xs text-text-tertiary">{ownersStrip.length} total</span>
+          <div className="flex items-baseline justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold tracking-tight text-text-primary">
+                Owners on the registry
+              </h2>
+              <p className="mt-0.5 text-xs text-text-tertiary">
+                {ownersStrip.length} registered operators — click to view their profiles
+              </p>
+            </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {ownersStrip.map((entry) => (

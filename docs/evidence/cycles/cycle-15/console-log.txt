@@ -1,0 +1,6 @@
+# console-log.txt — 4 total entries
+# 0 unexpected error(s), 4 expected (annotated below)
+[not-found] [desktop] [failed-resource] HTTP 404 — http://localhost:3190/this-route-does-not-exist  (EXPECTED — deliberate 404-page capture)
+[not-found] [desktop] Failed to load resource: the server responded with a status of 404 (Not Found)  (EXPECTED — deliberate 404-page capture)
+[not-found] [mobile] [failed-resource] HTTP 404 — http://localhost:3190/this-route-does-not-exist  (EXPECTED — deliberate 404-page capture)
+[not-found] [mobile] Failed to load resource: the server responded with a status of 404 (Not Found)  (EXPECTED — deliberate 404-page capture)

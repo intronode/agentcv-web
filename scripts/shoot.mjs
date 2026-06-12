@@ -813,7 +813,8 @@ async function main() {
     // Extra settle after navigation
     await sleep(SETTLE_MS);
 
-    // Full-page screenshot of the landed team detail page (shows 2-member roster)
+    // Full-page screenshot of the landed team detail page (/teams/<slug>?created=1).
+    // The success band ("✓ <Name> is live on the registry") should be visible at top.
     await page.screenshot({
       path: join(outDir, 'register-team-success.png'),
       fullPage: true,
