@@ -231,3 +231,62 @@ verification-ladder design beyond launch labeling (roadmap). No pricing
 or consulting-engagement terms (HJ business direction). The CORE scope
 realizing these decisions is docs/SPEC-V4.md; sequencing is
 docs/PLAN.md.
+
+---
+
+# v4.1 addendum (2026-06-12, per HJ's v4.1 goal directive)
+
+## D6 — Entity naming: TEAM, with topology as a field
+
+**Decision.** The first-class entity is named **Team** (was
+"Configuration" in v4). Topology remains a structured comparable field
+on the Team. Routes move to /teams (with /configurations 308-ing to
+/teams — inverting the v4 redirect; v3-era /teams URLs become canonical
+again). The registration flow offers five named topologies:
+`supervisor · orchestrator_worker · swarm · pipeline · router`; the
+enum additionally retains `solo_plus_tools` and `other` for entities
+that are honestly neither (mapping for existing data:
+hub_and_spoke→orchestrator_worker, hierarchical→supervisor,
+peer→swarm, pipeline→pipeline, solo_plus_tools/other retained).
+
+**Reasoning.** Practitioners say "my agent team"; the industry
+converged on the word (agent teams in Claude Code, team topologies in
+the framework literature). "Configuration" was precise but jargon-cold
+at the exact moment a stranger decides whether the product is for
+them. Nothing in D1 changes: the first-class unit is still the
+multi-agent composition with agents as components — only its name
+moves toward the user's vocabulary while topology stays the
+comparable, filterable axis (D3 unchanged).
+
+**Wrong if:** "Team" pulls submissions toward HR-style human-team
+profiles (watch early submissions); or topology stops being scanned as
+the primary comparison axis once demoted from the entity name
+(comparison analytics).
+
+## D7 — D2 evolution: viewable operational source ≠ clonable artifacts
+
+**Decision.** Teams and agents may publish their operational markdown
+files (CLAUDE.md, AGENTS.md, SOUL.md, LESSONS.md, rules/ and similar)
+rendered read-only in a GitHub-grade viewer, with per-file
+public/private visibility, private-by-default, and a mandatory
+sanitization review (secrets, PII, business-confidential references)
+before anything goes public. This EVOLVES D2 rather than reversing it:
+what we add is _viewable evidence depth_ — operational source as
+proof — not downloads, not packaging, not one-click cloning, not a
+marketplace. The Claw Mart differentiation (parts store, file sales)
+stays intact: AgentCV still sells understanding, and now shows more of
+the receipts.
+
+**Reasoning.** D2's moat was "knowledge of the design"; rendered
+source files are the strongest honest evidence of design knowledge.
+The risk D2 guarded against was commoditized artifact distribution —
+that risk attaches to _packaged, clonable_ artifacts, not to read-only
+rendered text with sanitization gates. ClawHavoc-class supply-chain
+risk (MARKET.md C3) does not attach to non-executable rendered
+viewing.
+
+**Wrong if:** users systematically copy-paste rendered files as
+de-facto downloads AND that demonstrably erodes the consulting wedge
+(measure request-setup conversion before/after); or sanitization
+failures leak real secrets/PII (visibility gate must fail closed —
+see docs/SANITIZER.md).

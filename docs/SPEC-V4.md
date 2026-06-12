@@ -169,3 +169,47 @@ critique cycles with committed screenshot evidence; floors all met;
 build + tsc zero; real-browser prod-mode sweep of all CORE routes;
 BUILD-REPORT.md with ≤15-min independent QA checklist. Build passes ≠
 done; Laplace's gate + HJ's pass are final acceptance.
+
+---
+
+# v4.1 addendum (2026-06-12) — naming, accounts, registration, files
+
+Authoritative deltas over the v4 spec above; D6/D7 in DECISIONS.md.
+
+1. **Naming (D6):** every v4 "configuration" surface is a **Team**
+   surface: /teams, /teams/[slug], compare unchanged in function.
+   /configurations* 308→ /teams*. Topology enum: supervisor ·
+   orchestrator_worker · swarm · pipeline · router (+ solo_plus_tools,
+   other retained); registration offers the five named.
+2. **Accounts (CORE):** Auth.js (NextAuth v5). Google provider wired
+   behind env vars (absent locally → hidden); local dev sign-in
+   (credentials-style, dev-only, clearly labeled) so every
+   auth-dependent flow works with zero cloud secrets. Sessions in
+   SQLite. Ownership: owners may be claimed by accounts; submissions
+   from a signed-in user attach to their account; claim flow =
+   account + claim request (kind='claim') pending manual review at
+   launch (no email verification yet — honest pending state). Google
+   OAuth client setup is an isolated [[HJ ACTION]] documented in
+   docs/AUTH.md.
+3. **Registration split (CORE):** /register offers "Register an
+   Agent" and "Register a Team". Team flow: one guided multi-step
+   form — team identity → topology selection (5 glyphs) → members
+   (add N agents inline: name, role, model, platform — creating
+   agents + memberships atomically) → blueprint prose → review+submit.
+   Lands self_reported, layer real, owned by the signed-in account
+   (or anonymous-with-owner-handle when signed out, unchanged from
+   v4 semantics).
+4. **Operational files (CORE):** agents and teams carry markdown
+   files (path, content, visibility public|private, sanitization
+   state). Viewer: file tree, rendered markdown with syntax
+   highlighting, raw toggle. Private by default. Publishing requires
+   sanitization review: automated findings (secrets/gitleaks-class,
+   PII/Presidio-class, business-confidential references) must each be
+   masked or dismissed-with-reason in the review UI before visibility
+   can flip to public; failures fail CLOSED. Masking generalizes
+   while preserving pattern ([client], [partner-email]). Per-file
+   sanitization log; in-product disclosure that automated scanning
+   assists but does not guarantee. Design + reasoning: docs/SANITIZER.md.
+5. **Floors unchanged** (PRODUCT-BAR); the file viewer and team
+   registration are CORE surfaces for cycle scoring; sweep gate now
+   includes per-route scrollWidth at 320/360/390/1440.
