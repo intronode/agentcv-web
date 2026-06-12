@@ -29,18 +29,18 @@ Setup (2 min): `npm ci && npm run db:reset && npm run build && PORT=3191 npm sta
 1. **Home** (1 min): `/` — thesis line readable in 10s; the four stats
    match `db:reset` counts (25/56/50/68%); hero right column shows the
    real flagship card.
-2. **Directory + filters** (2 min): `/configurations` — 25 cards, each
+2. **Directory + filters** (2 min): `/teams` — 25 cards, each
    with Outcome/Economics slots and a layer badge; set topology =
    Hub & Spoke → count drops to 4.
-3. **Flagship** (2 min): `/configurations/ari-collective` — windowed
+3. **Flagship** (2 min): `/teams/ari-collective` — windowed
    reconciliation 90.8% with provenance note; [unknown] metrics carry
    "NOT ESTIMATED" badges with reasons + why-link; 5 proof entries,
    husky-incident entry links to a real commit.
 4. **Compare** (2 min): `/compare?ids=ari-collective,magentic-one,metagpt-pipeline`
    — row-aligned, diffs highlighted, [unknown] cells visible; resize
    to ~390px: stacked rows stay legible.
-5. **Honest layers** (1 min): open `/configurations/magentic-one`
-   (CURATED — arXiv citation banner) and `/configurations/helios-swarm`
+5. **Honest layers** (1 min): open `/teams/magentic-one`
+   (CURATED — arXiv citation banner) and `/teams/helios-swarm`
    (ILLUSTRATIVE — dashed banner). Labels must be unmissable.
 6. **Write flows** (3 min): `/submit` — submit empty → designed field
    errors; fill minimal valid → lands on a new self-reported detail
@@ -48,7 +48,7 @@ Setup (2 min): `npm ci && npm run db:reset && npm run build && PORT=3191 npm sta
    Add an attestation without the disclosure checkbox → designed 400;
    with it → success and honest tier message.
 7. **Soundness** (2 min): browser console clean while navigating;
-   `/teams` and `/trust` 308-redirect; `/nonexistent` shows the
+   `/configurations` and `/trust` 308-redirect; `/nonexistent` shows the
    designed 404; favicon renders.
 
 Stop the server; verify the port released. Any failure → reject the gate.

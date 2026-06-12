@@ -268,3 +268,99 @@ count. All timestamps KST.
   required files); per-subject tier context on agent pages; owner stat
   reframe.
 - **Fix commit:** 348b6b4
+
+## v4.1 features (between cycles 13 and 14)
+
+- Auth.js v5 accounts: Google behind env vars, labeled dev sign-in
+  (zero-env local preserved), users + owners.user_id, claim flow,
+  docs/AUTH.md with isolated [[HJ ACTION]] · commit 0942b44
+- Registration split: /register chooser, agent form, 5-step guided
+  team stepper with five named topologies + atomic team+members
+  creation · commit b0db020
+- docs/SANITIZER.md research-grounded design (gitleaks/Presidio/
+  Purview cited) · commit 9aacacb
+- Operational files: schema, viewer (tree, GFM render, raw toggle),
+  private-by-default, fail-closed publish · commit d5b8166 (overflow
+  gate caught the viewer's mobile overflow pre-commit; fixed)
+- Sanitizer pipeline: detectors, review-and-mask, publish gate, scan
+  log, deny-list UI; end-to-end demos gated as required captures (a
+  first demo run that silently skipped captures was caught via the
+  evidence file and sent back; a published-file client-name leak was
+  caught by direct screenshot read and fixed with span-correct
+  counterparty detection) · commit d5d7c3f
+
+## Cycle 13
+
+- **Shot:** 2026-06-12 via qa-shoot.sh · cycle-13/ (clean gates)
+- **Examiner:** 4·4·4·4·5·4·4 (min 4). Weakest: register/agent native
+  date input on the conversion surface.
+- **Fix:** ISO date inputs everywhere; scroll-to-first-error below
+  sticky nav; next-steps block on fresh profiles; directory pagination
+  at 12; /signin in capture routes. Commit 47c15b7.
+
+## Cycle 14
+
+- **Shot:** 2026-06-12 · cycle-14/ (sanitizer evidence set included)
+- **Examiner:** 4·4·4·4·5·4·4 (min 4); sanitizer surfaces judged
+  "craft-level implementation of the honesty thesis". Mobile-compare
+  claim REFUTED by direct PNG read.
+- **Fix:** 64-hex SANITIZER_KEY in QA (deny-list storage works); GET
+  configured-flag; TOP METRIC labeled slot; first-action CTA;
+  full-frame validation evidence. Commit 69cd488.
+
+## Cycle 15
+
+- **Shot:** 2026-06-12 · cycle-15/ (clean gates)
+- **Examiner:** 4·4·4·4·5·4·4 (min 4); ALL SIX FLOORS PASS; stacked
+  mobile compare judged legible at full size. Weakest:
+  post-registration empty-state + /signin reads as dev scaffold.
+- **Fix:** live confirmation band (?created=1, URL copy, tier-path
+  CTA); invite-gated signin states; mobile hero anchor card; stepper
+  echo removed; owners feed hierarchy. Commit 4678775.
+
+## Cycle 16
+
+- **Shot:** 2026-06-12 · cycle-16/ (clean gates)
+- **Examiner:** 4·4·4·4·5·4·4 (min 4). Weakest: dev sign-in chip
+  (QA-env artifact; production hides it — improved to collapsed
+  disclosure anyway).
+- **Fix:** quiet dev disclosure; flagship files 2→5 (ROLES,
+  COST-HONESTY, OVERSIGHT compiled strictly from published registry
+  data); review-step probe platform fill (carry logic verified
+  correct); harness-eng mobile pill nav; numbered next-step cards;
+  sticky compare strip verified intact. Commit 801fd5f.
+
+## Cycle 17
+
+- **Shot:** 2026-06-12 · cycle-17/ (clean gates)
+- **Examiner:** 4·4·4·4·5·5·4 (min 4); ALL FLOORS PASS. Verdict:
+  "Yes, a funded team launched this." Weakest: flagship economics
+  [unknown] — preservation-mandated; fix was presentation parity
+  ("[unknown] · deliberate" on cards, note tooltips on compare).
+- **Fix:** unknown-parity; canonical tag suggestions + normalization
+  on registration; contact transparency line; finished explainer copy.
+  Commit 210fef8.
+
+## v4.1 Summary (2026-06-12)
+
+- **6 examiner cycles under the upgraded protocol** (12–17), every
+  capture through the gated pipeline (port/buildId/CSS gates +
+  per-route scrollWidth at 320/360/390/1440 + required-capture
+  enforcement). Latest pass: **4·4·4·4·5·5·4 — no dimension below 4.**
+- **Scope delivered:** (1) overflow blocker fixed structurally
+  (reproduced at ≤360px; pipeline gate + BUILD-REPORT root-cause
+  note); (2) WCAG AA pass (automated checker, 5 pairs fixed, 0
+  failures) + split-button; (3) Auth.js accounts (Google env-gated,
+  dev sign-in, claims, [[HJ ACTION]] doc); (4) Agent/Team registration
+  split with guided 5-step team flow (D6 naming executed: Team + new
+  topology enum); (5) operational files + GitHub-grade viewer +
+  research-grounded sanitizer with fail-closed review-and-mask
+  publishing, demonstrated end-to-end (block case + leak-free masking
+  round-trip, sqlite evidence); (6) D6/D7 recorded in DECISIONS.md,
+  SPEC updated.
+- Final verification: tsc 0 + build 0 (docs/evidence/final-\*-v41.txt);
+  final sweep docs/evidence/final-sweep-v41/ — 20 routes × 4 widths
+  zero overflow, 0 unexpected console errors, all required end-to-end
+  captures present.
+- Constraints held: no deploys, no vercel-fork pushes, nothing
+  AgentLab, port 3000 untouched.

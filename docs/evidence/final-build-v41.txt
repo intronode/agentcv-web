@@ -1,0 +1,98 @@
+
+> agentcv@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.19
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 1434ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+   Generating static pages (0/10) ...
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+[AgentCV auth] AUTH_SECRET is not set. This is required in production. Set it to a random 32-byte hex or base64 string in your environment.
+   Generating static pages (2/10) 
+   Generating static pages (4/10) 
+   Generating static pages (7/10) 
+ ✓ Generating static pages (10/10)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                              Size  First Load JS
+┌ ƒ /                                                 2.04 kB         108 kB
+├ ƒ /_not-found                                         194 B         103 kB
+├ ƒ /agents                                           4.02 kB         110 kB
+├ ƒ /agents/[slug]                                      191 B         109 kB
+├ ƒ /agents/[slug]/files/[...path]                      125 B         151 kB
+├ ƒ /agents/[slug]/files/new                          1.32 kB         104 kB
+├ ƒ /api/agents                                         194 B         103 kB
+├ ƒ /api/attestations                                   194 B         103 kB
+├ ƒ /api/auth/[...nextauth]                             194 B         103 kB
+├ ƒ /api/claim                                          194 B         103 kB
+├ ƒ /api/configurations                                 194 B         103 kB
+├ ƒ /api/contact                                        194 B         103 kB
+├ ƒ /api/files                                          194 B         103 kB
+├ ƒ /api/files/[id]                                     194 B         103 kB
+├ ƒ /api/files/[id]/findings/[findingId]/resolve        194 B         103 kB
+├ ƒ /api/files/[id]/rescan                              194 B         103 kB
+├ ƒ /api/files/[id]/visibility                          194 B         103 kB
+├ ƒ /api/owners/[handle]/confidential-terms             194 B         103 kB
+├ ƒ /api/owners/[handle]/confidential-terms/[termId]    194 B         103 kB
+├ ƒ /api/proof                                          194 B         103 kB
+├ ƒ /api/teams                                          194 B         103 kB
+├ ƒ /compare                                            178 B         106 kB
+├ ƒ /configurations                                     194 B         103 kB
+├ ƒ /configurations/[slug]                              194 B         103 kB
+├ ƒ /harness-engineering                                178 B         106 kB
+├ ○ /icon.svg                                             0 B            0 B
+├ ƒ /owners/[handle]                                  4.75 kB         111 kB
+├ ƒ /register                                           178 B         106 kB
+├ ƒ /register/agent                                    3.1 kB         109 kB
+├ ƒ /register/team                                    6.63 kB         114 kB
+├ ƒ /request                                          2.28 kB         108 kB
+├ ƒ /signin                                           2.22 kB         107 kB
+├ ƒ /submit                                             194 B         103 kB
+├ ƒ /teams                                            6.12 kB         113 kB
+├ ƒ /teams/[slug]                                       902 B         110 kB
+├ ƒ /teams/[slug]/files/[...path]                       126 B         151 kB
+├ ƒ /teams/[slug]/files/new                           1.32 kB         104 kB
+└ ƒ /trust                                              178 B         106 kB
++ First Load JS shared by all                          102 kB
+  ├ chunks/1255-5c680abb9db89955.js                   46.2 kB
+  ├ chunks/4bd1b696-f785427dddbba9fb.js               54.2 kB
+  └ other shared chunks (total)                       1.93 kB
+
+
+ƒ Middleware                                          87.3 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+build exit: 0
