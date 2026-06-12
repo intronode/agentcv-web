@@ -363,6 +363,65 @@ export function teamFilterOptions(): { platforms: string[]; topologyTypes: strin
 /** Deprecated alias — kept for call-sites not yet migrated. */
 export const configurationFilterOptions = teamFilterOptions;
 
+/**
+ * Return the union of distinct tag values already in the DB for the two
+ * free-text tag fields (industries, task_kinds on teams) plus the agent
+ * category field.  Used to populate datalist suggestions in registration forms
+ * so new submissions converge on the existing vocabulary rather than forking
+ * it with synonym variants.
+ */
+export function getDistinctTagValues(): {
+  industries: string[];
+  taskKinds: string[];
+  agentCategories: string[];
+} {
+  const db = getDb();
+
+  // industries and task_kinds are stored as JSON arrays in TEXT columns.
+  // Unpack them by reading all non-null rows and parsing in JS — SQLite has
+  // no native JSON array-unnest and the row count is small (<500).
+  const industryRows = db
+    .prepare('SELECT industries FROM teams WHERE industries IS NOT NULL')
+    .all() as { industries: string }[];
+  const taskKindRows = db
+    .prepare('SELECT task_kinds FROM teams WHERE task_kinds IS NOT NULL')
+    .all() as { task_kinds: string }[];
+
+  const industrySet = new Set<string>();
+  for (const row of industryRows) {
+    try {
+      const arr = JSON.parse(row.industries) as string[];
+      for (const v of arr) if (v) industrySet.add(v);
+    } catch {
+      // malformed row — skip
+    }
+  }
+
+  const taskKindSet = new Set<string>();
+  for (const row of taskKindRows) {
+    try {
+      const arr = JSON.parse(row.task_kinds) as string[];
+      for (const v of arr) if (v) taskKindSet.add(v);
+    } catch {
+      // malformed row — skip
+    }
+  }
+
+  const agentCategories = (
+    db
+      .prepare('SELECT DISTINCT category FROM agents WHERE category IS NOT NULL ORDER BY category')
+      .all() as {
+      category: string;
+    }[]
+  ).map((r) => r.category);
+
+  return {
+    industries: Array.from(industrySet).sort(),
+    taskKinds: Array.from(taskKindSet).sort(),
+    agentCategories,
+  };
+}
+
 // ---- profiles -------------------------------------------------------------
 
 function subjectExtras(subjectType: SubjectType, id: number) {

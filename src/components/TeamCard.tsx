@@ -152,9 +152,13 @@ export default function TeamCard({ team }: { team: TeamCardData }) {
                   ) : (
                     <span
                       className="inline-flex items-center gap-1 rounded border border-dashed border-border px-1.5 py-0.5 text-[11px] font-medium text-text-tertiary"
-                      title="Not stated for this team"
+                      title={
+                        slotLabel === 'Economics'
+                          ? 'Deliberately unestimated — economics of production AI work are high-context and change frequently'
+                          : 'Not stated for this team'
+                      }
                     >
-                      [unknown]
+                      {slotLabel === 'Economics' ? '[unknown] · deliberate' : '[unknown]'}
                     </span>
                   )}
                 </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { auth } from '@/lib/auth';
+import { getDistinctTagValues } from '@/lib/db/queries';
 import RegisterAgentClient from './RegisterAgentClient';
 
 export const dynamic = 'force-dynamic';
@@ -14,5 +15,6 @@ export default async function RegisterAgentPage() {
         email: session.user.email ?? null,
       }
     : null;
-  return <RegisterAgentClient sessionUser={sessionUser} />;
+  const { agentCategories } = getDistinctTagValues();
+  return <RegisterAgentClient sessionUser={sessionUser} agentCategories={agentCategories} />;
 }

@@ -154,10 +154,10 @@ export default function HarnessEngineeringPage() {
         The composition problem
       </h2>
       <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-        Once you accept the harness-engineering frame, a hard problem becomes visible. A
-        configuration is a combinatorial choice: which roles (main / dev / watcher / ops?), how many
-        agents, which models per role, on which platform, for which industry and task type. The
-        space is M&times;N across each dimension.
+        Accept that framing and the hard problem comes into focus: composition. A configuration is a
+        combinatorial choice: which roles (main / dev / watcher / ops?), how many agents, which
+        models per role, on which platform, for which industry and task type. The space is M&times;N
+        across each dimension.
       </p>
       <p className="mt-3 text-sm leading-relaxed text-text-secondary">
         Navigating that space today relies on manual heuristics, conference talks, and word of

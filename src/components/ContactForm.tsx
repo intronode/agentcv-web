@@ -86,6 +86,9 @@ export default function ContactForm({ subjectType, subjectSlug, subjectName }: C
         className={inputClasses}
       />
       {state === 'error' && <p className="text-xs text-red-400">{error}</p>}
+      <p className="text-xs text-text-tertiary">
+        Read by the profile owner&#39;s operator. No automated funnel.
+      </p>
       <div className="flex gap-2">
         <button
           type="submit"

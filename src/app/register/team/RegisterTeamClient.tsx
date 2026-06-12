@@ -103,6 +103,9 @@ interface TagInputProps {
   onChange: (tags: string[]) => void;
   maxItems?: number;
   maxItemLength?: number;
+  /** Canonical values from the DB — rendered as a datalist so the browser
+   *  shows an autocomplete dropdown without restricting free-text entry. */
+  suggestions?: string[];
 }
 
 function TagInput({
@@ -112,8 +115,12 @@ function TagInput({
   onChange,
   maxItems = 10,
   maxItemLength = 40,
+  suggestions,
 }: TagInputProps) {
   const [draft, setDraft] = useState('');
+  // Stable ID for the datalist so multiple TagInputs on the same page don't
+  // cross-wire their suggestion lists.
+  const listId = `tag-suggestions-${label.toLowerCase().replace(/\s+/g, '-')}`;
 
   const addTag = useCallback(
     (raw: string) => {
@@ -146,6 +153,13 @@ function TagInput({
     <div>
       <label className={labelClasses}>{label}</label>
       <p className="mt-0.5 text-[11px] text-text-tertiary">{hint}</p>
+      {suggestions && suggestions.length > 0 && (
+        <datalist id={listId}>
+          {suggestions.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
+      )}
       <div className="mt-1.5 flex min-h-[40px] flex-wrap gap-1.5 rounded-lg border border-border bg-surface-elevated px-2 py-1.5 focus-within:border-accent cursor-text">
         {tags.map((tag) => (
           <span
@@ -171,6 +185,7 @@ function TagInput({
             onBlur={() => {
               if (draft.trim()) addTag(draft);
             }}
+            list={suggestions && suggestions.length > 0 ? listId : undefined}
             placeholder={tags.length === 0 ? 'type and press Enter or comma' : ''}
             className="flex-1 min-w-[120px] bg-transparent text-sm text-text-primary placeholder:text-text-tertiary outline-none"
             maxLength={maxItemLength + 1}
@@ -290,7 +305,15 @@ function StepperBar({ current }: { current: number }) {
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-export default function RegisterTeamClient({ sessionUser }: { sessionUser?: SessionUser | null }) {
+export default function RegisterTeamClient({
+  sessionUser,
+  industrySuggestions = [],
+  taskKindSuggestions = [],
+}: {
+  sessionUser?: SessionUser | null;
+  industrySuggestions?: string[];
+  taskKindSuggestions?: string[];
+}) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [stepErrors, setStepErrors] = useState<StepErrors>({});
@@ -529,6 +552,7 @@ export default function RegisterTeamClient({ sessionUser }: { sessionUser?: Sess
           hint="What domain does this run in? e.g. software-delivery, research, ops"
           tags={form.industries}
           onChange={(t) => setField('industries', t)}
+          suggestions={industrySuggestions}
         />
 
         <TagInput
@@ -536,6 +560,7 @@ export default function RegisterTeamClient({ sessionUser }: { sessionUser?: Sess
           hint="What work does it actually do? e.g. code-review, incident-response, data-pipeline"
           tags={form.taskKinds}
           onChange={(t) => setField('taskKinds', t)}
+          suggestions={taskKindSuggestions}
         />
 
         <div className="border-t border-border pt-5">

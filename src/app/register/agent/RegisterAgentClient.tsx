@@ -25,9 +25,10 @@ export interface SessionUser {
 
 interface Props {
   sessionUser?: SessionUser | null;
+  agentCategories?: string[];
 }
 
-export default function RegisterAgentClient({ sessionUser }: Props) {
+export default function RegisterAgentClient({ sessionUser, agentCategories = [] }: Props) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -158,12 +159,20 @@ export default function RegisterAgentClient({ sessionUser }: Props) {
               <label htmlFor="category" className={labelClasses}>
                 Category *
               </label>
+              {agentCategories.length > 0 && (
+                <datalist id="agent-category-suggestions">
+                  {agentCategories.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
+              )}
               <input
                 id="category"
                 name="category"
                 required
                 maxLength={40}
                 placeholder="e.g. Engineering, Research, Ops"
+                list={agentCategories.length > 0 ? 'agent-category-suggestions' : undefined}
                 className={`mt-1.5 ${inputClasses} ${fieldErrors['category'] ? 'border-red-500/50' : ''}`}
               />
               {fieldErrors['category'] && (

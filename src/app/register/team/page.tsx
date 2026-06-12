@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { auth } from '@/lib/auth';
+import { getDistinctTagValues } from '@/lib/db/queries';
 import RegisterTeamClient from './RegisterTeamClient';
 
 export const dynamic = 'force-dynamic';
@@ -14,5 +15,12 @@ export default async function RegisterTeamPage() {
         email: session.user.email ?? null,
       }
     : null;
-  return <RegisterTeamClient sessionUser={sessionUser} />;
+  const { industries, taskKinds } = getDistinctTagValues();
+  return (
+    <RegisterTeamClient
+      sessionUser={sessionUser}
+      industrySuggestions={industries}
+      taskKindSuggestions={taskKinds}
+    />
+  );
 }
