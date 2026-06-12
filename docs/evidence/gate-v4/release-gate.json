@@ -1,0 +1,136 @@
+{
+  "gate": "laplace-v4",
+  "date": "2026-06-12",
+  "commit": "967d9b17372041017f4e44c06c157b5f168800ca",
+  "branch": "main",
+  "repo": "intronode/agentcv-web",
+  "verdict": "ACCEPT-WITH-FINDINGS",
+  "deploy_allowed": false,
+  "items": [
+    {
+      "id": 1,
+      "name": "Build + overflow sweep",
+      "verdict": "PASS",
+      "evidence": "npm run build exit 0; npx tsc --noEmit exit 0; 22 routes x 4 widths (320/360/390/1440px) = 0 overflows. ADDENDUM (2026-06-12): 390px discrepancy resolved. At 9d752ce (pre-fix), document.scrollWidth exceeds viewport at ALL widths (320–414px) on /, /configurations, /owners/intronode — primary cause: Navbar flex row (no mobile collapse) has intrinsic min-width ~417px. v3 gate 390px report was correct. Implementer ≤360px claim was accurate for card-grid sub-problem only (fixed in a243c57); Navbar overflow (fixed in 5a34ca0) was present at 390px. At 967d9b1 (post-fix): 0 overflows, 0 element escapes across all widths and routes. Verdict unchanged: PASS."
+    },
+    {
+      "id": 2,
+      "name": "Contrast",
+      "verdict": "PASS",
+      "evidence": "node scripts/check-contrast.mjs → 0 failing pairs"
+    },
+    {
+      "id": 3,
+      "name": "Auth + claim",
+      "verdict": "PASS",
+      "evidence": "Dev toggle present (DEV_LOGIN=1); 401 on unauth API; session userId attached to agent; claim submits as pending; Google absent without env vars"
+    },
+    {
+      "id": 4,
+      "name": "Dual registration + atomicity",
+      "verdict": "PASS",
+      "evidence": "Agent + team registered; db.transaction() in registerTeam(); cycle-13 register-team-success.png shows 2-member roster"
+    },
+    {
+      "id": 5,
+      "name": "Operational files",
+      "verdict": "PASS",
+      "evidence": "Private by default (201 visibility=private); anon GET private=401; publish gate 200 for clean file; anon GET public=200; auto-revert confirmed in DB; render view navigates and shows content; content_private never exposed",
+      "observations": [
+        "content_public field appears alongside content alias in public file API response — redundant but not a security issue"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Sanitizer adversarial",
+      "verdict": "PASS-WITH-HONEST-LIMITS",
+      "evidence": "13 detector types confirmed with original crafted test content; fail-closed 403; auto-revert DB verified; scan log append-only (IDs increment, no DELETE); mask round-trip [email] token in public content; disclosure text verbatim present in ReviewUI",
+      "confirmed_misses": [
+        "All-uppercase company names (PROPER_NOUN_SEQ requires [A-Z][a-z]+)",
+        "Person names without PII context (no NER)"
+      ],
+      "false_positives": [
+        "Title Case heading text near context words fires counterparty-name finding"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Evidence integrity",
+      "verdict": "PASS",
+      "evidence": "Cycle-01 blobs: 30 files diff IDENTICAL vs 9d752ce; Cycles 12-17: all have examiner-report.md with numbered defects, cycle-specific image references, non-templated verdicts; sanitizer evidence files present from cycle-14 onward"
+    },
+    {
+      "id": 8,
+      "name": "Hygiene",
+      "verdict": "PASS-WITH-FINDINGS",
+      "evidence": "AgentLab traces: docs/constraints only, no UI source; reflog: no vercel-fork pushes in 9d752ce..967d9b1 range; husky: pre-commit fires (lint-staged prettier), no commit-msg hook",
+      "findings": [
+        "gitleaks F1: hardcoded QA dummy SANITIZER_KEY in scripts/qa-shoot.sh (non-real credential)",
+        "gitleaks F2: DEV_FALLBACK_SECRET in src/lib/auth.config.ts (dev fallback, not production credential)",
+        "husky F3: no commit-msg hook; conventional commit format unenforced"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "category": "gitleaks",
+      "severity": "low",
+      "blocking": false,
+      "file": "scripts/qa-shoot.sh",
+      "commit": "69cd488acfad5a45e6eeafbeae6d5b615a5671ff",
+      "description": "Hardcoded QA dummy SANITIZER_KEY (0123456789abcdef... sequence) — not a real credential"
+    },
+    {
+      "id": "F2",
+      "category": "gitleaks",
+      "severity": "low",
+      "blocking": false,
+      "file": "src/lib/auth.config.ts",
+      "commit": "0942b44aeef77fe95abf0c8663245c82aba08746",
+      "description": "DEV_FALLBACK_SECRET hardcoded — explicit dev-only fallback, fails loudly in production"
+    },
+    {
+      "id": "F3",
+      "category": "husky",
+      "severity": "low",
+      "blocking": false,
+      "description": "No .husky/commit-msg hook; commit message format not enforced"
+    },
+    {
+      "id": "F4",
+      "category": "api-response",
+      "severity": "informational",
+      "blocking": false,
+      "description": "content_public field exposed alongside content alias in public file GET response — redundant, not a security issue"
+    },
+    {
+      "id": "F5",
+      "category": "sanitizer",
+      "severity": "informational",
+      "blocking": false,
+      "description": "False positive: Title Case headings near context words fire confidential.counterparty-name findings"
+    },
+    {
+      "id": "F6",
+      "category": "sanitizer",
+      "severity": "documented-honest-limit",
+      "blocking": false,
+      "description": "All-uppercase company names (INITECH, ACME) not detected by PROPER_NOUN_SEQ regex; disclosed in ReviewUI"
+    }
+  ],
+  "hj_actions": [
+    {
+      "priority": "recommended",
+      "action": "Add .gitleaksignore for F1 (scripts/qa-shoot.sh SANITIZER_KEY) and F2 (DEV_FALLBACK_SECRET pattern) to clean CI scanner output"
+    },
+    {
+      "priority": "advisory",
+      "action": "Add .husky/commit-msg with commitlint if conventional commit enforcement is intended policy"
+    },
+    {
+      "priority": "required",
+      "action": "Implementer go-signal + HJ final browser pass before setting deploy_allowed: true"
+    }
+  ]
+}

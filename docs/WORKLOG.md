@@ -364,3 +364,24 @@ count. All timestamps KST.
   captures present.
 - Constraints held: no deploys, no vercel-fork pushes, nothing
   AgentLab, port 3000 untouched.
+
+## Laplace gate v4 (2026-06-12, independent — run as a context-isolated
+
+## subagent from the implementer session; structural caveat recorded)
+
+- **Verdict: ACCEPT-WITH-FINDINGS** · deploy_allowed=false unchanged ·
+  report: docs/evidence/gate-v4/laplace-gate-v4-report.md + release-gate.json
+- Items 1–8 PASS (sanitizer adversarial: PASS-WITH-HONEST-LIMITS;
+  hygiene: PASS-WITH-FINDINGS). Findings all non-blocking: F1 hardcoded
+  QA SANITIZER_KEY placeholder triggers gitleaks (recommend
+  .gitleaksignore), F2 DEV_FALLBACK_SECRET pattern likewise, F3 no
+  commit-msg hook, F4 redundant content field, F5/F6 documented
+  sanitizer limits (all-caps names missed; Title-Case heading false
+  positives).
+- **Discrepancy addendum (corrects the implementer record):** the v3
+  gate's 390px overflow was REAL — the Navbar overflowed at all widths
+  ≤414px on 9d752ce and was fixed by Ari in 5a34ca0 on the task branch
+  before this session's first probe ran; the card-grid bug (≤360px)
+  was the separate, remaining piece fixed in a243c57. BUILD-REPORT
+  root-cause section corrected; both reports were accurate about
+  different overflow sources.

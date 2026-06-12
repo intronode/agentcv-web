@@ -102,9 +102,17 @@ simply does not appear in the image. An examiner looking at a mobile
 screenshot has no visual signal that `document.scrollWidth` is wider
 than the viewport; the overflow is invisible by construction.
 
-**Precise reproduction truth (verified 2026-06-12):** The overflow did
-**not** reproduce at exactly 390px. It reproduced at **≤ 360px**. The
-root cause was that `ConfigurationCard` grid cells lacked `min-w-0`,
+**Precise reproduction truth (corrected 2026-06-12 after the Laplace
+gate-v4 addendum):** the gate's 390px report was CORRECT. There were
+TWO overflow bugs at the v4 exit (9d752ce): (1) the Navbar's inline
+link row had an intrinsic minimum width of ~417px, overflowing at
+every width up to 414px including 390px — fixed by Ari in `5a34ca0`
+("Fix AgentCV mobile overflow") on the task branch BEFORE this
+session's first probe ran, which is why the implementer's probe found
+no 390px overflow and this section originally (and wrongly) stated the
+blocker "did not reproduce at exactly 390px"; and (2) the card-grid
+bug this section describes, which reproduced at **≤ 360px** only:
+`ConfigurationCard` grid cells lacked `min-w-0`,
 and `TrustBadge` used `whitespace-nowrap`, giving cards a minimum
 content width wider than 320–360px viewports. The grid cell's implicit
 `min-width: auto` prevented the card from compressing to the column
