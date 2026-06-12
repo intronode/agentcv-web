@@ -3147,4 +3147,197 @@ export function seed(db: Database.Database): void {
     'Caught two production-grade bugs in our payment path that human review missed. (Fictional demo attestation.)',
     1
   );
+
+  // ---- v6: seed files -------------------------------------------------------
+  // Seed-public files: insert a file_scan_log row with triggered_by='seed_review',
+  // error_message=NULL, finding_count=0 — this is the ONLY path to public visibility
+  // before the sanitizer runs.
+  const SEED_DETECTOR_VERSIONS = JSON.stringify({
+    secrets: '1.0.0',
+    pii: '1.0.0',
+    confidential: '1.0.0',
+  });
+
+  const insFile = db.prepare(
+    `INSERT INTO files (subject_type, subject_id, path, content_private, content_public, visibility, sanitization_state, uploaded_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`
+  );
+  const insScanLog = db.prepare(
+    `INSERT INTO file_scan_log (file_id, detector_versions, finding_count, error_message, triggered_by)
+     VALUES (?, ?, 0, NULL, 'seed_review')`
+  );
+
+  // Helper: insert a public seed file (scan log row included)
+  const seedPublicFile = (
+    subjectType: SubjectType,
+    subjectId_: number,
+    path: string,
+    content: string
+  ): void => {
+    const res = insFile.run(
+      subjectType,
+      subjectId_,
+      path,
+      content,
+      content,
+      'public',
+      'scan_complete'
+    );
+    insScanLog.run(Number(res.lastInsertRowid), SEED_DETECTOR_VERSIONS);
+  };
+
+  // Helper: insert a private seed file (no scan log — starts at needs_scan)
+  const seedPrivateFile = (
+    subjectType: SubjectType,
+    subjectId_: number,
+    path: string,
+    content: string
+  ): void => {
+    insFile.run(subjectType, subjectId_, path, content, null, 'private', 'needs_scan');
+  };
+
+  // ari-collective (real): public operational files
+  const ariTeamId = subjectId(['team', 'ari-collective']);
+
+  seedPublicFile(
+    'team',
+    ariTeamId,
+    'LESSONS.md',
+    `# Ari Collective — Lessons Log
+
+This file is part of the Ari Collective's public operational record.
+Entries are real; provenance: Intronode internal sessions.
+
+## 2026-05
+
+### Lesson 001 — Harness over model swap
+**Context:** Stanley failed a TypeScript strict-mode refactor three times in a row.
+**Root cause:** Wrong subagent model tier; Haiku assigned to L3_complex work.
+**Fix:** Routing rule added: L3_complex tasks → Sonnet minimum; architecture tasks → Opus.
+**Outcome:** Zero repeat of same failure class since rule applied.
+
+### Lesson 002 — Seed-public discipline
+**Context:** A seeded file was published with [REDACTED] placeholders inline, not removed.
+**Root cause:** Content was copied from a draft without sanitization review.
+**Fix:** Seed-public path now requires explicit scan log row (triggered_by='seed_review').
+**Outcome:** Sanitization discipline is now mechanical, not advisory.
+
+## 2026-04
+
+### Lesson 003 — Context window economics
+**Context:** Main session accumulated 180K tokens in a single coding session.
+**Root cause:** Subagent output was forwarded verbatim into main context rather than summarized.
+**Fix:** Delegation rule: subagent output → summary only in main; raw output stays in subagent context.
+**Outcome:** Avg session token cost reduced ~40%.
+`
+  );
+
+  seedPublicFile(
+    'team',
+    ariTeamId,
+    'TOPOLOGY.md',
+    `# Ari Collective — Topology Reference
+
+**Last verified:** 2026-06-11
+**Owner:** Intronode / HJ
+**Platform:** Claude Code (Anthropic)
+
+## Role Map
+
+| Role | Agent | Model | Scope |
+|------|-------|-------|-------|
+| Orchestrator | Ari | Opus (Fable 5) | Decision, routing, user-facing synthesis |
+| Coder | Stanley | Sonnet (Fable 5) | Feature work, refactors, bug fixes |
+| Ops | Arthur | Sonnet (Fable 5) | Cron, deploy verification, monitoring |
+| QA / Audit | Laplace | Sonnet (Fable 5) | Independent gate, contradiction detection |
+
+## Communication Paths
+
+- HJ → Ari (orchestrator): primary instruction channel
+- Ari → Stanley / Arthur / Laplace: subagent dispatch via Claude Code agent tool
+- Laplace → Ari: QA verdicts only; never directly to HJ
+- Arthur → Ari: ops alerts and completion signals
+
+## Oversight Model
+
+Human-in-the-loop at four gates:
+1. Cloud secrets / account changes
+2. External sends (email, posts, DMs)
+3. Irreversible destruction
+4. Business direction
+
+All other decisions: Ari autonomy, report after execution.
+
+## Token Economics (windowed, 2026-04 — 2026-05)
+
+- Avg session tokens (main): ~45K
+- Subagent token share: ~72% of total
+- Escalation rate (L1 tasks routed to Opus): <5%
+`
+  );
+
+  // helios-swarm (illustrative): private runbook
+  const heliosTeamId = subjectId(['team', 'helios-swarm']);
+  seedPrivateFile(
+    'team',
+    heliosTeamId,
+    'RUNBOOK.md',
+    `# Helios Swarm — Extraction Runbook
+
+**Status:** PRIVATE — pending sanitization review
+**Owner:** Helios AI (illustrative)
+
+## Pipeline Overview
+
+1. Extractor agents (EU / US regions) pull raw feed data
+2. Transform agent normalizes schema
+3. Validation agent checks completeness and flags anomalies
+4. Output routed to downstream consumers via queue
+
+## Failure Modes
+
+- **Partial feed:** EU extractor falls back to cached snapshot; logs WARN
+- **Schema drift:** Transform agent flags and pauses pipeline; alerts ops
+- **Queue backpressure:** Extractor retries with exponential backoff (max 5)
+
+## On-call
+
+Contact: ops@helios-ai.example (illustrative placeholder)
+`
+  );
+
+  // haven-support (illustrative agent): private soul file
+  const havenAgentId = subjectId(['agent', 'haven-support']);
+  seedPrivateFile(
+    'agent',
+    havenAgentId,
+    'SOUL.md',
+    `# Haven Support Agent — Soul Document
+
+**Status:** PRIVATE — internal reference only
+**Owner:** Haven AI (illustrative)
+
+## Identity
+
+Haven is a customer support agent. Its primary obligation is to the user asking for help,
+not to the brand narrative. When the product genuinely fails someone, Haven says so clearly
+and escalates — it does not deflect.
+
+## Tone
+
+Warm, direct, low-jargon. Acknowledge the problem first; explain second; resolve third.
+Never apologize for things that are not wrong. Never promise things that are uncertain.
+
+## Escalation Rule
+
+If a user asks the same question three times without resolution → escalate to human tier,
+no exceptions. Do not attempt a fourth autonomous answer.
+
+## What Haven Will Not Do
+
+- Deny a known bug is a bug
+- Claim a feature exists when it does not
+- Apologize for the user's confusion when the product is confusing
+`
+  );
 }

@@ -56,6 +56,8 @@ export const ROUTES = [
   { path: '/submit',                                                         slug: 'submit' },
   { path: '/request?config=ari-collective',                                slug: 'request' },
   { path: '/this-route-does-not-exist',                                    slug: 'not-found' },
+  { path: '/teams/ari-collective/files/LESSONS.md',                        slug: 'teams-ari-collective-files-lessons' },
+  { path: '/teams/ari-collective/files/TOPOLOGY.md',                       slug: 'teams-ari-collective-files-topology' },
 ];
 // ────────────────────────────────────────────────────────────────────────────
 

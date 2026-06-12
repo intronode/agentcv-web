@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getTeamProfile } from '@/lib/db/queries';
+import { auth } from '@/lib/auth';
+import { getTeamProfile, getFilesForSubject } from '@/lib/db/queries';
+import { getDb } from '@/lib/db';
 import TrustBadge from '@/components/TrustBadge';
 import LayerLabel from '@/components/LayerLabel';
 import TopologyGlyph, { TOPOLOGY_LABELS } from '@/components/TopologyGlyph';
@@ -112,6 +114,18 @@ export default async function TeamProfilePage({ params }: PageProps) {
   if (!profile) notFound();
 
   const { team, owner, tier, members, metrics, proof, attestations } = profile;
+
+  // Files — show public files to everyone; show private files only to owner
+  const session = await auth();
+  const userId = session?.user?.id ? Number(session.user.id) : null;
+  const db = getDb();
+  const ownerRow = db.prepare('SELECT user_id FROM owners WHERE id=?').get(team.owner_id) as
+    | { user_id: number | null }
+    | undefined;
+  const isOwner = userId !== null && ownerRow?.user_id === userId;
+  const files = isOwner
+    ? getFilesForSubject('team', team.id, false)
+    : getFilesForSubject('team', team.id, true);
 
   const topologyType = team.topology_type as TopologyType | null;
   const industries: string[] = team.industries ? (JSON.parse(team.industries) as string[]) : [];
@@ -410,6 +424,60 @@ export default async function TeamProfilePage({ params }: PageProps) {
               />
             </div>
           </section>
+
+          {/* 8. Files */}
+          {files.length > 0 && (
+            <section>
+              <SectionHeading>
+                Files{' '}
+                <span className="text-sm font-normal text-text-tertiary">({files.length})</span>
+              </SectionHeading>
+              <p className="mt-1 text-xs text-text-tertiary">
+                Operational documents — runbooks, soul files, topology references.
+              </p>
+              <ul className="mt-4 space-y-1">
+                {files.map((f) => (
+                  <li key={f.id}>
+                    <Link
+                      href={`/teams/${team.slug}/files/${f.path}`}
+                      className="flex items-center justify-between gap-2 rounded px-3 py-2 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
+                    >
+                      <span className="font-mono truncate">{f.path}</span>
+                      {f.visibility === 'private' && (
+                        <span className="shrink-0 text-[10px] uppercase tracking-wide text-zinc-600 border border-zinc-700 rounded px-1.5 py-0.5">
+                          private
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {isOwner && (
+                <div className="mt-3">
+                  <Link
+                    href={`/teams/${team.slug}/files/new`}
+                    className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline"
+                  >
+                    + Upload file
+                  </Link>
+                </div>
+              )}
+            </section>
+          )}
+          {files.length === 0 && isOwner && (
+            <section>
+              <SectionHeading>Files</SectionHeading>
+              <p className="mt-1 text-xs text-text-tertiary">No files yet.</p>
+              <div className="mt-3">
+                <Link
+                  href={`/teams/${team.slug}/files/new`}
+                  className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline"
+                >
+                  + Upload file
+                </Link>
+              </div>
+            </section>
+          )}
         </div>
 
         {/* ── Sidebar ── */}

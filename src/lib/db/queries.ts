@@ -21,6 +21,9 @@ import type {
   SubjectType,
   TrustTier,
   UserRow,
+  FileRow,
+  FileListItem,
+  FileVisibility,
 } from './types';
 
 // Deprecated type aliases — kept so old import sites keep compiling.
@@ -1170,3 +1173,144 @@ export function registerTeam(input: RegisterTeamInput): {
 
 /** Deprecated alias — kept for call-sites not yet migrated. */
 export const registerConfiguration = registerTeam;
+
+// ---- v6: operational files ------------------------------------------------
+
+const ALLOWED_EXTENSIONS = ['.md', '.markdown'];
+const MAX_PATH_SEGMENTS = 2;
+const MAX_CONTENT_BYTES = 65536; // 64 KB
+
+/**
+ * Validate a file path: relative, .md/.markdown only, max 2 segments,
+ * no traversal, no absolute paths.
+ * Returns an error string or null if valid.
+ */
+export function validateFilePath(path: string): string | null {
+  if (!path || path.trim() === '') return 'Path is required';
+  if (path.startsWith('/') || path.startsWith('\\')) return 'Absolute paths are not allowed';
+  if (path.includes('..')) return 'Path traversal is not allowed';
+  const segments = path.split('/').filter(Boolean);
+  if (segments.length === 0) return 'Path is required';
+  if (segments.length > MAX_PATH_SEGMENTS)
+    return `Path must have at most ${MAX_PATH_SEGMENTS} segments`;
+  const last = segments[segments.length - 1] ?? '';
+  const hasAllowedExt = ALLOWED_EXTENSIONS.some((ext) => last.toLowerCase().endsWith(ext));
+  if (!hasAllowedExt) return 'Only .md and .markdown files are allowed';
+  return null;
+}
+
+export function getFilesForSubject(
+  subjectType: 'agent' | 'team',
+  subjectId: number,
+  visibleOnly = false
+): FileListItem[] {
+  const db = getDb();
+  const visClause = visibleOnly ? "AND f.visibility = 'public'" : '';
+  return db
+    .prepare(
+      `SELECT f.id, f.path, f.visibility, f.sanitization_state, f.updated_at,
+              (SELECT sl.scan_ts FROM file_scan_log sl WHERE sl.file_id = f.id ORDER BY sl.scan_ts DESC LIMIT 1) AS last_scan_ts
+       FROM files f
+       WHERE f.subject_type = ? AND f.subject_id = ? ${visClause}
+       ORDER BY f.path ASC`
+    )
+    .all(subjectType, subjectId) as FileListItem[];
+}
+
+/** Returns the file row (including content_private) — only for server-side use. */
+export function getFileByPath(
+  subjectType: 'agent' | 'team',
+  subjectId: number,
+  path: string
+): FileRow | null {
+  return (
+    (getDb()
+      .prepare('SELECT * FROM files WHERE subject_type=? AND subject_id=? AND path=?')
+      .get(subjectType, subjectId, path) as FileRow | undefined) ?? null
+  );
+}
+
+/** Returns the file row (including content_private) — only for server-side use. */
+export function getFileById(id: number): FileRow | null {
+  return (getDb().prepare('SELECT * FROM files WHERE id=?').get(id) as FileRow | undefined) ?? null;
+}
+
+export function countPublicFiles(subjectType: 'agent' | 'team', subjectId: number): number {
+  return (
+    getDb()
+      .prepare(
+        "SELECT COUNT(*) AS n FROM files WHERE subject_type=? AND subject_id=? AND visibility='public'"
+      )
+      .get(subjectType, subjectId) as { n: number }
+  ).n;
+}
+
+export function countPrivateFiles(subjectType: 'agent' | 'team', subjectId: number): number {
+  return (
+    getDb()
+      .prepare(
+        "SELECT COUNT(*) AS n FROM files WHERE subject_type=? AND subject_id=? AND visibility='private'"
+      )
+      .get(subjectType, subjectId) as { n: number }
+  ).n;
+}
+
+export interface CreateFileInput {
+  subjectType: 'agent' | 'team';
+  subjectId: number;
+  path: string;
+  contentPrivate: string;
+  uploadedBy: number | null;
+}
+
+export function createFile(input: CreateFileInput): { id: number } {
+  if (Buffer.byteLength(input.contentPrivate, 'utf8') > MAX_CONTENT_BYTES) {
+    throw new Error(`File content exceeds 64 KB limit`);
+  }
+  const db = getDb();
+  const res = db
+    .prepare(
+      `INSERT INTO files (subject_type, subject_id, path, content_private, uploaded_by)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(input.subjectType, input.subjectId, input.path, input.contentPrivate, input.uploadedBy);
+  return { id: Number(res.lastInsertRowid) };
+}
+
+export interface UpdateFileInput {
+  contentPrivate: string;
+}
+
+export function updateFile(id: number, input: UpdateFileInput): void {
+  if (Buffer.byteLength(input.contentPrivate, 'utf8') > MAX_CONTENT_BYTES) {
+    throw new Error(`File content exceeds 64 KB limit`);
+  }
+  getDb()
+    .prepare(
+      `UPDATE files SET content_private=?, sanitization_state='needs_scan', updated_at=datetime('now') WHERE id=?`
+    )
+    .run(input.contentPrivate, id);
+}
+
+/**
+ * Check whether a file can be made public: it must have at least one completed
+ * (non-error, error_message IS NULL) scan log row with triggered_by='seed_review'
+ * OR a completed scan with no findings.
+ * Returns true if allowed, false if blocked.
+ */
+export function canMakeFilePublic(fileId: number): boolean {
+  const row = getDb()
+    .prepare(
+      `SELECT id FROM file_scan_log
+       WHERE file_id=? AND error_message IS NULL
+       LIMIT 1`
+    )
+    .get(fileId) as { id: number } | undefined;
+  return row !== undefined;
+}
+
+export function setFileVisibility(id: number, visibility: FileVisibility): void {
+  getDb()
+    .prepare(`UPDATE files SET visibility=?, updated_at=datetime('now') WHERE id=?`)
+    .run(visibility, id);
+}

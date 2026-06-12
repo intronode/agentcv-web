@@ -4,7 +4,8 @@
 // Bump on any schema change: a seeded demo DB with an older version is
 // dropped and rebuilt automatically on next access (data/ is disposable).
 // v5: users table + owners.user_id for Auth.js v5 account ownership.
-export const SCHEMA_VERSION = 5;
+// v6: operational files per agent/team (files, file_findings, file_scan_log).
+export const SCHEMA_VERSION = 6;
 
 export const SCHEMA_SQL = `
 PRAGMA user_version = ${SCHEMA_VERSION};
@@ -164,4 +165,54 @@ CREATE TABLE contact_requests (
   kind TEXT NOT NULL DEFAULT 'general' CHECK (kind IN ('request_setup','claim','general')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- v6: operational files per agent/team
+CREATE TABLE files (
+  id              INTEGER PRIMARY KEY,
+  subject_type    TEXT NOT NULL CHECK (subject_type IN ('agent','team')),
+  subject_id      INTEGER NOT NULL,
+  path            TEXT NOT NULL,
+  content_private TEXT NOT NULL,
+  content_public  TEXT,
+  visibility      TEXT NOT NULL DEFAULT 'private' CHECK (visibility IN ('private','public')),
+  sanitization_state TEXT NOT NULL DEFAULT 'needs_scan'
+    CHECK (sanitization_state IN ('needs_scan','scan_complete','scan_error')),
+  uploaded_by     INTEGER REFERENCES users(id),
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (subject_type, subject_id, path)
+);
+
+CREATE TABLE file_scan_log (
+  id              INTEGER PRIMARY KEY,
+  file_id         INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  scan_ts         TEXT NOT NULL DEFAULT (datetime('now')),
+  detector_versions TEXT NOT NULL,
+  finding_count   INTEGER NOT NULL DEFAULT 0,
+  error_message   TEXT,
+  triggered_by    TEXT NOT NULL CHECK (triggered_by IN ('content_change','manual_rescan','visibility_attempt','seed_review'))
+);
+CREATE INDEX idx_file_scan_log_file ON file_scan_log(file_id, scan_ts DESC);
+
+CREATE TABLE file_findings (
+  id              INTEGER PRIMARY KEY,
+  file_id         INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  scan_log_id     INTEGER NOT NULL REFERENCES file_scan_log(id),
+  detector_id     TEXT NOT NULL,
+  detector_version TEXT NOT NULL,
+  finding_type    TEXT NOT NULL CHECK (finding_type IN ('secret','pii','confidential')),
+  severity        TEXT NOT NULL CHECK (severity IN ('critical','blocking','advisory')),
+  span_start      INTEGER NOT NULL,
+  span_end        INTEGER NOT NULL,
+  excerpt         TEXT NOT NULL,
+  suggested_mask  TEXT NOT NULL,
+  status          TEXT NOT NULL DEFAULT 'unresolved'
+    CHECK (status IN ('unresolved','masked','dismissed','stale')),
+  resolved_mask   TEXT,
+  dismiss_reason  TEXT,
+  resolved_by     INTEGER REFERENCES users(id),
+  resolved_at     TEXT,
+  stale           INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_file_findings_file ON file_findings(file_id, stale, status);
 `;

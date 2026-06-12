@@ -250,6 +250,8 @@ REQUIRED_CAPTURES=(
   "register-chooser-desktop-fold.png"
   "request-success.png"
   "agents-filtered-openclaw-desktop.png"
+  "teams-ari-collective-files-lessons-desktop.png"
+  "teams-ari-collective-files-lessons-mobile.png"
 )
 MISSING_CAPTURES=()
 for cap in "${REQUIRED_CAPTURES[@]}"; do

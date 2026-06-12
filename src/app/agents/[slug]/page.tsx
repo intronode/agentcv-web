@@ -1,7 +1,14 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getAgentProfile, getConfigurationHeadlineMetrics, getTeamTiers } from '@/lib/db/queries';
+import { auth } from '@/lib/auth';
+import {
+  getAgentProfile,
+  getConfigurationHeadlineMetrics,
+  getTeamTiers,
+  getFilesForSubject,
+} from '@/lib/db/queries';
+import { getDb } from '@/lib/db';
 import type { MetricRow } from '@/lib/db/types';
 import TrustBadge from '@/components/TrustBadge';
 import LayerLabel from '@/components/LayerLabel';
@@ -67,6 +74,18 @@ export default async function AgentProfilePage({ params }: PageProps) {
     platform_verified: 3,
   };
   const agentTierRank = TIER_RANK[tier] ?? 0;
+
+  // Files — show public files to everyone; show private files only to owner
+  const session = await auth();
+  const userId = session?.user?.id ? Number(session.user.id) : null;
+  const db = getDb();
+  const ownerRow = db.prepare('SELECT user_id FROM owners WHERE id=?').get(owner.id) as
+    | { user_id: number | null }
+    | undefined;
+  const isOwner = userId !== null && ownerRow?.user_id === userId;
+  const files = isOwner
+    ? getFilesForSubject('agent', agent.id, false)
+    : getFilesForSubject('agent', agent.id, true);
 
   // Collect teams whose tier is strictly higher than the agent's tier
   const higherTierTeams = teams.filter((t) => {
@@ -353,6 +372,60 @@ export default async function AgentProfilePage({ params }: PageProps) {
               />
             </div>
           </section>
+
+          {/* Files */}
+          {files.length > 0 && (
+            <section>
+              <h2 className="text-lg font-semibold tracking-tight">
+                Files{' '}
+                <span className="text-sm font-normal text-text-tertiary">({files.length})</span>
+              </h2>
+              <p className="mt-1 text-xs text-text-tertiary">
+                Operational documents — soul files, runbooks, configuration references.
+              </p>
+              <ul className="mt-4 space-y-1">
+                {files.map((f) => (
+                  <li key={f.id}>
+                    <Link
+                      href={`/agents/${agent.slug}/files/${f.path}`}
+                      className="flex items-center justify-between gap-2 rounded px-3 py-2 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
+                    >
+                      <span className="font-mono truncate">{f.path}</span>
+                      {f.visibility === 'private' && (
+                        <span className="shrink-0 text-[10px] uppercase tracking-wide text-zinc-600 border border-zinc-700 rounded px-1.5 py-0.5">
+                          private
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {isOwner && (
+                <div className="mt-3">
+                  <Link
+                    href={`/agents/${agent.slug}/files/new`}
+                    className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline"
+                  >
+                    + Upload file
+                  </Link>
+                </div>
+              )}
+            </section>
+          )}
+          {files.length === 0 && isOwner && (
+            <section>
+              <h2 className="text-lg font-semibold tracking-tight">Files</h2>
+              <p className="mt-1 text-xs text-text-tertiary">No files yet.</p>
+              <div className="mt-3">
+                <Link
+                  href={`/agents/${agent.slug}/files/new`}
+                  className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline"
+                >
+                  + Upload file
+                </Link>
+              </div>
+            </section>
+          )}
         </div>
 
         {/* Sidebar */}

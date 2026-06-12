@@ -292,3 +292,45 @@ export interface SiteCounts {
   owners: number;
   proofEntries: number;
 }
+
+// ---- v6: operational files ------------------------------------------------
+
+export type FileVisibility = 'private' | 'public';
+export type SanitizationState = 'needs_scan' | 'scan_complete' | 'scan_error';
+export type FindingType = 'secret' | 'pii' | 'confidential';
+export type FindingSeverity = 'critical' | 'blocking' | 'advisory';
+export type FindingStatus = 'unresolved' | 'masked' | 'dismissed' | 'stale';
+export type ScanTrigger = 'content_change' | 'manual_rescan' | 'visibility_attempt' | 'seed_review';
+
+export interface FileRow {
+  id: number;
+  subject_type: SubjectType;
+  subject_id: number;
+  path: string;
+  content_private: string;
+  content_public: string | null;
+  visibility: FileVisibility;
+  sanitization_state: SanitizationState;
+  uploaded_by: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FileScanLogRow {
+  id: number;
+  file_id: number;
+  scan_ts: string;
+  detector_versions: string;
+  finding_count: number;
+  error_message: string | null;
+  triggered_by: ScanTrigger;
+}
+
+export interface FileListItem {
+  id: number;
+  path: string;
+  visibility: FileVisibility;
+  sanitization_state: SanitizationState;
+  updated_at: string;
+  last_scan_ts: string | null;
+}
