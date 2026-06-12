@@ -124,7 +124,7 @@ export function CompareTray() {
         <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap">
           {/* Count badge */}
           <div className="flex shrink-0 items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-button text-xs font-bold text-white">
               {selected.length}
             </span>
             <span className="text-xs font-semibold text-text-primary">
@@ -152,7 +152,7 @@ export function CompareTray() {
             {canCompare ? (
               <Link
                 href={compareUrl}
-                className="rounded-lg bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+                className="rounded-lg bg-accent-button px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-button-hover"
               >
                 Compare {selected.length} →
               </Link>

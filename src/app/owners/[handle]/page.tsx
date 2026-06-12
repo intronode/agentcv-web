@@ -127,14 +127,14 @@ export default async function OwnerProfilePage({ params }: PageProps) {
             team{teams.length === 1 ? '' : 's'}
           </span>
         </span>
-        <span className="text-border">·</span>
+        <span className="text-text-tertiary">·</span>
         <span className="font-semibold text-text-primary">
           {agents.length}{' '}
           <span className="font-normal text-text-tertiary">
             agent component{agents.length === 1 ? '' : 's'}
           </span>
         </span>
-        <span className="text-border">·</span>
+        <span className="text-text-tertiary">·</span>
         <span className="font-semibold text-text-primary">
           {totalProof}{' '}
           <span className="font-normal text-text-tertiary">
@@ -143,7 +143,7 @@ export default async function OwnerProfilePage({ params }: PageProps) {
         </span>
         {evidenceLinked > 0 && (
           <>
-            <span className="text-border">·</span>
+            <span className="text-text-tertiary">·</span>
             <span className="font-semibold text-blue-300">
               {evidenceLinked}{' '}
               <span className="font-normal text-text-tertiary">evidence-linked</span>
@@ -193,7 +193,7 @@ export default async function OwnerProfilePage({ params }: PageProps) {
               shared by all {agentsWithViaMetric.length} members via{' '}
               <span className="font-medium text-text-primary">{sharedTeamMetric.configName}</span>
             </span>
-            <span className="text-border">·</span>
+            <span className="text-text-tertiary">·</span>
             <span className="text-xs text-text-secondary">{sharedTeamMetric.label}</span>
             <span className="font-semibold text-text-primary">
               {formatMetricValue(sharedTeamMetric.value, sharedTeamMetric.unit)}

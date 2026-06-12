@@ -380,7 +380,7 @@ export default async function TeamProfilePage({ params }: PageProps) {
           <div className="space-y-2">
             <Link
               href={`/request?config=${team.slug}`}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent-button px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover"
             >
               <svg
                 width="15"

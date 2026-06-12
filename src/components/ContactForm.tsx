@@ -63,7 +63,7 @@ export default function ContactForm({ subjectType, subjectSlug, subjectName }: C
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+        className="w-full rounded-lg bg-accent-button px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover"
       >
         Contact owner about {subjectName}
       </button>
@@ -90,7 +90,7 @@ export default function ContactForm({ subjectType, subjectSlug, subjectName }: C
         <button
           type="submit"
           disabled={state === 'submitting'}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+          className="rounded-lg bg-accent-button px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover disabled:opacity-50"
         >
           {state === 'submitting' ? 'Sending…' : 'Send request'}
         </button>

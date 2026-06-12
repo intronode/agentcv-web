@@ -83,21 +83,21 @@ function SubmitDropdown() {
   }, []);
 
   return (
-    <div ref={ref} className="relative flex items-center">
-      {/* Primary CTA */}
+    <div ref={ref} className="relative flex items-stretch">
+      {/* Primary CTA — h-9 fixes exact height; items-center vertically centres the label */}
       <Link
         href="/submit"
-        className="rounded-l-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+        className="flex h-9 items-center rounded-l-md bg-accent-button px-4 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover"
         onClick={() => setOpen(false)}
       >
         Submit
       </Link>
-      {/* Chevron toggle */}
+      {/* Chevron toggle — same h-9 so both halves are identical height */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="More submit options"
-        className="rounded-r-lg border-l border-accent-hover bg-accent px-2 py-2 text-white transition-colors hover:bg-accent-hover"
+        className="flex h-9 w-9 items-center justify-center rounded-r-md border-l border-accent-button-hover bg-accent-button text-white transition-colors hover:bg-accent-button-hover"
       >
         <svg
           width="12"

@@ -406,7 +406,7 @@ export default function SubmitPage() {
             >
               <span
                 className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-semibold transition-colors ${
-                  isActive ? 'bg-accent text-white' : 'bg-surface text-text-tertiary'
+                  isActive ? 'bg-accent-button text-white' : 'bg-surface text-text-tertiary'
                 }`}
               >
                 {i + 1}
@@ -725,7 +725,7 @@ export default function SubmitPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+            className="rounded-lg bg-accent-button px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover disabled:opacity-50"
           >
             {submitting ? 'Submitting…' : 'Submit team'}
           </button>

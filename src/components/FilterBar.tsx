@@ -132,7 +132,7 @@ export default function FilterBar({ categories, platforms }: FilterBarProps) {
           </svg>
           Filters
           {activeCount > 0 && (
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-semibold text-white">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent-button text-[10px] font-semibold text-white">
               {activeCount}
             </span>
           )}
