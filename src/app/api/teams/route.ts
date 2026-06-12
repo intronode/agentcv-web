@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { listTeams, registerTeam } from '@/lib/db/queries';
+import type { MemberEntry } from '@/lib/db/queries';
 import type { TrustTier } from '@/lib/db/types';
 import {
   ValidationError,
@@ -70,8 +71,10 @@ export async function POST(request: Request): Promise<NextResponse> {
     const userId = session?.user?.id ? Number(session.user.id) : undefined;
     const body = await readJsonBody(request);
 
-    // Parse members array if provided
-    let members: { agentSlug: string; role: string }[] | undefined;
+    // Parse members array — accepts two shapes per member:
+    //   { agentSlug, role }           — existing agent by slug
+    //   { create: { name, role, model?, platform?, tagline? } } — inline create
+    let members: MemberEntry[] | undefined;
     const rawMembers = body['members'];
     if (rawMembers !== undefined && rawMembers !== null) {
       if (!Array.isArray(rawMembers)) {
@@ -85,16 +88,50 @@ export async function POST(request: Request): Promise<NextResponse> {
           throw new ValidationError(`members[${i}] must be an object`);
         }
         const obj = m as Record<string, unknown>;
-        if (typeof obj['agentSlug'] !== 'string' || !obj['agentSlug']) {
-          throw new ValidationError(`members[${i}].agentSlug is required`);
+        if ('create' in obj) {
+          // Inline create shape
+          const c = obj['create'];
+          if (typeof c !== 'object' || c === null) {
+            throw new ValidationError(`members[${i}].create must be an object`);
+          }
+          const cobj = c as Record<string, unknown>;
+          if (typeof cobj['name'] !== 'string' || !cobj['name']) {
+            throw new ValidationError(`members[${i}].create.name is required`);
+          }
+          if (typeof cobj['role'] !== 'string' || !cobj['role']) {
+            throw new ValidationError(`members[${i}].create.role is required`);
+          }
+          return {
+            create: {
+              name: (cobj['name'] as string).trim().slice(0, 80),
+              role: (cobj['role'] as string).trim().slice(0, 80),
+              model:
+                typeof cobj['model'] === 'string' ? cobj['model'].trim().slice(0, 80) : undefined,
+              platform:
+                typeof cobj['platform'] === 'string'
+                  ? cobj['platform'].trim().slice(0, 40)
+                  : undefined,
+              tagline:
+                typeof cobj['tagline'] === 'string'
+                  ? cobj['tagline'].trim().slice(0, 200)
+                  : undefined,
+            },
+          };
+        } else {
+          // Existing agent by slug
+          if (typeof obj['agentSlug'] !== 'string' || !obj['agentSlug']) {
+            throw new ValidationError(
+              `members[${i}].agentSlug is required (or use .create for inline creation)`
+            );
+          }
+          if (typeof obj['role'] !== 'string' || !obj['role']) {
+            throw new ValidationError(`members[${i}].role is required`);
+          }
+          return {
+            agentSlug: (obj['agentSlug'] as string).trim().slice(0, 80),
+            role: (obj['role'] as string).trim().slice(0, 80),
+          };
         }
-        if (typeof obj['role'] !== 'string' || !obj['role']) {
-          throw new ValidationError(`members[${i}].role is required`);
-        }
-        return {
-          agentSlug: (obj['agentSlug'] as string).trim().slice(0, 80),
-          role: (obj['role'] as string).trim().slice(0, 80),
-        };
       });
     }
 

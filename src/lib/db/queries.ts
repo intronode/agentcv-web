@@ -1017,6 +1017,25 @@ export function createContactRequest(input: ContactInput): { id: number } {
 
 // ---- register team -----------------------------------------------
 
+/** A member that references an existing agent by slug. */
+export interface MemberBySlug {
+  agentSlug: string;
+  role: string;
+}
+
+/** A member that creates a new agent inline (atomic — same transaction). */
+export interface MemberCreate {
+  create: {
+    name: string;
+    role: string;
+    model?: string;
+    platform?: string;
+    tagline?: string;
+  };
+}
+
+export type MemberEntry = MemberBySlug | MemberCreate;
+
 export interface RegisterTeamInput {
   name: string;
   tagline: string;
@@ -1034,8 +1053,12 @@ export interface RegisterTeamInput {
   ownerHandle: string;
   /** When provided (signed-in submit), link/update the owner row's user_id. */
   userId?: number;
-  /** Existing agent slugs + roles for membership (agents must already exist). */
-  members?: { agentSlug: string; role: string }[];
+  /**
+   * Members as either existing agent slugs or inline create specs.
+   * Both forms may appear in the same array.
+   * Inline creates are created atomically in the same transaction.
+   */
+  members?: MemberEntry[];
 }
 
 /** Deprecated alias — kept for call-sites not yet migrated. */
@@ -1088,18 +1111,55 @@ export function registerTeam(input: RegisterTeamInput): {
       );
     const teamId = Number(res.lastInsertRowid);
 
-    // Attach members if provided.
+    // Attach members if provided — supports both existing-slug refs and inline creates.
     if (input.members && input.members.length > 0) {
       const agentStmt = db.prepare('SELECT id FROM agents WHERE slug=?');
+      const insertAgentStmt = db.prepare(
+        `INSERT INTO agents (slug, name, tagline, category, platform, model, about, how_built, oversight, operational_since, owner_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
       const memberStmt = db.prepare(
         `INSERT INTO team_members (team_id, agent_id, role, ordinal)
          VALUES (?, ?, ?, ?)`
       );
       let ordinal = 0;
       for (const m of input.members) {
-        const agent = agentStmt.get(m.agentSlug) as { id: number } | undefined;
-        if (!agent) throw new Error(`Unknown agent: ${m.agentSlug}`);
-        memberStmt.run(teamId, agent.id, m.role, ordinal++);
+        let agentId: number;
+        if ('create' in m) {
+          // Inline create: new agent owned by the same owner, same platform default.
+          const c = m.create;
+          const agentName = c.name.trim().slice(0, 80);
+          const agentSlug = uniqueSlug('agents', slugify(agentName));
+          const agentTagline = (c.tagline ?? c.role).trim().slice(0, 200);
+          const agentPlatform =
+            (c.platform ?? input.platform ?? '').trim().slice(0, 40) || 'Unknown';
+          const agentModel = c.model ? c.model.trim().slice(0, 80) : null;
+          const agentRes = insertAgentStmt.run(
+            agentSlug,
+            agentName,
+            agentTagline,
+            c.role.trim().slice(0, 40), // category = role
+            agentPlatform,
+            agentModel,
+            null, // about
+            null, // how_built
+            null, // oversight
+            null, // operational_since
+            owner.id
+          );
+          agentId = Number(agentRes.lastInsertRowid);
+        } else {
+          // Existing agent by slug.
+          const agent = agentStmt.get(m.agentSlug) as { id: number } | undefined;
+          if (!agent) throw new Error(`Unknown agent: ${m.agentSlug}`);
+          agentId = agent.id;
+        }
+        memberStmt.run(
+          teamId,
+          agentId,
+          'create' in m ? m.create.role.trim().slice(0, 80) : m.role,
+          ordinal++
+        );
       }
     }
 

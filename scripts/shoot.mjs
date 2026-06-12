@@ -14,10 +14,11 @@
  *   <slug>-mobile.png        (390×844, full-page)
  *
  * Interaction captures (desktop):
- *   submit-validation-errors.png   — /submit with empty form submitted
- *   compare-tray-selected.png      — /teams with 2 items selected
- *   submit-success.png             — /submit filled + submitted, lands on new team detail page
- *   request-success.png            — /request filled + submitted, captures request-ID success state
+ *   submit-validation-errors.png    — /register/agent with empty form submitted
+ *   compare-tray-selected.png       — /teams with 2 items selected
+ *   register-chooser-desktop-fold   — /register chooser above the fold (from ROUTES list)
+ *   register-team-success.png       — 5-step team stepper filled + submitted, lands on team detail page
+ *   request-success.png             — /request filled + submitted, captures request-ID success state
  *
  * Console errors per page are written to console-log.txt in the out dir.
  * The deliberate /this-route-does-not-exist 404 is annotated in console-log.txt.
@@ -49,7 +50,9 @@ export const ROUTES = [
   { path: '/agents/ari',                                                    slug: 'agents-ari' },
   { path: '/owners/intronode',                                              slug: 'owners-intronode' },
   { path: '/harness-engineering',                                           slug: 'harness-engineering' },
-  { path: '/submit',                                                        slug: 'submit' },
+  { path: '/register',                                                       slug: 'register-chooser' },
+  { path: '/register/agent',                                                 slug: 'register-agent' },
+  { path: '/submit',                                                         slug: 'submit' },
   { path: '/request?config=ari-collective',                                slug: 'request' },
   { path: '/this-route-does-not-exist',                                    slug: 'not-found' },
 ];
@@ -291,12 +294,12 @@ async function main() {
     });
   }
 
-  // ── Interaction capture 1: submit form validation errors ──────────────────
+  // ── Interaction capture 1: register agent form validation errors ──────────
   console.log(`  → [interaction] submit-validation-errors`);
   {
     const { page, context } = await openDesktopPage(
       browser,
-      `${baseUrl}/submit`,
+      `${baseUrl}/register/agent`,
       consoleEntries,
       'submit-interaction',
     );
@@ -307,11 +310,10 @@ async function main() {
     // Brief wait for React state to update and render error messages
     await sleep(400);
 
-    // Clip to the form element bounding box — a full-page shot is illegible
-    // because validation errors appear inline and the form is only a portion
-    // of the viewport.  locator.screenshot() clips to the element exactly.
-    await page.locator('form').screenshot({
+    // Full-page screenshot (agent form has no separate <form> wrapper tag)
+    await page.screenshot({
       path: join(outDir, 'submit-validation-errors.png'),
+      fullPage: true,
     });
 
     await context.close();
@@ -372,39 +374,85 @@ async function main() {
     await context.close();
   }
 
-  // ── Interaction capture 3: submit form success — lands on new team detail ─
-  console.log(`  → [interaction] submit-success`);
+  // ── Interaction capture 3: register team — 5-step stepper → team detail ───
+  console.log(`  → [interaction] register-team-success`);
   {
     const { page, context } = await openDesktopPage(
       browser,
-      `${baseUrl}/submit`,
+      `${baseUrl}/register/team`,
       consoleEntries,
-      'submit-success-interaction',
+      'register-team-success-interaction',
     );
 
-    // Fill required fields minimally: name, tagline, topology select, agent count, owner
-    await page.fill('#name', 'QA Probe Team');
-    await page.fill('#tagline', 'Automated QA submission — evidence-state probe');
-    // Topology select: pick 'orchestrator_worker'
-    await page.selectOption('#topologyType', 'orchestrator_worker');
-    // Agent count — numeric input controlled via React state; use fill
-    await page.fill('#agentCount', '2');
-    // Owner fields
-    await page.fill('#ownerName', 'QA Probe Owner');
-    await page.fill('#ownerHandle', 'qa-probe-owner');
+    // Step 1 — Identity
+    await page.fill('#st1-name', 'QA Probe Team');
+    await page.fill('#st1-tagline', 'Automated QA submission — evidence-state probe');
+    await page.fill('#st1-ownerName', 'QA Probe Owner');
+    await page.fill('#st1-ownerHandle', 'qa-probe-owner');
+
+    // Helper: click the "Next →" navigation button (not topology cards)
+    const clickNext = () => page.locator('button:has-text("Next →")').click();
+
+    // Click "Next →"
+    await clickNext();
+    await sleep(300);
+
+    // Step 2 — Topology: click the "Orchestrator–Worker" card
+    await page.locator('button:has-text("Orchestrator")').first().click();
+    await sleep(200);
+
+    // Capture mid-stepper: topology card selected (step 2)
+    await page.screenshot({
+      path: join(outDir, 'register-team-mid-stepper.png'),
+      fullPage: false,
+    });
+
+    // Click "Next →"
+    await clickNext();
+    await sleep(300);
+
+    // Step 3 — Members: fill member 1
+    const memberRows = page.locator('.rounded-xl.border.border-border.bg-surface-elevated\\/50.p-4');
+    await memberRows.first().locator('input').first().fill('QA Coder Agent');
+    const memberInputs = memberRows.first().locator('input');
+    await memberInputs.nth(0).fill('QA Coder Agent');
+    await memberInputs.nth(1).fill('Lead coder');
+
+    // Add member 2
+    await page.locator('button:has-text("Add another member")').click();
+    await sleep(200);
+    const updatedRows = page.locator('.rounded-xl.border.border-border.bg-surface-elevated\\/50.p-4');
+    const secondRow = updatedRows.nth(1);
+    await secondRow.locator('input').nth(0).fill('QA Ops Watcher');
+    await secondRow.locator('input').nth(1).fill('Ops watcher');
+
+    // Click "Next →"
+    await clickNext();
+    await sleep(300);
+
+    // Step 4 — Blueprint (minimal, all optional)
+    // Click "Next →" immediately to skip
+    await clickNext();
+    await sleep(300);
+
+    // Step 5 — Review: screenshot review state
+    await page.screenshot({
+      path: join(outDir, 'register-team-review.png'),
+      fullPage: false,
+    });
 
     // Submit and wait for navigation to the new team detail page
-    const [response] = await Promise.all([
-      page.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }).catch(() => null),
-      page.locator('button[type="submit"]').click(),
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: 'networkidle', timeout: 20000 }).catch(() => null),
+      page.locator('button:has-text("Submit team")').click(),
     ]);
 
     // Extra settle after navigation
     await sleep(SETTLE_MS);
 
-    // Full-page screenshot of the landed team detail page
+    // Full-page screenshot of the landed team detail page (shows 2-member roster)
     await page.screenshot({
-      path: join(outDir, 'submit-success.png'),
+      path: join(outDir, 'register-team-success.png'),
       fullPage: true,
     });
 

@@ -70,7 +70,7 @@ const LINKS = [
   { href: '/harness-engineering', label: 'Harness Engineering' },
 ];
 
-/** Two-button split CTA: primary = Submit Configuration, secondary = Register Agent */
+/** Two-button split CTA: primary = Register (chooser), dropdown = team/agent paths */
 function SubmitDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -87,17 +87,17 @@ function SubmitDropdown() {
     <div ref={ref} className="relative flex items-stretch">
       {/* Primary CTA — h-9 fixes exact height; items-center vertically centres the label */}
       <Link
-        href="/submit"
+        href="/register"
         className="flex h-9 items-center rounded-l-md bg-accent-button px-4 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover"
         onClick={() => setOpen(false)}
       >
-        Submit
+        Register
       </Link>
       {/* Chevron toggle — same h-9 so both halves are identical height */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label="More submit options"
+        aria-label="More register options"
         className="flex h-9 w-9 items-center justify-center rounded-r-md border-l border-accent-button-hover bg-accent-button text-white transition-colors hover:bg-accent-button-hover"
       >
         <svg
@@ -117,7 +117,7 @@ function SubmitDropdown() {
       {open && (
         <div className="absolute right-0 top-full mt-1 w-48 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
           <Link
-            href="/submit"
+            href="/register/team"
             className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
             onClick={() => setOpen(false)}
           >
@@ -134,10 +134,10 @@ function SubmitDropdown() {
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <path d="M12 8v8M8 12h8" />
             </svg>
-            Submit team
+            Register team
           </Link>
           <Link
-            href="/register"
+            href="/register/agent"
             className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
             onClick={() => setOpen(false)}
           >

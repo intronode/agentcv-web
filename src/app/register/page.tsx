@@ -1,227 +1,202 @@
-'use client';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import TopologyGlyph from '@/components/TopologyGlyph';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+export const metadata: Metadata = { title: 'Register — AgentCV' };
 
-const inputClasses =
-  'w-full rounded-lg border border-border bg-surface-elevated px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none';
-
-const labelClasses = 'block text-xs font-medium uppercase tracking-wide text-text-tertiary';
-
-export default function RegisterPage() {
-  const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const payload: Record<string, string> = {};
-    for (const [key, value] of form.entries()) {
-      if (typeof value === 'string' && value.trim()) payload[key] = value.trim();
-    }
-    setSubmitting(true);
-    setError('');
-    try {
-      const res = await fetch('/api/agents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = (await res.json()) as { slug?: string; error?: string };
-      if (!res.ok || !data.slug) {
-        setError(data.error ?? 'Registration failed');
-        setSubmitting(false);
-        return;
-      }
-      router.push(`/agents/${data.slug}`);
-    } catch {
-      setError('Network error');
-      setSubmitting(false);
-    }
-  }
-
+export default function RegisterChooserPage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">Register an agent</h1>
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">Register</p>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight">What are you registering?</h1>
       <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-        New profiles start at <span className="text-slate-300">Self-Reported</span> — every claim is
-        labeled as yours. Log proof entries with public evidence links and the computed tier
-        upgrades itself. Nothing here is self-assignable.
+        Agents are individual components. Teams are working harnesses — a topology of agents with
+        evidence of what they actually do.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-        <section className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5">
-          <h2 className="text-sm font-semibold">Identity</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="name" className={labelClasses}>
-                Agent name *
-              </label>
-              <input
-                id="name"
-                name="name"
-                required
-                maxLength={80}
-                placeholder="e.g. Atlas"
-                className={`mt-1.5 ${inputClasses}`}
-              />
-            </div>
-            <div>
-              <label htmlFor="category" className={labelClasses}>
-                Category *
-              </label>
-              <input
-                id="category"
-                name="category"
-                required
-                maxLength={40}
-                placeholder="e.g. Engineering, Research, Ops"
-                className={`mt-1.5 ${inputClasses}`}
-              />
-            </div>
-          </div>
-          <div>
-            <label htmlFor="tagline" className={labelClasses}>
-              Tagline *
-            </label>
-            <input
-              id="tagline"
-              name="tagline"
-              required
-              maxLength={200}
-              placeholder="One sentence: what does it actually do?"
-              className={`mt-1.5 ${inputClasses}`}
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <label htmlFor="platform" className={labelClasses}>
-                Platform *
-              </label>
-              <input
-                id="platform"
-                name="platform"
-                required
-                maxLength={40}
-                placeholder="OpenClaw, Claude Code, …"
-                className={`mt-1.5 ${inputClasses}`}
-              />
-            </div>
-            <div>
-              <label htmlFor="model" className={labelClasses}>
-                Model
-              </label>
-              <input
-                id="model"
-                name="model"
-                maxLength={80}
-                placeholder="optional"
-                className={`mt-1.5 ${inputClasses}`}
-              />
-            </div>
-            <div>
-              <label htmlFor="operationalSince" className={labelClasses}>
-                Operating since
-              </label>
-              <input
-                id="operationalSince"
-                name="operationalSince"
-                type="date"
-                className={`mt-1.5 ${inputClasses}`}
-              />
-            </div>
-          </div>
-          <div>
-            <label htmlFor="about" className={labelClasses}>
-              About
-            </label>
-            <textarea
-              id="about"
-              name="about"
-              rows={3}
-              maxLength={4000}
-              placeholder="What it does, for whom, and within what limits."
-              className={`mt-1.5 ${inputClasses}`}
-            />
-          </div>
-        </section>
-
-        <section className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5">
-          <h2 className="text-sm font-semibold">How it&apos;s built</h2>
-          <div>
-            <label htmlFor="howBuilt" className={labelClasses}>
-              Architecture
-            </label>
-            <textarea
-              id="howBuilt"
-              name="howBuilt"
-              rows={3}
-              maxLength={4000}
-              placeholder="Operational DNA: runtime, memory, routing — the plans, not the house."
-              className={`mt-1.5 ${inputClasses}`}
-            />
-          </div>
-          <div>
-            <label htmlFor="oversight" className={labelClasses}>
-              Oversight model
-            </label>
-            <textarea
-              id="oversight"
-              name="oversight"
-              rows={2}
-              maxLength={1000}
-              placeholder="What requires a human? What is autonomous?"
-              className={`mt-1.5 ${inputClasses}`}
-            />
-          </div>
-        </section>
-
-        <section className="space-y-4 rounded-xl border border-border bg-surface-elevated/50 p-5">
-          <h2 className="text-sm font-semibold">Owner</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="ownerName" className={labelClasses}>
-                Display name *
-              </label>
-              <input
-                id="ownerName"
-                name="ownerName"
-                required
-                maxLength={80}
-                className={`mt-1.5 ${inputClasses}`}
-              />
-            </div>
-            <div>
-              <label htmlFor="ownerHandle" className={labelClasses}>
-                Handle *
-              </label>
-              <input
-                id="ownerHandle"
-                name="ownerHandle"
-                required
-                maxLength={40}
-                placeholder="lowercase, no spaces"
-                className={`mt-1.5 ${inputClasses}`}
-              />
-            </div>
-          </div>
-          <p className="text-xs text-text-tertiary">
-            Existing handles attach the agent to that owner; new handles create a new owner page.
-            Ownership claiming and authentication land in a later phase.
-          </p>
-        </section>
-
-        {error && <p className="text-sm text-red-400">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-lg bg-accent-button px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover disabled:opacity-50"
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        {/* Register an Agent */}
+        <Link
+          href="/register/agent"
+          className="group relative flex flex-col gap-4 rounded-xl border border-border bg-surface-elevated/50 p-6 transition-colors hover:border-accent/40 hover:bg-surface-elevated"
         >
-          {submitting ? 'Registering…' : 'Register agent'}
-        </button>
-      </form>
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface text-accent">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+              </svg>
+            </span>
+            <div>
+              <h2 className="text-sm font-semibold text-text-primary">Register an Agent</h2>
+              <p className="text-[11px] text-text-tertiary">A single component</p>
+            </div>
+          </div>
+          <p className="text-xs leading-relaxed text-text-secondary">
+            A single AI agent — its model, platform, role, and what it does. Agents become the
+            components of team rosters.
+          </p>
+          <ul className="space-y-1 text-[11px] text-text-tertiary">
+            <li className="flex items-center gap-1.5">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Name, platform, model, role
+            </li>
+            <li className="flex items-center gap-1.5">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Capabilities and oversight model
+            </li>
+            <li className="flex items-center gap-1.5">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Works signed in or anonymous
+            </li>
+          </ul>
+          <span className="mt-auto flex items-center gap-1 text-xs font-medium text-accent group-hover:underline">
+            Register agent
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </span>
+        </Link>
+
+        {/* Register a Team */}
+        <Link
+          href="/register/team"
+          className="group relative flex flex-col gap-4 rounded-xl border border-accent/30 bg-accent/5 p-6 transition-colors hover:border-accent/60 hover:bg-accent/10"
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-accent">
+              <TopologyGlyph topology="orchestrator_worker" size={20} />
+            </span>
+            <div>
+              <h2 className="text-sm font-semibold text-text-primary">Register a Team</h2>
+              <p className="text-[11px] text-text-tertiary">A working harness</p>
+            </div>
+          </div>
+          <p className="text-xs leading-relaxed text-text-secondary">
+            A multi-agent harness with topology, member agents, and evidence. The configuration is
+            the asset — this is the full documented blueprint.
+          </p>
+          <ul className="space-y-1 text-[11px] text-text-tertiary">
+            <li className="flex items-center gap-1.5">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Topology selection (5 named patterns)
+            </li>
+            <li className="flex items-center gap-1.5">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Add member agents inline — created atomically
+            </li>
+            <li className="flex items-center gap-1.5">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Blueprint: why it works, how it was built
+            </li>
+          </ul>
+          <span className="mt-auto flex items-center gap-1 text-xs font-medium text-accent group-hover:underline">
+            Register team
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </span>
+        </Link>
+      </div>
+
+      <p className="mt-6 text-[11px] text-text-tertiary">
+        All submissions start at <span className="font-mono text-[10px]">self_reported</span> tier.
+        Log proof entries with public evidence links after creation and the computed tier upgrades
+        automatically.
+      </p>
     </div>
   );
 }

@@ -245,7 +245,9 @@ fi
 # Verify required interaction captures are present
 INTERACTION_PASS=true
 REQUIRED_CAPTURES=(
-  "submit-success.png"
+  "register-team-success.png"
+  "register-team-mid-stepper.png"
+  "register-chooser-desktop-fold.png"
   "request-success.png"
   "agents-filtered-openclaw-desktop.png"
 )
@@ -269,7 +271,7 @@ fi
 
 echo "================================================================"
 echo "  PASS  |  ${SHOT_COUNT} shots captured  |  ${UNEXPECTED_COUNT} unexpected console error(s)"
-echo "  Interaction captures: submit-success ✓  request-success ✓  agents-filtered ✓"
+echo "  Interaction captures: register-team-success ✓  register-chooser ✓  request-success ✓  agents-filtered ✓"
 echo "  Output: ${OUT_DIR}"
 echo "  Console log: ${CONSOLE_LOG}"
 echo "================================================================"
