@@ -41,7 +41,14 @@ export default async function OwnerProfilePage({ params }: PageProps) {
   const totalProof =
     agents.reduce((s, a) => s + a.proofCount, 0) + teams.reduce((s, t) => s + t.proofCount, 0);
 
-  const evidenceLinked = proofFeed.filter((p) => p.evidence_url !== null).length;
+  // Compute evidence-linked count accurately:
+  // - agents: use evidenceCount from card data (covers all agent proof entries)
+  // - teams: use proofFeed (capped at 20 across subjects, may undercount for prolific owners)
+  const agentEvidenceLinked = agents.reduce((s, a) => s + a.evidenceCount, 0);
+  const teamEvidenceLinkedFromFeed = proofFeed.filter(
+    (p) => p.subjectKind === 'team' && p.evidence_url !== null
+  ).length;
+  const totalEvidenceLinked = agentEvidenceLinked + teamEvidenceLinkedFromFeed;
 
   // Detect curated-owner disclosure embedded by seed.ts
   const isCurated =
@@ -122,13 +129,6 @@ export default async function OwnerProfilePage({ params }: PageProps) {
       {/* ── Compact summary strip ──────────────────────────────────────────── */}
       <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg border border-border bg-surface-elevated px-4 py-3 text-sm">
         <span className="font-semibold text-text-primary">
-          {teams.length}{' '}
-          <span className="font-normal text-text-tertiary">
-            team{teams.length === 1 ? '' : 's'}
-          </span>
-        </span>
-        <span className="text-text-tertiary">·</span>
-        <span className="font-semibold text-text-primary">
           {agents.length}{' '}
           <span className="font-normal text-text-tertiary">
             agent component{agents.length === 1 ? '' : 's'}
@@ -141,15 +141,23 @@ export default async function OwnerProfilePage({ params }: PageProps) {
             proof entr{totalProof === 1 ? 'y' : 'ies'}
           </span>
         </span>
-        {evidenceLinked > 0 && (
+        {totalEvidenceLinked > 0 && (
           <>
             <span className="text-text-tertiary">·</span>
             <span className="font-semibold text-blue-300">
-              {evidenceLinked}{' '}
+              {totalEvidenceLinked}{' '}
               <span className="font-normal text-text-tertiary">evidence-linked</span>
             </span>
           </>
         )}
+        <span className="text-text-tertiary">·</span>
+        <span className="font-semibold text-text-primary">
+          {teams.length}{' '}
+          <span className="font-normal text-text-tertiary">
+            team{teams.length === 1 ? '' : 's'}
+            {totalTeams > 0 && <> (of {totalTeams} on the registry)</>}
+          </span>
+        </span>
       </div>
 
       {isCurated && (

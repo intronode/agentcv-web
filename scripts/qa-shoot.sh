@@ -242,8 +242,34 @@ if [[ -f "${CONSOLE_LOG}" ]]; then
   UNEXPECTED_COUNT="$(grep -oE '^# [0-9]+ unexpected' "${CONSOLE_LOG}" | grep -oE '[0-9]+' || echo "0")"
 fi
 
+# Verify required interaction captures are present
+INTERACTION_PASS=true
+REQUIRED_CAPTURES=(
+  "submit-success.png"
+  "request-success.png"
+  "agents-filtered-openclaw-desktop.png"
+)
+MISSING_CAPTURES=()
+for cap in "${REQUIRED_CAPTURES[@]}"; do
+  if [[ ! -f "${OUT_DIR}/${cap}" ]]; then
+    MISSING_CAPTURES+=("${cap}")
+    INTERACTION_PASS=false
+  fi
+done
+
+if [[ "${INTERACTION_PASS}" == "false" ]]; then
+  echo "================================================================"
+  echo "  FAIL  |  Missing required captures:"
+  for m in "${MISSING_CAPTURES[@]}"; do
+    echo "          - ${m}"
+  done
+  echo "================================================================"
+  exit 1
+fi
+
 echo "================================================================"
 echo "  PASS  |  ${SHOT_COUNT} shots captured  |  ${UNEXPECTED_COUNT} unexpected console error(s)"
+echo "  Interaction captures: submit-success ✓  request-success ✓  agents-filtered ✓"
 echo "  Output: ${OUT_DIR}"
 echo "  Console log: ${CONSOLE_LOG}"
 echo "================================================================"

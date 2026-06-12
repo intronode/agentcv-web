@@ -489,6 +489,38 @@ export function getTeamHeadlineMetrics(
 /** Deprecated alias — kept for call-sites not yet migrated. */
 export const getConfigurationHeadlineMetrics = getTeamHeadlineMetrics;
 
+/**
+ * Fetch the computed trust tier for each of the given team slugs.
+ * Used by the agent-detail page to compare agent tier vs. team tier.
+ */
+export function getTeamTiers(slugs: string[]): Map<string, TrustTier> {
+  const result = new Map<string, TrustTier>();
+  if (slugs.length === 0) return result;
+  const db = getDb();
+  for (const slug of slugs) {
+    const team = db.prepare('SELECT id FROM teams WHERE slug=?').get(slug) as
+      | { id: number }
+      | undefined;
+    if (!team) continue;
+    const evidenceCount = (
+      db
+        .prepare(
+          `SELECT COUNT(*) AS cnt FROM proof_entries WHERE subject_type='team' AND subject_id=? AND evidence_url IS NOT NULL`
+        )
+        .get(team.id) as { cnt: number }
+    ).cnt;
+    const attestationCount = (
+      db
+        .prepare(
+          `SELECT COUNT(*) AS cnt FROM attestations WHERE subject_type='team' AND subject_id=?`
+        )
+        .get(team.id) as { cnt: number }
+    ).cnt;
+    result.set(slug, computeTier(evidenceCount, attestationCount));
+  }
+  return result;
+}
+
 export function getOwnerProfile(handle: string): OwnerProfile | null {
   const db = getDb();
   const owner = db.prepare('SELECT * FROM owners WHERE handle=?').get(handle) as

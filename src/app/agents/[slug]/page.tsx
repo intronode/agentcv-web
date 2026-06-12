@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getAgentProfile, getConfigurationHeadlineMetrics } from '@/lib/db/queries';
+import { getAgentProfile, getConfigurationHeadlineMetrics, getTeamTiers } from '@/lib/db/queries';
 import type { MetricRow } from '@/lib/db/types';
 import TrustBadge from '@/components/TrustBadge';
 import LayerLabel from '@/components/LayerLabel';
@@ -55,6 +55,25 @@ export default async function AgentProfilePage({ params }: PageProps) {
         >)
       : new Map();
 
+  // Fetch team tiers to show context when agent's tier < team's tier.
+  const teamTiers: Map<string, string> =
+    teams.length > 0 ? (getTeamTiers(teams.map((t) => t.slug)) as Map<string, string>) : new Map();
+
+  // Tier rank for comparison: higher index = higher tier
+  const TIER_RANK: Record<string, number> = {
+    self_reported: 0,
+    evidence_linked: 1,
+    peer_attested: 2,
+    platform_verified: 3,
+  };
+  const agentTierRank = TIER_RANK[tier] ?? 0;
+
+  // Collect teams whose tier is strictly higher than the agent's tier
+  const higherTierTeams = teams.filter((t) => {
+    const teamTier = teamTiers.get(t.slug);
+    return teamTier !== undefined && (TIER_RANK[teamTier] ?? 0) > agentTierRank;
+  });
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
       {/* Header */}
@@ -77,6 +96,24 @@ export default async function AgentProfilePage({ params }: PageProps) {
               </span>
             )}
           </div>
+          {higherTierTeams.length > 0 && (
+            <p className="mt-1 text-xs text-text-tertiary">
+              Tiers are computed per subject —{' '}
+              {higherTierTeams.map((t, i) => (
+                <span key={t.slug}>
+                  {i > 0 && <span>, </span>}
+                  <Link href={`/teams/${t.slug}`} className="text-accent hover:underline">
+                    {t.name}
+                  </Link>{' '}
+                  is{' '}
+                  <span className="font-medium text-text-secondary">
+                    {teamTiers.get(t.slug)!.replace(/_/g, ' ')}
+                  </span>
+                </span>
+              ))}{' '}
+              on its own evidence.
+            </p>
+          )}
           <p className="mt-1.5 max-w-2xl text-text-secondary">{agent.tagline}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
             <Link href={`/owners/${owner.handle}`} className="text-accent hover:underline">

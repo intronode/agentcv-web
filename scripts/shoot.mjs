@@ -16,6 +16,8 @@
  * Interaction captures (desktop):
  *   submit-validation-errors.png   — /submit with empty form submitted
  *   compare-tray-selected.png      — /teams with 2 items selected
+ *   submit-success.png             — /submit filled + submitted, lands on new team detail page
+ *   request-success.png            — /request filled + submitted, captures request-ID success state
  *
  * Console errors per page are written to console-log.txt in the out dir.
  * The deliberate /this-route-does-not-exist 404 is annotated in console-log.txt.
@@ -43,6 +45,7 @@ export const ROUTES = [
   { path: '/teams/helios-swarm',                                            slug: 'teams-helios-swarm' },
   { path: '/compare?ids=ari-collective,magentic-one,metagpt-pipeline',    slug: 'compare-three' },
   { path: '/agents',                                                        slug: 'agents-directory' },
+  { path: '/agents?platform=OpenClaw',                                      slug: 'agents-filtered-openclaw' },
   { path: '/agents/ari',                                                    slug: 'agents-ari' },
   { path: '/owners/intronode',                                              slug: 'owners-intronode' },
   { path: '/harness-engineering',                                           slug: 'harness-engineering' },
@@ -365,6 +368,90 @@ async function main() {
       fullPage: false,
       clip,
     });
+
+    await context.close();
+  }
+
+  // ── Interaction capture 3: submit form success — lands on new team detail ─
+  console.log(`  → [interaction] submit-success`);
+  {
+    const { page, context } = await openDesktopPage(
+      browser,
+      `${baseUrl}/submit`,
+      consoleEntries,
+      'submit-success-interaction',
+    );
+
+    // Fill required fields minimally: name, tagline, topology select, agent count, owner
+    await page.fill('#name', 'QA Probe Team');
+    await page.fill('#tagline', 'Automated QA submission — evidence-state probe');
+    // Topology select: pick 'orchestrator_worker'
+    await page.selectOption('#topologyType', 'orchestrator_worker');
+    // Agent count — numeric input controlled via React state; use fill
+    await page.fill('#agentCount', '2');
+    // Owner fields
+    await page.fill('#ownerName', 'QA Probe Owner');
+    await page.fill('#ownerHandle', 'qa-probe-owner');
+
+    // Submit and wait for navigation to the new team detail page
+    const [response] = await Promise.all([
+      page.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }).catch(() => null),
+      page.locator('button[type="submit"]').click(),
+    ]);
+
+    // Extra settle after navigation
+    await sleep(SETTLE_MS);
+
+    // Full-page screenshot of the landed team detail page
+    await page.screenshot({
+      path: join(outDir, 'submit-success.png'),
+      fullPage: true,
+    });
+
+    await context.close();
+  }
+
+  // ── Interaction capture 4: request form success — request-ID state ─────────
+  console.log(`  → [interaction] request-success`);
+  {
+    const { page, context } = await openDesktopPage(
+      browser,
+      `${baseUrl}/request`,
+      consoleEntries,
+      'request-success-interaction',
+    );
+
+    // Fill required fields: requesterName, requesterEmail, message
+    await page.fill('#requesterName', 'QA Probe Requester');
+    await page.fill('#requesterEmail', 'qa-probe@example.com');
+    await page.fill('#message', 'QA probe request — automated evidence-state capture. Ignore.');
+
+    // Submit and wait for React state to update (form transitions to done state)
+    await page.locator('button[type="submit"]').click();
+    // Wait for the success confirmation element to appear
+    try {
+      await page.waitForSelector('text=Request #', { timeout: 10000 });
+    } catch {
+      console.warn('    ⚠  request success text not visible within 10s — screenshot anyway');
+    }
+    await sleep(SETTLE_MS);
+
+    // Clip to the success card area; fall back to full page if not found
+    let clip = null;
+    try {
+      const box = await page.locator('.rounded-xl.border-emerald-500\\/30').boundingBox();
+      if (box) {
+        clip = { x: 0, y: Math.max(0, box.y - 40), width: page.viewportSize()?.width ?? 1440, height: box.height + 120 };
+      }
+    } catch (_e) {
+      // selector miss — fall back to full page
+    }
+
+    if (clip) {
+      await page.screenshot({ path: join(outDir, 'request-success.png'), fullPage: false, clip });
+    } else {
+      await page.screenshot({ path: join(outDir, 'request-success.png'), fullPage: true });
+    }
 
     await context.close();
   }
