@@ -73,7 +73,7 @@ export default function TrustBadge({ tier, size = 'md' }: { tier: TrustTier; siz
         <span className={style.icon}>{config.icon}</span>
         <span className="whitespace-nowrap">{config.label}</span>
       </span>
-      <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-64 -translate-x-1/2 rounded-md border border-border bg-surface-elevated px-2.5 py-1.5 text-center text-xs text-text-secondary opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+      <span className="pointer-events-none absolute right-0 top-full z-10 mt-2 hidden w-[min(16rem,calc(100vw-2rem))] rounded-md border border-border bg-surface-elevated px-2.5 py-1.5 text-center text-xs text-text-secondary opacity-0 shadow-md transition-opacity group-hover:opacity-100 sm:block sm:left-1/2 sm:right-auto sm:-translate-x-1/2">
         {config.description}
       </span>
     </span>

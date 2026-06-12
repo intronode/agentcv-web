@@ -140,7 +140,7 @@ export function CompareTray() {
           </div>
 
           {/* Actions */}
-          <div className="flex shrink-0 items-center gap-2 ml-auto">
+          <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
             <button
               onClick={clear}
               className="rounded-md border border-border px-3 py-1.5 text-xs text-text-tertiary transition-colors hover:border-border-subtle hover:text-text-secondary"

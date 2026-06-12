@@ -15,14 +15,14 @@ interface AgentCardProps {
 
 export default function AgentCard({ agent, hideViaConfigMetric = false }: AgentCardProps) {
   return (
-    <Link href={`/agents/${agent.slug}`}>
-      <div className="group h-full rounded-xl border border-border bg-surface-elevated p-6 transition-all duration-200 hover:bg-surface-hover hover:shadow-lg hover:shadow-accent/5">
+    <Link href={`/agents/${agent.slug}`} className="block min-w-0 w-full">
+      <div className="group flex h-full min-w-0 w-full flex-col rounded-xl border border-border bg-surface-elevated p-6 transition-all duration-200 hover:bg-surface-hover hover:shadow-lg hover:shadow-accent/5">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface text-2xl">
               {agent.avatar}
             </div>
-            <div>
+            <div className="min-w-0">
               <h3 className="font-semibold text-text-primary transition-colors group-hover:text-accent">
                 {agent.name}
               </h3>
@@ -52,8 +52,8 @@ export default function AgentCard({ agent, hideViaConfigMetric = false }: AgentC
         </div>
 
         {/* Common evidence anchor — shared axis for cross-card scanning */}
-        <div className="mt-4 flex items-center justify-between border-t border-border-subtle pt-3">
-          <div className="flex flex-col">
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-3 border-t border-border-subtle pt-3">
+          <div className="min-w-0 flex flex-col">
             <span className="text-[10px] text-text-tertiary">Evidence</span>
             <span className="text-sm font-medium text-text-primary">
               {agent.proofCount} proof
@@ -66,7 +66,7 @@ export default function AgentCard({ agent, hideViaConfigMetric = false }: AgentC
           </div>
 
           {/* Distinctive agent metric (own or via-config) */}
-          <div className="flex items-end gap-3">
+          <div className="flex min-w-0 flex-wrap items-end justify-end gap-3">
             {agent.metrics.slice(0, 2).map((metric) => (
               <div key={metric.key} className="flex flex-col items-end">
                 <span className="text-[10px] text-text-tertiary">{metric.label}</span>
@@ -76,17 +76,17 @@ export default function AgentCard({ agent, hideViaConfigMetric = false }: AgentC
               </div>
             ))}
             {agent.metrics.length === 0 && agent.viaConfigMetric && !hideViaConfigMetric && (
-              <div className="flex flex-col items-end gap-0.5">
+              <div className="flex min-w-0 max-w-full flex-col items-end gap-0.5">
                 <span className="text-[10px] text-text-tertiary">
                   {agent.viaConfigMetric.label}
                 </span>
                 <span className="text-sm font-medium text-text-primary">
                   {formatMetricValue(agent.viaConfigMetric.value, agent.viaConfigMetric.unit)}
                 </span>
-                <div className="flex items-center gap-1">
+                <div className="flex max-w-full flex-wrap items-center justify-end gap-1">
                   <ProvenanceTag provenance={agent.viaConfigMetric.provenance} />
                   <span
-                    className="text-[9px] text-text-tertiary"
+                    className="max-w-[12rem] truncate text-[9px] text-text-tertiary"
                     title={`Team metric from configuration: ${agent.viaConfigMetric.configName}`}
                   >
                     team metric · via {agent.viaConfigMetric.configName}

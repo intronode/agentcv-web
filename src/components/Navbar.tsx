@@ -166,8 +166,8 @@ export default function Navbar() {
 
   return (
     <nav className="fixed left-0 right-0 top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:h-16 sm:flex-nowrap sm:px-6 sm:py-0">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           <LogoMark size={28} />
           <span className="text-base font-semibold tracking-tight">
             <span className="text-text-primary">Agent</span>
@@ -175,12 +175,12 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-x-4 gap-y-2 sm:flex-nowrap sm:gap-6">
           {LINKS.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
-              className={`text-sm transition-colors hover:text-text-primary ${
+              className={`text-right text-sm leading-tight transition-colors hover:text-text-primary ${
                 pathname.startsWith(href) ? 'text-text-primary' : 'text-text-secondary'
               }`}
             >

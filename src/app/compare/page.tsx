@@ -366,9 +366,11 @@ export default async function ComparePage({ searchParams }: PageProps) {
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <span className="text-xs text-text-tertiary">
+          <span className="min-w-0 text-xs text-text-tertiary">
             Slug{droppedSlugs.length > 1 ? 's' : ''} not found and dropped:{' '}
-            <span className="font-mono text-text-secondary">{droppedSlugs.join(', ')}</span>
+            <span className="break-all font-mono text-text-secondary">
+              {droppedSlugs.join(', ')}
+            </span>
           </span>
         </div>
       )}
@@ -381,7 +383,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
       <div className="block md:hidden">
         {/* Config identity strip — sticky so column identity is always visible while scrolling */}
         <div
-          className="sticky top-14 z-10 mb-4 grid gap-2 rounded-xl border border-border bg-surface-elevated/95 p-3 backdrop-blur-sm"
+          className="sticky top-28 z-10 mb-4 grid gap-2 rounded-xl border border-border bg-surface-elevated/95 p-3 backdrop-blur-sm sm:top-16"
           style={{ gridTemplateColumns: `repeat(${configs.length}, minmax(0, 1fr))` }}
         >
           {configs.map((c) => (

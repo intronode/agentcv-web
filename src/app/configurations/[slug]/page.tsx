@@ -243,9 +243,9 @@ export default async function ConfigurationProfilePage({ params }: PageProps) {
                 <Link
                   key={member.slug}
                   href={`/agents/${member.slug}`}
-                  className="group rounded-xl border border-border bg-surface-elevated p-4 transition-colors hover:bg-surface-hover"
+                  className="group block min-w-0 w-full rounded-xl border border-border bg-surface-elevated p-4 transition-colors hover:bg-surface-hover"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface text-xl">
                       {member.avatar}
                     </span>

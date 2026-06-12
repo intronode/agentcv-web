@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen antialiased">
         <Navbar />
-        <main className="pt-16">{children}</main>
+        <main className="pt-28 sm:pt-16">{children}</main>
         <footer className="border-t border-border-subtle py-8">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-6 text-xs text-text-tertiary">
             <span className="flex items-center gap-2">

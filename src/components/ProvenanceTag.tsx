@@ -11,7 +11,7 @@ export function ProvenanceTag({ provenance }: { provenance: Provenance }) {
   const c = CONFIG[provenance];
   return (
     <span
-      className={`inline-flex items-center whitespace-nowrap rounded border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide ${c.classes}`}
+      className={`inline-flex max-w-full items-center rounded border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide ${c.classes}`}
     >
       {c.label}
     </span>
@@ -22,7 +22,7 @@ export function ProvenanceTag({ provenance }: { provenance: Provenance }) {
 export function IllustrativeMark() {
   return (
     <span
-      className="inline-flex items-center whitespace-nowrap rounded border border-dashed border-orange-400/50 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-orange-300"
+      className="inline-flex max-w-full items-center rounded border border-dashed border-orange-400/50 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-orange-300"
       title="Illustrative: demo or approximate data, labeled honestly"
     >
       illustrative
