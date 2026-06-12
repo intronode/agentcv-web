@@ -1,0 +1,29 @@
+sign-in redirect: http://localhost:3190/
+session-verified: navbar does NOT show "Sign in" link — authenticated OK
+auth-signin.png: captured authenticated home page (no "Sign in" link in navbar)
+deny-list-ui: term "Initech" added — visible in list: true
+deny-list-terms.png: captured owner page with Confidential terms section
+scan-log-panel: opened OK
+sanitizer-scan-log.png: captured
+POST /api/files: HTTP 201
+  file id: 5  path: QA-PROBE.md
+findings on review page: 4
+summary-bar: 4 unresolved findings|4 total
+publish-before-mask: DISABLED (correct — findings blocking publish)
+sanitizer-block.png: captured (publish blocked, findings listed)
+findings masked: 4
+publish-after-mask: ENABLED
+publish-clicked: success
+sanitizer-masked-published.png: captured public file page with masks applied
+
+=== SQLite Evidence ===
+files row: id=5 path=QA-PROBE.md visibility=public sanitization_state=scan_complete
+  created_at=2026-06-12 06:10:56 updated_at=2026-06-12 06:11:02
+file_findings: 4 total
+  finding id=1 type=secret severity=critical detector=secrets.provider-prefix.openai status=masked resolved_mask=[api-key]
+  finding id=2 type=pii severity=blocking detector=pii.email status=masked resolved_mask=[email]
+  finding id=3 type=confidential severity=blocking detector=confidential.deny-list status=masked resolved_mask=[codename]
+  finding id=4 type=confidential severity=blocking detector=confidential.deal-proximity-high status=masked resolved_mask=[amount]
+file_scan_log: 1 entries
+  scan id=3 ts=2026-06-12 06:10:56 findings=4 trigger=content_change error=(none)
+=== End SQLite Evidence ===

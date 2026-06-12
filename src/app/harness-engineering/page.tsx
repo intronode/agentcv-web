@@ -59,17 +59,22 @@ export default function HarnessEngineeringPage() {
       </h1>
 
       {/* ── TOC chip bar ──────────────────────────────────────────────────── */}
-      <nav aria-label="Page sections" className="mt-5 flex flex-wrap gap-1.5">
-        {TOC_ITEMS.map(({ id, label }) => (
-          <a
-            key={id}
-            href={`#${id}`}
-            className="rounded-full border border-border bg-surface-elevated px-3 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:border-accent/50 hover:bg-surface-hover hover:text-accent"
-          >
-            {label}
-          </a>
-        ))}
-      </nav>
+      <div className="mt-5 -mx-6 px-6 sm:mx-0 sm:px-0">
+        <nav
+          aria-label="Page sections"
+          className="flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-x-visible"
+        >
+          {TOC_ITEMS.map(({ id, label }) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className="shrink-0 whitespace-nowrap rounded-full border border-border bg-surface-elevated px-3 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:border-accent/50 hover:bg-surface-hover hover:text-accent sm:shrink"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+      </div>
 
       <p className="mt-6 leading-relaxed text-text-secondary">
         The field of AI agents has gone through three capability disciplines in rapid succession.

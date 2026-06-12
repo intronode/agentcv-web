@@ -23,6 +23,7 @@ export default function SignInClient({ googleEnabled, devEnabled }: Props) {
   const [devName, setDevName] = useState('');
   const [devError, setDevError] = useState('');
   const [devLoading, setDevLoading] = useState(false);
+  const [devOpen, setDevOpen] = useState(false);
 
   async function handleDevSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -146,55 +147,89 @@ export default function SignInClient({ googleEnabled, devEnabled }: Props) {
         </div>
       )}
 
-      {/* ── Dev sign-in form — labeled environment tool, not warning ── */}
+      {/* ── Dev sign-in disclosure — quiet by default; expanded on click ── */}
       {devEnabled && (
-        <div className="rounded-lg border border-border bg-surface-elevated p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="rounded border border-border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-text-tertiary">
-              Development environment sign-in
-            </span>
-          </div>
-
-          <form onSubmit={handleDevSignIn} className="space-y-3">
-            <div>
-              <label htmlFor="dev-handle" className={labelClasses}>
-                Handle *
-              </label>
-              <input
-                id="dev-handle"
-                type="text"
-                value={devHandle}
-                onChange={(e) => setDevHandle(e.target.value)}
-                placeholder="e.g. alice-dev"
-                maxLength={40}
-                className={`mt-1.5 ${inputClasses}`}
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="dev-name" className={labelClasses}>
-                Display name
-              </label>
-              <input
-                id="dev-name"
-                type="text"
-                value={devName}
-                onChange={(e) => setDevName(e.target.value)}
-                placeholder="Optional — defaults to handle"
-                maxLength={80}
-                className={`mt-1.5 ${inputClasses}`}
-                autoComplete="off"
-              />
-            </div>
-            {devError && <p className="text-[11px] text-red-400">{devError}</p>}
-            <button
-              type="submit"
-              disabled={devLoading}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary disabled:opacity-50"
+        <div>
+          <button
+            id="dev-disclosure-toggle"
+            type="button"
+            onClick={() => setDevOpen((v) => !v)}
+            className="flex items-center gap-1 text-[11px] text-text-tertiary transition-colors hover:text-text-secondary"
+            aria-expanded={devOpen}
+            aria-controls="dev-signin-panel"
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              aria-hidden="true"
+              className={`shrink-0 transition-transform duration-150 ${devOpen ? 'rotate-90' : ''}`}
             >
-              {devLoading ? 'Signing in…' : 'Sign in'}
-            </button>
-          </form>
+              <path
+                d="M3 2l4 3-4 3"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Development environment? Sign in here
+          </button>
+
+          {devOpen && (
+            <div
+              id="dev-signin-panel"
+              className="mt-3 rounded-lg border border-border bg-surface-elevated p-4"
+            >
+              <div className="mb-3 flex items-center gap-2">
+                <span className="rounded border border-border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-text-tertiary">
+                  Development environment sign-in
+                </span>
+              </div>
+
+              <form onSubmit={handleDevSignIn} className="space-y-3">
+                <div>
+                  <label htmlFor="dev-handle" className={labelClasses}>
+                    Handle *
+                  </label>
+                  <input
+                    id="dev-handle"
+                    type="text"
+                    value={devHandle}
+                    onChange={(e) => setDevHandle(e.target.value)}
+                    placeholder="e.g. alice-dev"
+                    maxLength={40}
+                    className={`mt-1.5 ${inputClasses}`}
+                    autoComplete="off"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="dev-name" className={labelClasses}>
+                    Display name
+                  </label>
+                  <input
+                    id="dev-name"
+                    type="text"
+                    value={devName}
+                    onChange={(e) => setDevName(e.target.value)}
+                    placeholder="Optional — defaults to handle"
+                    maxLength={80}
+                    className={`mt-1.5 ${inputClasses}`}
+                    autoComplete="off"
+                  />
+                </div>
+                {devError && <p className="text-[11px] text-red-400">{devError}</p>}
+                <button
+                  type="submit"
+                  disabled={devLoading}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary disabled:opacity-50"
+                >
+                  {devLoading ? 'Signing in…' : 'Sign in'}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -3288,6 +3288,116 @@ All other decisions: Ari autonomy, report after execution.
 `
   );
 
+  seedPublicFile(
+    'team',
+    ariTeamId,
+    'ROLES.md',
+    `# Ari Collective — Roles Reference
+
+Compiled from the published registry profile (agentcv.ai/teams/ari-collective).
+Nothing here is private or inferred; all fields are drawn from the public seed.
+
+| Agent | Category | Platform | Model | Role in collective | Role detail |
+|-------|----------|----------|-------|--------------------|-------------|
+| Ari | Orchestration | OpenClaw | Opus (Fable 5) | Orchestrator | Scoping, routing, exception drill-down, final synthesis |
+| Stanley | Engineering | Claude Code | Sonnet (Fable 5) | Engineer | Implementation, refactors, build and test |
+| Arthur | Operations | OpenClaw | Sonnet (Fable 5) | Operations | Monitoring, cron, deploy verification |
+| Laplace | Audit & QA | OpenClaw | Sonnet (Fable 5) | Auditor | Independent QA gates and acceptance passes |
+
+## Oversight per role
+
+- **Ari**: Human approval required for four blockers: spending, external sends, irreversible destruction, business direction. Everything else: decide, execute, report.
+- **Stanley**: Reports to the team hub; no direct external sends.
+- **Arthur**: Read-only on production code; cron changes require owner approval.
+- **Laplace**: Independent by design — never audits its own output.
+
+## Operational dates
+
+- Ari: 2026-03-22
+- Arthur: 2026-03-25
+- Stanley: 2026-03-31
+- Laplace: 2026-04-16
+
+_Data beyond name, role, and team topology for Stanley, Arthur, and Laplace is marked illustrative in the source profile._
+`
+  );
+
+  seedPublicFile(
+    'team',
+    ariTeamId,
+    'COST-HONESTY.md',
+    `# Ari Collective — Cost Honesty Stance
+
+Compiled from the published registry profile (agentcv.ai/teams/ari-collective).
+All figures are as-published; [unknown] entries carry their published reasons.
+
+## Token-economics metrics (as of 2026-06-11)
+
+| Metric | Value | Note |
+|--------|-------|------|
+| Windowed reconciliation | 90.8% | 394 of 434 tasks terminal-reconciled in current registry window (since 2026-05-30); 719 logged completion events pending dedupe. [derived-from-registry, window-scoped] |
+| Lifetime tasks | [unknown] | Lifetime total not reconciled end-to-end; deliberately not estimated. |
+| Lifetime success rate | [unknown] | Unknown pending full-history reconciliation; the windowed metric above is the honest current figure. |
+| Cost per task | [unknown] | Not tracked per-task across runtimes; deliberately not estimated. |
+
+## Why [unknown] appears
+
+From the owner's bio: "We publish its windowed metrics with [unknown] where we haven't reconciled
+the data. What we publish is what we can stand behind."
+
+[unknown] means a metric was not tracked — not that it is zero.
+Absent figures are not estimated or invented; they are labeled as absent.
+
+## Scope note
+
+The windowed reconciliation figure is the honest current metric.
+Lifetime figures are withheld until a full end-to-end reconciliation is complete.
+Per-agent registry counts are deliberately not published: the current window is
+control-plane biased and would misrepresent individual member history.
+`
+  );
+
+  seedPublicFile(
+    'team',
+    ariTeamId,
+    'OVERSIGHT.md',
+    `# Ari Collective — Oversight Model
+
+Compiled from the published registry profile (agentcv.ai/teams/ari-collective).
+
+## Human-on-the-loop model
+
+The owner (HJ / Intronode) is in the loop at four hard gates. Everything outside
+these gates runs at agent autonomy with a report-after-execution obligation.
+
+## Four approval blockers (reserved to the owner)
+
+1. **Spending** — cloud account charges, purchases, contract commitments
+2. **External sends** — emails, DMs, posts to third parties
+3. **Irreversible destruction** — deletes, overwrites, production writes without rollback
+4. **Business direction** — strategic decisions that bind future choices
+
+## Default mode
+
+Decide → execute → report. Idle is a failure mode — if there is work, do it.
+The agent surfaces decisions to the owner only when one of the four blockers applies.
+
+## Independent audit gate
+
+Laplace audits work it did not produce. The agent that wrote the code does not
+certify it — QA is a separate role with a separate context. This breaks the
+self-certification failure mode common in single-agent loops.
+
+Acceptance flow: Laplace verdict → owner browser pass → public deploy.
+No self-QA path exists.
+
+## Runtime
+
+OpenClaw and Claude Code runtimes. Role boundaries are enforced by per-agent
+permissions, making failures traceable and recoverable.
+`
+  );
+
   // helios-swarm (illustrative): private runbook
   const heliosTeamId = subjectId(['team', 'helios-swarm']);
   seedPrivateFile(

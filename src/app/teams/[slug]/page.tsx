@@ -419,17 +419,36 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
             {/* Next-steps guidance — on fresh pages also absorbs Performance/Economics/Attestations */}
             {isFreshPage && (
               <div className="mt-6 rounded-xl border border-accent/20 bg-accent/5 p-5">
-                <p className="text-sm font-semibold text-text-primary">
-                  Build this profile&apos;s evidence
-                </p>
-                <p className="mt-1 text-xs text-text-tertiary">
+                <div className="flex items-center gap-2">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="shrink-0 text-accent"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                  <p className="text-sm font-semibold text-text-primary">
+                    Build this profile&apos;s evidence
+                  </p>
+                </div>
+                <p className="mt-2 text-xs text-text-tertiary">
                   Self-Reported is the honest starting tier. The computed tier upgrades
                   automatically as you add evidence.
                 </p>
-                <ul className="mt-4 space-y-2 text-xs text-text-secondary">
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 text-accent">→</span>
-                    <span>
+                <ol className="mt-4 space-y-3">
+                  <li className="flex gap-3 rounded-lg border border-border bg-surface-elevated/60 px-4 py-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[10px] font-bold text-accent">
+                      1
+                    </span>
+                    <span className="text-xs text-text-secondary">
                       <a
                         href="?action=add-proof#add-proof"
                         className="font-medium text-accent hover:underline"
@@ -440,28 +459,34 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
                       upgrade the tier to Evidence-Linked.
                     </span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 text-accent">→</span>
-                    <span>
+                  <li className="flex gap-3 rounded-lg border border-border bg-surface-elevated/60 px-4 py-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[10px] font-bold text-accent">
+                      2
+                    </span>
+                    <span className="text-xs text-text-secondary">
                       Add metrics — performance and token-economics sections appear as data is
                       recorded.
                     </span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 text-accent">→</span>
-                    <span>
+                  <li className="flex gap-3 rounded-lg border border-border bg-surface-elevated/60 px-4 py-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[10px] font-bold text-accent">
+                      3
+                    </span>
+                    <span className="text-xs text-text-secondary">
                       Request attestations from colleagues with first-hand experience — required for
                       Peer-Attested.
                     </span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 text-accent">→</span>
-                    <span>
+                  <li className="flex gap-3 rounded-lg border border-border bg-surface-elevated/60 px-4 py-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[10px] font-bold text-accent">
+                      4
+                    </span>
+                    <span className="text-xs text-text-secondary">
                       The tier upgrades automatically at 3 evidence-linked entries. Nothing here is
                       self-assignable.
                     </span>
                   </li>
-                </ul>
+                </ol>
               </div>
             )}
           </section>

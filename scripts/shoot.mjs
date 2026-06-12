@@ -115,12 +115,16 @@ retainer contract. This information is proprietary and not for public release.
     }
     await sleep(SETTLE_MS);
 
-    // Assert: dev sign-in form must be present (DEV_LOGIN=1 gate)
-    const devHandleInput = page.locator('#dev-handle');
-    const devFormExists = await devHandleInput.count() > 0;
-    if (!devFormExists) {
-      throw new Error('PRECONDITION FAILED: dev sign-in form not found — DEV_LOGIN=1 must be set on the server. qa-shoot.sh must pass DEV_LOGIN=1.');
+    // Assert: dev disclosure toggle must be present (DEV_LOGIN=1 gate)
+    const devToggle = page.locator('#dev-disclosure-toggle');
+    const devToggleExists = await devToggle.count() > 0;
+    if (!devToggleExists) {
+      throw new Error('PRECONDITION FAILED: dev sign-in disclosure toggle not found — DEV_LOGIN=1 must be set on the server. qa-shoot.sh must pass DEV_LOGIN=1.');
     }
+
+    // Click the disclosure toggle to reveal the dev sign-in form
+    await devToggle.click();
+    await sleep(200);
 
     await page.fill('#dev-handle', 'intronode');
     await page.fill('#dev-name', 'Intronode QA');
@@ -752,6 +756,7 @@ async function main() {
     await page.fill('#st1-tagline', 'Automated QA submission — evidence-state probe');
     await page.fill('#st1-ownerName', 'QA Probe Owner');
     await page.fill('#st1-ownerHandle', 'qa-probe-owner');
+    await page.fill('#st1-platform', 'OpenClaw');
 
     // Helper: click the "Next →" navigation button (not topology cards)
     const clickNext = () => page.locator('button:has-text("Next →")').click();
