@@ -60,12 +60,8 @@ export default function RegisterAgentClient({ sessionUser }: Props) {
     }
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
-      // Scroll to the first errored field so it's visible below the sticky nav
-      const firstErrKey = Object.keys(errs)[0] ?? '';
-      if (firstErrKey) {
-        const el = document.getElementById(firstErrKey);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      // Scroll to TOP so the first errors (Name, Tagline) are visible in frame
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     setFieldErrors({});

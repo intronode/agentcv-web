@@ -100,6 +100,7 @@ AUTH_SECRET=<generate with: openssl rand -hex 32>
 AUTH_GOOGLE_ID=<your-client-id>
 AUTH_GOOGLE_SECRET=<your-client-secret>
 AUTH_SECRET=<different value from local — openssl rand -hex 32>
+SANITIZER_KEY=<generate with: openssl rand -hex 32>  # 64 hex chars, AES-256-GCM key for deny-list term encryption — [[HJ ACTION]]
 ```
 
 ### Step 3 — Verify

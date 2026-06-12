@@ -12,7 +12,7 @@
  * Spec: SANITIZER.md §5.3.1, §8
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 interface TermEntry {
   id: number;
@@ -36,6 +36,18 @@ export default function ConfidentialTermsManager({
   const [terms, setTerms] = useState<TermEntry[]>(
     initialTerms.map((t) => ({ id: t.id, created_at: t.created_at }))
   );
+  // configured: whether SANITIZER_KEY is set on the server (determined via GET response)
+  const [configured, setConfigured] = useState<boolean | null>(null);
+
+  // Refresh configured flag from GET response on mount
+  useEffect(() => {
+    fetch(`/api/owners/${ownerHandle}/confidential-terms`)
+      .then((r) => r.json())
+      .then((data: { configured?: boolean }) => {
+        setConfigured(data.configured ?? false);
+      })
+      .catch(() => setConfigured(false));
+  }, [ownerHandle]);
   const [inputValue, setInputValue] = useState('');
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState('');
@@ -156,6 +168,16 @@ export default function ConfidentialTermsManager({
         </ul>
       )}
 
+      {/* Not-configured notice — shown when SANITIZER_KEY is absent on the server */}
+      {configured === false && (
+        <p className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-300">
+          <span className="font-semibold">SANITIZER_KEY not configured.</span> Terms are encrypted
+          at rest — the server needs a 64-hex SANITIZER_KEY env var before new terms can be stored.
+          Existing terms are listed above. See{' '}
+          <span className="font-mono text-amber-200">docs/SANITIZER.md §10.3</span> for setup.
+        </p>
+      )}
+
       {/* Add form */}
       <div className="flex gap-2">
         <input
@@ -167,13 +189,14 @@ export default function ConfidentialTermsManager({
             if (e.key === 'Enter' && !adding) void handleAdd();
           }}
           placeholder="e.g. Initech or Acme Corp"
-          className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-amber-500/50 focus:outline-none"
+          className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-amber-500/50 focus:outline-none disabled:opacity-50"
           maxLength={200}
           aria-label="Confidential term to add"
+          disabled={configured === false}
         />
         <button
           type="button"
-          disabled={adding || inputValue.trim().length === 0}
+          disabled={adding || inputValue.trim().length === 0 || configured === false}
           onClick={() => void handleAdd()}
           className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-200 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
         >

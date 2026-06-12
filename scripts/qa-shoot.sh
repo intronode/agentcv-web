@@ -105,7 +105,8 @@ rm -f "${PID_FILE}"
 SERVER_LOG="/tmp/agentcv-server-${PORT}.log"
 # SANITIZER_KEY: QA-local key so deny-list term storage is testable in the
 # pipeline (local-only; production requires a real secret per docs/SANITIZER.md)
-AUTH_URL="http://localhost:${PORT}" DEV_LOGIN=1 SANITIZER_KEY="qa-local-sanitizer-key" PORT="${PORT}" npm start > "${SERVER_LOG}" 2>&1 &
+# (must be 64 hex chars — AES-256 key; fixed value is fine for local QA)
+AUTH_URL="http://localhost:${PORT}" DEV_LOGIN=1 SANITIZER_KEY="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" PORT="${PORT}" npm start > "${SERVER_LOG}" 2>&1 &
 NPM_WRAPPER_PID=$!
 echo "    npm wrapper PID: ${NPM_WRAPPER_PID}"
 

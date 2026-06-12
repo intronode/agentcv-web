@@ -66,55 +66,64 @@ export default function AgentCard({ agent, hideViaConfigMetric = false }: AgentC
           </div>
 
           {/* Distinctive agent metric (own or via-config) */}
-          <div className="flex min-w-0 flex-wrap items-end justify-end gap-3">
-            {agent.metrics.slice(0, 2).map((metric) => (
-              <div key={metric.key} className="flex flex-col items-end">
-                <span className="text-[10px] text-text-tertiary">{metric.label}</span>
-                <span className="text-sm font-medium">
-                  {formatMetricValue(metric.value, metric.unit)}
-                </span>
-              </div>
-            ))}
-            {agent.metrics.length === 0 && agent.viaConfigMetric && !hideViaConfigMetric && (
-              <div className="flex min-w-0 max-w-full flex-col items-end gap-0.5">
-                <span className="text-[10px] text-text-tertiary">
-                  {agent.viaConfigMetric.label}
-                </span>
-                <span className="text-sm font-medium text-text-primary">
-                  {formatMetricValue(agent.viaConfigMetric.value, agent.viaConfigMetric.unit)}
-                </span>
-                <div className="flex max-w-full flex-wrap items-center justify-end gap-1">
-                  <ProvenanceTag provenance={agent.viaConfigMetric.provenance} />
-                  <span
-                    className="max-w-[12rem] truncate text-[9px] text-text-tertiary"
-                    title={`Team metric from configuration: ${agent.viaConfigMetric.configName}`}
-                  >
-                    team metric · via {agent.viaConfigMetric.configName}
+          {/* Outer wrapper: labeled slot "TOP METRIC" — mirrors TeamCard's Outcome/Economics grammar */}
+          <div className="flex min-w-0 flex-col items-end gap-1">
+            {(agent.metrics.length > 0 ||
+              (agent.metrics.length === 0 && agent.viaConfigMetric && !hideViaConfigMetric)) && (
+              <span className="text-[10px] font-medium uppercase tracking-wide text-text-tertiary">
+                Top Metric
+              </span>
+            )}
+            <div className="flex min-w-0 flex-wrap items-end justify-end gap-3">
+              {agent.metrics.slice(0, 2).map((metric) => (
+                <div key={metric.key} className="flex flex-col items-end">
+                  <span className="text-[10px] text-text-tertiary">{metric.label}</span>
+                  <span className="text-sm font-medium">
+                    {formatMetricValue(metric.value, metric.unit)}
                   </span>
                 </div>
-              </div>
-            )}
-            {agent.configurationCount > 0 && (
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] text-text-tertiary">configs</span>
-                <span className="flex items-center gap-1 text-sm font-medium text-text-secondary">
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                  </svg>
-                  {agent.configurationCount}
-                </span>
-              </div>
-            )}
+              ))}
+              {agent.metrics.length === 0 && agent.viaConfigMetric && !hideViaConfigMetric && (
+                <div className="flex min-w-0 max-w-full flex-col items-end gap-0.5">
+                  <span className="text-[10px] text-text-tertiary">
+                    {agent.viaConfigMetric.label}
+                  </span>
+                  <span className="text-sm font-medium text-text-primary">
+                    {formatMetricValue(agent.viaConfigMetric.value, agent.viaConfigMetric.unit)}
+                  </span>
+                  <div className="flex max-w-full flex-wrap items-center justify-end gap-1">
+                    <ProvenanceTag provenance={agent.viaConfigMetric.provenance} />
+                    <span
+                      className="max-w-[12rem] truncate text-[9px] text-text-tertiary"
+                      title={`Team metric from configuration: ${agent.viaConfigMetric.configName}`}
+                    >
+                      team metric · via {agent.viaConfigMetric.configName}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {agent.configurationCount > 0 && (
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] text-text-tertiary">configs</span>
+                  <span className="flex items-center gap-1 text-sm font-medium text-text-secondary">
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <rect x="3" y="3" width="7" height="7" />
+                      <rect x="14" y="3" width="7" height="7" />
+                      <rect x="14" y="14" width="7" height="7" />
+                      <rect x="3" y="14" width="7" height="7" />
+                    </svg>
+                    {agent.configurationCount}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

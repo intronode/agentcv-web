@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SubjectType } from '@/lib/db/types';
 
 interface ProofFormProps {
   subjectType: SubjectType;
   subjectSlug: string;
+  /** When true, the form opens automatically on mount (used by NextSteps CTA link). */
+  defaultOpen?: boolean;
 }
 
 const inputClasses =
@@ -28,9 +30,21 @@ function isValidISODate(val: string): boolean {
   return !isNaN(d.getTime());
 }
 
-export default function ProofForm({ subjectType, subjectSlug }: ProofFormProps) {
+export default function ProofForm({
+  subjectType,
+  subjectSlug,
+  defaultOpen = false,
+}: ProofFormProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
+
+  // Also open when the URL hash is #add-proof (NextSteps CTA anchor)
+  useEffect(() => {
+    if (defaultOpen) return; // already open
+    if (typeof window !== 'undefined' && window.location.hash === '#add-proof') {
+      setOpen(true);
+    }
+  }, [defaultOpen]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');

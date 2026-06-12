@@ -57,7 +57,12 @@ export async function GET(_request: Request, { params }: Params): Promise<NextRe
       created_at,
     }));
 
-    return NextResponse.json({ count, terms });
+    // configured: false when SANITIZER_KEY is missing — UI renders a notice
+    // GET never 503s: listing terms (or zero terms) is always safe without the key.
+    const configured =
+      typeof process.env.SANITIZER_KEY === 'string' && process.env.SANITIZER_KEY.length === 64;
+
+    return NextResponse.json({ count, terms, configured });
   } catch (error) {
     console.error('GET /api/owners/[handle]/confidential-terms failed:', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

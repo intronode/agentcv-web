@@ -20,6 +20,7 @@ export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -108,8 +109,10 @@ function TokenEconomicsSection({ metrics }: { metrics: MetricRow[] }) {
   );
 }
 
-export default async function TeamProfilePage({ params }: PageProps) {
+export default async function TeamProfilePage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const sp = searchParams ? await searchParams : {};
+  const openProofForm = sp['action'] === 'add-proof';
   const profile = getTeamProfile(slug);
   if (!profile) notFound();
 
@@ -357,8 +360,8 @@ export default async function TeamProfilePage({ params }: PageProps) {
             <div className="mt-5">
               <ProofFeed entries={proof} />
             </div>
-            <div className="mt-5">
-              <ProofForm subjectType="team" subjectSlug={team.slug} />
+            <div className="mt-5" id="add-proof">
+              <ProofForm subjectType="team" subjectSlug={team.slug} defaultOpen={openProofForm} />
             </div>
             {/* Next-steps guidance — shown only on fresh profiles with no evidence yet */}
             {proof.length === 0 && metrics.length === 0 && (
@@ -374,7 +377,10 @@ export default async function TeamProfilePage({ params }: PageProps) {
                   <li className="flex items-start gap-2">
                     <span className="mt-0.5 text-accent">→</span>
                     <span>
-                      <a href="#proof" className="font-medium text-accent hover:underline">
+                      <a
+                        href="?action=add-proof#add-proof"
+                        className="font-medium text-accent hover:underline"
+                      >
                         Add a proof entry
                       </a>{' '}
                       — tasks, incidents, lessons, milestones, or artifacts with an evidence URL

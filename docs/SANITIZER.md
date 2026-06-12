@@ -747,6 +747,42 @@ drop-and-rebuild seeding strategy applies (data/ is disposable).
   env var (separate from AUTH_SECRET). Key must be documented in docs/AUTH.md
   as an `[[HJ ACTION]]` for production.
 
+### 10.3a Environment variable requirements
+
+| Variable        | Required for         | Format                  | Notes                                                    |
+| --------------- | -------------------- | ----------------------- | -------------------------------------------------------- |
+| `SANITIZER_KEY` | Deny-list write/read | 64 hex chars (32 bytes) | AES-256-GCM key for encrypting owner confidential terms. |
+
+**`SANITIZER_KEY`** — generate with:
+
+```
+openssl rand -hex 32
+```
+
+This produces exactly 64 hex characters (32 bytes) — the required key size for AES-256-GCM.
+
+**Behavior when absent:**
+
+- `GET /api/owners/:handle/confidential-terms` — returns `{ count, terms, configured: false }`.
+  The UI renders a "SANITIZER_KEY not configured" notice and disables the add input. Read-only
+  listing is always safe without the key.
+- `POST /api/owners/:handle/confidential-terms` — returns 503. Writes fail closed; no plaintext
+  term is accepted without the key.
+- `loadDenyList()` in the scanner — returns `[]`. Deny-list enforcement is silently disabled
+  for scans. This is a graceful degradation, not an error.
+
+**Production:** this is an `[[HJ ACTION]]` — add `SANITIZER_KEY` to Vercel project environment
+variables alongside `AUTH_SECRET`. See `docs/AUTH.md §[[HJ ACTION]] — Google OAuth client` for
+the full production env vars block.
+
+**Local dev:** add to `.env.local` (never tracked):
+
+```
+SANITIZER_KEY=<output of: openssl rand -hex 32>
+```
+
+The QA pipeline (`scripts/qa-shoot.sh`) injects a test-only 64-hex key automatically.
+
 ### 10.4 API routes needed
 
 ```
