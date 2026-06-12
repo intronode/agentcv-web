@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import { listTeams, registerTeam } from '@/lib/db/queries';
 import type { TrustTier } from '@/lib/db/types';
 import {
@@ -65,6 +66,8 @@ export async function GET(request: Request): Promise<NextResponse> {
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
+    const session = await auth();
+    const userId = session?.user?.id ? Number(session.user.id) : undefined;
     const body = await readJsonBody(request);
 
     // Parse members array if provided
@@ -114,6 +117,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       ownerName: reqStr(body, 'ownerName', { max: 80 }),
       ownerHandle: reqStr(body, 'ownerHandle', { max: 40 }),
       members,
+      userId,
     });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

@@ -23,6 +23,16 @@ export type TopologyType =
   | 'other';
 export type ContactKind = 'request_setup' | 'claim' | 'general';
 
+export interface UserRow {
+  id: number;
+  email: string | null;
+  name: string;
+  image: string | null;
+  provider: string;
+  handle: string | null;
+  created_at: string;
+}
+
 export interface OwnerRow {
   id: number;
   handle: string;
@@ -30,6 +40,8 @@ export interface OwnerRow {
   kind: 'individual' | 'org';
   bio: string | null;
   website_url: string | null;
+  /** Set when a signed-in user has registered or claimed this owner profile. */
+  user_id: number | null;
   created_at: string;
 }
 

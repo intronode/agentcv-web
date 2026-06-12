@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
+import { signOut } from 'next-auth/react';
 
 /** Compact hub-and-spoke logomark — inline SVG so it renders server-side too. */
 function LogoMark({ size = 28 }: { size?: number }) {
@@ -161,7 +162,96 @@ function SubmitDropdown() {
   );
 }
 
-export default function Navbar() {
+/** Session-aware user menu in the Navbar. */
+function UserMenu({
+  user,
+}: {
+  user: { name: string | null; email: string | null; image: string | null };
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const initials = (user.name ?? user.email ?? '?')
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  async function handleSignOut() {
+    setOpen(false);
+    await signOut({ redirect: false });
+    router.refresh();
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Account menu"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-elevated text-xs font-semibold text-text-primary transition-colors hover:border-accent hover:text-accent"
+        title={user.name ?? user.email ?? 'Account'}
+      >
+        {user.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={user.image} alt="" className="h-9 w-9 rounded-full object-cover" />
+        ) : (
+          initials
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-52 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
+          <div className="border-b border-border px-4 py-3">
+            <p className="truncate text-sm font-medium text-text-primary">
+              {user.name ?? 'Signed in'}
+            </p>
+            {user.email && (
+              <p className="mt-0.5 truncate text-[11px] text-text-tertiary">{user.email}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface NavbarProps {
+  user?: { name: string | null; email: string | null; image: string | null } | null;
+}
+
+export default function Navbar({ user }: NavbarProps = {}) {
   const pathname = usePathname();
 
   return (
@@ -188,6 +278,17 @@ export default function Navbar() {
             </Link>
           ))}
           <SubmitDropdown />
+          {/* Session area */}
+          {user ? (
+            <UserMenu user={user} />
+          ) : (
+            <Link
+              href="/signin"
+              className="text-sm text-text-secondary transition-colors hover:text-text-primary"
+            >
+              Sign in
+            </Link>
+          )}
         </div>
       </div>
     </nav>

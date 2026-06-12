@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { auth } from '@/lib/auth';
 import { getOwnerProfile, getOwnersStrip, getCounts } from '@/lib/db/queries';
 import AgentCard from '@/components/AgentCard';
 import TeamCard from '@/components/TeamCard';
 import ContactForm from '@/components/ContactForm';
+import ClaimOwnerButton from '@/components/ClaimOwnerButton';
 import { formatDate, formatMetricValue } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -33,6 +35,14 @@ export default async function OwnerProfilePage({ params }: PageProps) {
   const profile = getOwnerProfile(handle);
   if (!profile) notFound();
   const { owner, agents, teams, proofFeed } = profile;
+
+  // Session for claim UI
+  const session = await auth();
+  const sessionUserId = session?.user?.id ? Number(session.user.id) : null;
+  const isClaimed = owner.user_id !== null;
+  const isOwnedByMe = isClaimed && sessionUserId !== null && owner.user_id === sessionUserId;
+  // Unclaimed + signed-in + not already owned by this user → show claim button
+  const canClaim = !isClaimed && sessionUserId !== null;
 
   // Owners strip — all owners with teams, for cross-owner discoverability
   const ownersStrip = getOwnersStrip();
@@ -166,6 +176,53 @@ export default async function OwnerProfilePage({ params }: PageProps) {
           organization. Data reflects what is publicly documented.
         </p>
       )}
+
+      {/* ── Claim / claimed status ─────────────────────────────────────────── */}
+      {isOwnedByMe ? (
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-accent/20 bg-accent/5 px-4 py-2.5 text-xs text-accent">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          You own this profile
+        </div>
+      ) : isClaimed ? (
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-xs text-text-tertiary">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          Claimed
+        </div>
+      ) : canClaim ? (
+        <div className="mt-4">
+          <ClaimOwnerButton ownerHandle={owner.handle} ownerName={owner.display_name} />
+        </div>
+      ) : !isClaimed && !sessionUserId ? (
+        <div className="mt-4 rounded-lg border border-dashed border-border px-4 py-2.5 text-xs text-text-tertiary">
+          <Link href="/signin" className="text-accent hover:underline">
+            Sign in
+          </Link>{' '}
+          to claim this profile if it belongs to you.
+        </div>
+      ) : null}
 
       {/* ── Agent components (prominent section) ──────────────────────────── */}
       <section className="mt-12">

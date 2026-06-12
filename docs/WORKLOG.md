@@ -227,3 +227,44 @@ count. All timestamps KST.
 - Constraint compliance: no deploys; no pushes to vercel-fork; nothing
   AgentLab-related touched; port 3000 untouched (all QA on 3190 via
   PID-file discipline).
+
+---
+
+# v4.1 (2026-06-12 → ) — post-Laplace-gate remediation + expansion
+
+## v4.1 foundation (pre-cycle)
+
+- 2026-06-12 — Laplace-gate overflow blocker: NOT reproducible at
+  exactly 390px; reproduced at ≤360px (card grids: missing min-w-0 +
+  TrustBadge nowrap, scrollWidth to 364px). Fixed structurally;
+  shoot.mjs now measures per-route scrollWidth at 320/360/390/1440 and
+  fails the pipeline on overflow; BUILD-REPORT root-cause note (why 11
+  screenshot cycles couldn't see it). Commit a243c57.
+- 2026-06-12 — D6 (Team naming + new topology enum) and D7 (viewable
+  operational source ≠ clonable artifacts) recorded; SPEC-V4 v4.1
+  addendum. Commit 61202fe.
+- 2026-06-12 — D6 executed: Team is the entity (routes /teams,
+  /configurations\* 308 shims, /api alias), topology migrated
+  (orchestrator_worker/supervisor/swarm/pipeline/router/+retained),
+  flagship metrics byte-identical. Commits 3e74486 (+ cleanup).
+- 2026-06-12 — WCAG AA contrast pass: scripts/check-contrast.mjs
+  (automated, per-route fg/bg ratios); 5 failing pairs fixed at token
+  level (accent text/button split, tertiary #838383); nav split-button
+  unified. Final: 14 routes, 0 failures. Commit c5ba991.
+
+## Cycle 12 (upgraded protocol: + overflow-report in examiner inputs)
+
+- **Shot:** 2026-06-12 via qa-shoot.sh · docs/evidence/cycles/cycle-12/
+  (44 files; 0 unexpected console errors; overflow gate PASS all
+  routes at 320/360/390/1440)
+- **Examiner (fresh subagent):** credibility 4 · density 4 · depth 4 ·
+  interaction 4 · honesty 5 · soundness 5 · copy 4 (min 4). Report:
+  cycle-12/examiner-report.md
+- **Weakest thing named:** agents directory uneven card density; no
+  filtered/success states in evidence.
+- **Fix:** uniform via-config team metrics on REAL agent cards;
+  shoot.mjs gains agents-filtered route + submit-success +
+  request-success end-to-end captures (persistence evidence, gated as
+  required files); per-subject tier context on agent pages; owner stat
+  reframe.
+- **Fix commit:** 348b6b4

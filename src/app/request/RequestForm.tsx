@@ -10,6 +10,7 @@ interface RefConfig {
 
 interface RequestFormProps {
   refConfig: RefConfig | null;
+  sessionUser?: { name: string | null; email: string | null } | null;
 }
 
 type FormState = 'idle' | 'submitting' | 'done' | 'error';
@@ -19,7 +20,7 @@ const inputClasses =
 
 const labelClasses = 'block text-xs font-medium uppercase tracking-wide text-text-tertiary';
 
-export default function RequestForm({ refConfig }: RequestFormProps) {
+export default function RequestForm({ refConfig, sessionUser }: RequestFormProps) {
   const [state, setState] = useState<FormState>('idle');
   const [error, setError] = useState('');
   const [requestId, setRequestId] = useState<number | null>(null);
@@ -164,6 +165,7 @@ export default function RequestForm({ refConfig }: RequestFormProps) {
               required
               maxLength={80}
               placeholder="Full name"
+              defaultValue={sessionUser?.name ?? ''}
               className={`mt-1.5 ${inputClasses}`}
             />
           </div>

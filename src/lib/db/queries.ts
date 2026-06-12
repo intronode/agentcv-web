@@ -20,6 +20,7 @@ import type {
   SiteCounts,
   SubjectType,
   TrustTier,
+  UserRow,
 } from './types';
 
 // Deprecated type aliases — kept so old import sites keep compiling.
@@ -741,6 +742,88 @@ export function getOwnersStrip(): OwnerStripEntry[] {
   }));
 }
 
+// ---- users ----------------------------------------------------------------
+
+export interface UpsertUserInput {
+  email?: string | null;
+  name: string;
+  image?: string | null;
+  provider: string;
+}
+
+/**
+ * Upsert a user record on sign-in. Returns the persisted user row.
+ * For credentials/dev sign-in (no email): always inserts a new row so
+ * multiple dev accounts can coexist without collision.
+ */
+export function upsertUser(input: UpsertUserInput): UserRow {
+  const db = getDb();
+  if (input.email) {
+    // Try update first; insert if not found.
+    const existing = db.prepare('SELECT * FROM users WHERE email=?').get(input.email) as
+      | UserRow
+      | undefined;
+    if (existing) {
+      db.prepare('UPDATE users SET name=?, image=?, provider=? WHERE id=?').run(
+        input.name || existing.name,
+        input.image ?? existing.image,
+        input.provider,
+        existing.id
+      );
+      return db.prepare('SELECT * FROM users WHERE id=?').get(existing.id) as UserRow;
+    }
+    const res = db
+      .prepare('INSERT INTO users (email, name, image, provider) VALUES (?, ?, ?, ?)')
+      .run(input.email, input.name, input.image ?? null, input.provider);
+    return db.prepare('SELECT * FROM users WHERE id=?').get(res.lastInsertRowid) as UserRow;
+  }
+  // No email — always insert fresh (dev sign-in creates ephemeral accounts).
+  const res = db
+    .prepare('INSERT INTO users (email, name, image, provider) VALUES (?, ?, ?, ?)')
+    .run(null, input.name, input.image ?? null, input.provider);
+  return db.prepare('SELECT * FROM users WHERE id=?').get(res.lastInsertRowid) as UserRow;
+}
+
+export function getUserById(id: number): UserRow | null {
+  return (getDb().prepare('SELECT * FROM users WHERE id=?').get(id) as UserRow | undefined) ?? null;
+}
+
+// ---- owner claim flow -----------------------------------------------------
+
+export interface ClaimOwnerInput {
+  ownerHandle: string;
+  userId: number;
+  requesterName: string;
+  requesterEmail: string;
+}
+
+/**
+ * Create a claim contact_request for an unclaimed owner profile.
+ * Does NOT auto-grant the claim — manual review required at launch.
+ * Returns the contact_request id.
+ */
+export function createOwnerClaimRequest(input: ClaimOwnerInput): { id: number } {
+  const db = getDb();
+  const owner = db.prepare('SELECT * FROM owners WHERE handle=?').get(input.ownerHandle) as
+    | OwnerRow
+    | undefined;
+  if (!owner) throw new Error(`Unknown owner: ${input.ownerHandle}`);
+  if (owner.user_id !== null) throw new Error('Owner already claimed');
+
+  const res = db
+    .prepare(
+      `INSERT INTO contact_requests (subject_type, subject_id, requester_name, requester_email, message, kind)
+       VALUES ('owner', ?, ?, ?, ?, 'claim')`
+    )
+    .run(
+      owner.id,
+      input.requesterName,
+      input.requesterEmail,
+      `User ${input.userId} claims ownership of @${input.ownerHandle}`
+    );
+  return { id: Number(res.lastInsertRowid) };
+}
+
 // ---- writes ---------------------------------------------------------------
 
 function slugify(name: string): string {
@@ -775,6 +858,8 @@ export interface RegisterAgentInput {
   operationalSince?: string;
   ownerName: string;
   ownerHandle: string;
+  /** When provided (signed-in submit), link/update the owner row's user_id. */
+  userId?: number;
 }
 
 export function registerAgent(input: RegisterAgentInput): { slug: string; id: number } {
@@ -785,9 +870,12 @@ export function registerAgent(input: RegisterAgentInput): { slug: string; id: nu
       | undefined;
     if (!owner) {
       const res = db
-        .prepare('INSERT INTO owners (handle, display_name) VALUES (?, ?)')
-        .run(slugify(input.ownerHandle), input.ownerName);
+        .prepare('INSERT INTO owners (handle, display_name, user_id) VALUES (?, ?, ?)')
+        .run(slugify(input.ownerHandle), input.ownerName, input.userId ?? null);
       owner = db.prepare('SELECT * FROM owners WHERE id=?').get(res.lastInsertRowid) as OwnerRow;
+    } else if (input.userId && owner.user_id === null) {
+      // Link user_id to existing unclaimed owner on their first signed-in submit.
+      db.prepare('UPDATE owners SET user_id=? WHERE id=?').run(input.userId, owner.id);
     }
     const slug = uniqueSlug('agents', slugify(input.name));
     const res = db
@@ -944,6 +1032,8 @@ export interface RegisterTeamInput {
   operationalSince?: string;
   ownerName: string;
   ownerHandle: string;
+  /** When provided (signed-in submit), link/update the owner row's user_id. */
+  userId?: number;
   /** Existing agent slugs + roles for membership (agents must already exist). */
   members?: { agentSlug: string; role: string }[];
 }
@@ -963,9 +1053,12 @@ export function registerTeam(input: RegisterTeamInput): {
       | undefined;
     if (!owner) {
       const res = db
-        .prepare('INSERT INTO owners (handle, display_name) VALUES (?, ?)')
-        .run(slugify(input.ownerHandle), input.ownerName);
+        .prepare('INSERT INTO owners (handle, display_name, user_id) VALUES (?, ?, ?)')
+        .run(slugify(input.ownerHandle), input.ownerName, input.userId ?? null);
       owner = db.prepare('SELECT * FROM owners WHERE id=?').get(res.lastInsertRowid) as OwnerRow;
+    } else if (input.userId && owner.user_id === null) {
+      // Link user_id to existing unclaimed owner on their first signed-in submit.
+      db.prepare('UPDATE owners SET user_id=? WHERE id=?').run(input.userId, owner.id);
     }
 
     const slug = uniqueSlug('teams', slugify(input.name));

@@ -3,10 +3,23 @@
 
 // Bump on any schema change: a seeded demo DB with an older version is
 // dropped and rebuilt automatically on next access (data/ is disposable).
-export const SCHEMA_VERSION = 4;
+// v5: users table + owners.user_id for Auth.js v5 account ownership.
+export const SCHEMA_VERSION = 5;
 
 export const SCHEMA_SQL = `
 PRAGMA user_version = ${SCHEMA_VERSION};
+
+-- Human accounts (Auth.js v5, JWT strategy — no DB adapter needed for sessions)
+-- email is nullable: dev sign-in creates users with no email.
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY,
+  email TEXT UNIQUE,
+  name TEXT NOT NULL DEFAULT '',
+  image TEXT,
+  provider TEXT NOT NULL DEFAULT 'credentials',
+  handle TEXT UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 
 CREATE TABLE owners (
   id INTEGER PRIMARY KEY,
@@ -15,6 +28,8 @@ CREATE TABLE owners (
   kind TEXT NOT NULL DEFAULT 'individual' CHECK (kind IN ('individual','org')),
   bio TEXT,
   website_url TEXT,
+  -- nullable FK: set when a user claims or registers this owner profile.
+  user_id INTEGER REFERENCES users(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

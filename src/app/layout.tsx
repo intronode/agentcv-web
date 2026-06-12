@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import Navbar from '@/components/Navbar';
+import NavbarServer from '@/components/NavbarServer';
 import './globals.css';
 
 const inter = Inter({
@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen antialiased">
-        <Navbar />
+        <NavbarServer />
         <main className="pt-28 sm:pt-16">{children}</main>
         <footer className="border-t border-border-subtle py-8">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-6 text-xs text-text-tertiary">

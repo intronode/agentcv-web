@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { auth } from '@/lib/auth';
 import { getConfigurationProfile } from '@/lib/db/queries';
 import RequestForm from './RequestForm';
 
@@ -23,6 +24,11 @@ export default async function RequestPage({ searchParams }: PageProps) {
     }
   }
 
+  const session = await auth();
+  const sessionUser = session?.user
+    ? { name: session.user.name ?? null, email: session.user.email ?? null }
+    : null;
+
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent">
@@ -40,7 +46,7 @@ export default async function RequestPage({ searchParams }: PageProps) {
         — the studio operating the Ari Collective — reviews every request.
       </p>
 
-      <RequestForm refConfig={refConfig} />
+      <RequestForm refConfig={refConfig} sessionUser={sessionUser} />
     </div>
   );
 }
