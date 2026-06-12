@@ -235,6 +235,7 @@ echo ""
 
 # Parse console-log.txt for shot count and unexpected error count
 CONSOLE_LOG="${OUT_DIR}/console-log.txt"
+OVERFLOW_REPORT="${OUT_DIR}/overflow-report.txt"
 SHOT_COUNT="$(find "${OUT_DIR}" -name '*.png' 2>/dev/null | wc -l | tr -d ' ')"
 UNEXPECTED_COUNT=0
 if [[ -f "${CONSOLE_LOG}" ]]; then
@@ -246,4 +247,12 @@ echo "  PASS  |  ${SHOT_COUNT} shots captured  |  ${UNEXPECTED_COUNT} unexpected
 echo "  Output: ${OUT_DIR}"
 echo "  Console log: ${CONSOLE_LOG}"
 echo "================================================================"
+
+# Print overflow report if present
+if [[ -f "${OVERFLOW_REPORT}" ]]; then
+  echo ""
+  echo "── Overflow report ─────────────────────────────────────────────"
+  cat "${OVERFLOW_REPORT}"
+  echo "────────────────────────────────────────────────────────────────"
+fi
 echo ""

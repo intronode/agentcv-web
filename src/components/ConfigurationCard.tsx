@@ -69,9 +69,9 @@ function IndustryTag({ label }: { label: string }) {
 export default function ConfigurationCard({ config }: { config: ConfigurationCardData }) {
   return (
     <Link href={`/configurations/${config.slug}`} className="group block h-full">
-      <article className="flex h-full flex-col rounded-xl border border-border bg-surface-elevated p-5 transition-all duration-200 hover:border-border hover:bg-surface-hover hover:shadow-lg hover:shadow-accent/5">
+      <article className="flex h-full flex-col rounded-xl border border-border bg-surface-elevated p-4 sm:p-5 transition-all duration-200 hover:border-border hover:bg-surface-hover hover:shadow-lg hover:shadow-accent/5">
         {/* Header row */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface text-2xl">
               {config.avatar}
@@ -83,7 +83,7 @@ export default function ConfigurationCard({ config }: { config: ConfigurationCar
               <p className="text-xs text-text-tertiary">{config.ownerName}</p>
             </div>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <div className="flex min-w-0 flex-col items-end gap-1.5">
             <TrustBadge tier={config.tier} size="sm" />
             <LayerLabel layer={config.seedLayer} size="sm" />
           </div>

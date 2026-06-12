@@ -209,11 +209,9 @@ export default async function OwnerProfilePage({ params }: PageProps) {
         ) : (
           <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {agents.map((agent) => (
-              <AgentCard
-                key={agent.slug}
-                agent={agent}
-                hideViaConfigMetric={sharedTeamMetric !== null}
-              />
+              <div key={agent.slug} className="min-w-0">
+                <AgentCard agent={agent} hideViaConfigMetric={sharedTeamMetric !== null} />
+              </div>
             ))}
           </div>
         )}
@@ -245,7 +243,9 @@ export default async function OwnerProfilePage({ params }: PageProps) {
           </p>
           <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {configurations.map((config) => (
-              <ConfigurationCard key={config.slug} config={config} />
+              <div key={config.slug} className="min-w-0">
+                <ConfigurationCard config={config} />
+              </div>
             ))}
           </div>
         </section>

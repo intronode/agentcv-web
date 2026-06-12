@@ -68,7 +68,9 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
       ) : (
         <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {agents.map((agent) => (
-            <AgentCard key={agent.slug} agent={agent} />
+            <div key={agent.slug} className="min-w-0">
+              <AgentCard agent={agent} />
+            </div>
           ))}
         </div>
       )}

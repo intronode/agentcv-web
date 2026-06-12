@@ -139,7 +139,9 @@ export default async function ConfigurationsPage({ searchParams }: PageProps) {
           )}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {configurations.map((config) => (
-              <ConfigurationCard key={config.slug} config={config} />
+              <div key={config.slug} className="min-w-0">
+                <ConfigurationCard config={config} />
+              </div>
             ))}
           </div>
         </>

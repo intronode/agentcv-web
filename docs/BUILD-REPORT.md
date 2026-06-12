@@ -91,3 +91,45 @@ Stop the server; verify the port released. Any failure → reject the gate.
   page evidence (cycle-02 "4 entries"; cycle-11 "no second owner") —
   both traced to evidence-legibility gaps, both fixed structurally
   (fold shots; owners strip).
+
+## Root cause — why 11 cycles missed the narrow-viewport overflow
+
+Independent QA (Laplace's gate, post-cycle-11) flagged horizontal
+overflow as a blocker. Eleven prior examiner cycles did not catch it
+because all QA evidence was screenshots (PNG files). PNG screenshots
+clip at the viewport boundary — if content overflows horizontally, it
+simply does not appear in the image. An examiner looking at a mobile
+screenshot has no visual signal that `document.scrollWidth` is wider
+than the viewport; the overflow is invisible by construction.
+
+**Precise reproduction truth (verified 2026-06-12):** The overflow did
+**not** reproduce at exactly 390px. It reproduced at **≤ 360px**. The
+root cause was that `ConfigurationCard` grid cells lacked `min-w-0`,
+and `TrustBadge` used `whitespace-nowrap`, giving cards a minimum
+content width wider than 320–360px viewports. The grid cell's implicit
+`min-width: auto` prevented the card from compressing to the column
+width, pushing `document.scrollWidth` to ~364px at 320px and ~364px
+at 360px. Clean at 375px and wider.
+
+Layout fix (applied 2026-06-12): all card grid cells in `page.tsx`,
+`configurations/page.tsx`, `owners/[handle]/page.tsx`, and
+`agents/page.tsx` now carry `min-w-0` wrappers. `ConfigurationCard`
+padding is `p-4 sm:p-5`. The header row uses `flex-wrap` so TrustBadge
+wraps below the title at narrow widths instead of widening the card.
+`TrustBadge`'s `whitespace-nowrap` was removed (replaced with
+`break-words`). `AgentCard` already had `min-w-0 w-full` on its
+root element. No `overflow-hidden` masking was used.
+
+Harness gate widened (applied 2026-06-12): `scripts/shoot.mjs` now
+measures `document.documentElement.scrollWidth` and
+`document.body.scrollWidth` at **320px, 360px, 390px** (mobile), and
+**1440px** (desktop) for every route immediately after page load. The
+320/360 measurements use a resize+measure loop on the already-loaded
+page (no additional screenshot captures — screenshots stay at 390px).
+Results are written to `overflow-report.txt` listing every route ×
+width. Any width with `scrollWidth > viewport + 2px` causes
+`shoot.mjs` to exit non-zero, which propagates through `qa-shoot.sh`
+(`set -euo pipefail`) and fails the entire pipeline. Any recurrence at
+320 or 360px will now fail the gate before a reviewer ever sees it.
+
+Vigilance is not the fix. The harness measures it directly.
