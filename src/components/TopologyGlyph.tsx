@@ -16,7 +16,7 @@ function HubAndSpokeGlyph({ size = 24, className = '' }: GlyphProps) {
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      aria-label="Hub-and-spoke topology"
+      aria-label="Orchestrator-worker topology"
       className={className}
     >
       {/* spokes */}
@@ -127,7 +127,7 @@ function PeerGlyph({ size = 24, className = '' }: GlyphProps) {
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      aria-label="Peer topology"
+      aria-label="Swarm topology"
       className={className}
     >
       {/* connections */}
@@ -177,7 +177,7 @@ function HierarchicalGlyph({ size = 24, className = '' }: GlyphProps) {
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      aria-label="Hierarchical topology"
+      aria-label="Supervisor topology"
       className={className}
     >
       {/* root → mid-level */}

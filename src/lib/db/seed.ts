@@ -1223,16 +1223,16 @@ export function seed(db: Database.Database): void {
     // 2. Anthropic SWE-Bench Solo Agent
     {
       slug: 'anthropic-swe-bench-agent',
-      name: 'Claude SWE-Bench Configuration',
+      name: 'Claude SWE-Bench Team',
       avatar: '🏆',
       kind: 'team',
       tagline: 'Single-agent software engineer achieving 49% on SWE-bench Verified.',
       about:
-        'Documents the solo-plus-tools configuration Anthropic used to achieve 49% on SWE-bench Verified, beating the previous state-of-the-art of 45%. Model: Claude 3.5 Sonnet (upgraded). Tools: Bash (persistent shell state) + str_replace_editor (file viewing and editing). Design philosophy: "give as much control as possible to the language model itself, and keep the scaffolding minimal." Source: Anthropic research page.',
+        'Documents the solo-plus-tools team design Anthropic used to achieve 49% on SWE-bench Verified, beating the previous state-of-the-art of 45%. Model: Claude 3.5 Sonnet (upgraded). Tools: Bash (persistent shell state) + str_replace_editor (file viewing and editing). Design philosophy: "give as much control as possible to the language model itself, and keep the scaffolding minimal." Source: Anthropic research page.',
       topology:
         'Single agent (solo-plus-tools). Claude 3.5 Sonnet operates two tools: a persistent Bash shell and a custom file editor. The model determines its own workflow freely — "the model is free to choose how it moves from step to step, rather than having strict and discrete transitions."',
       oversight:
-        'No human-in-the-loop described for this configuration. Evaluated on the SWE-bench Verified benchmark (500 real GitHub issues).',
+        'No human-in-the-loop described for this team design. Evaluated on the SWE-bench Verified benchmark (500 real GitHub issues).',
       howBuilt:
         'Minimal scaffolding. Two tools only: Bash (persistent state across calls) and str_replace_editor. The LLM autonomously decides when to read files, run tests, or edit code. Claude 3.5 Sonnet (upgraded version) was the model used.',
       owner: 'anthropic',
@@ -1434,11 +1434,11 @@ export function seed(db: Database.Database): void {
       name: 'Claude Code Agent Teams (Experimental)',
       avatar: '👥',
       kind: 'team',
-      tagline: 'Peer teammates sharing a task list — parallel exploration on a single codebase.',
+      tagline: 'Swarm teammates sharing a task list — parallel exploration on a single codebase.',
       about:
         'Documents the experimental agent teams feature in Claude Code. Unlike sub-agents (hierarchical, one-way), teammates are peers sharing a task list and communicating via a mailbox. "Claude Code agent teams allow multiple Claude Code instances to work together as peers on the same codebase in real time." Recommended size: 3–5 teammates. Feature marked experimental at time of documentation. Source: Claude Code official docs.',
       topology:
-        'Peer topology with shared state. Teammates access a shared task list and communicate via a mailbox system. Parallel exploration: teammates can work on different parts of a problem simultaneously. Key distinction from sub-agents: "sub-agents only report results back to the main agent, while in agent teams agents can communicate with each other."',
+        'Swarm topology with shared state. Teammates access a shared task list and communicate via a mailbox system. Parallel exploration: teammates can work on different parts of a problem simultaneously. Key distinction from sub-agents: "sub-agents only report results back to the main agent, while in agent teams agents can communicate with each other."',
       oversight:
         'Experimental feature — behavior may change. No human-in-the-loop described in documentation. 3–5 teammates recommended for optimal coordination.',
       howBuilt:
@@ -1453,7 +1453,7 @@ export function seed(db: Database.Database): void {
       industries: ['software-delivery'],
       taskKinds: ['parallel-exploration', 'multi-file-coding', 'distributed-debugging'],
       whyItWorks:
-        'Peer topology enables parallel exploration without bottlenecking through a single orchestrator. Shared task list prevents work duplication. Mailbox communication allows agents to coordinate asynchronously. Complementary to sub-agents: teams for peer collaboration, sub-agents for context isolation.',
+        'Swarm topology enables parallel exploration without bottlenecking through a single orchestrator. Shared task list prevents work duplication. Mailbox communication allows agents to coordinate asynchronously. Complementary to sub-agents: teams for peer collaboration, sub-agents for context isolation.',
       members: [
         ['claude-code-teammate', 'Teammate A', 'Parallel exploration and task execution'],
         ['claude-code-lead', 'Teammate B', 'Parallel exploration and task execution'],
@@ -1828,13 +1828,13 @@ export function seed(db: Database.Database): void {
       kind: 'team',
       tagline: 'Multi-objective Bayesian search for team config — >45% cost reduction vs random.',
       about:
-        "Documents MALBO (arXiv 2511.11788, University of Milano-Bicocca, Master's thesis). A framework that applies multi-objective Bayesian optimization (BO) to search the space of agent team configurations, balancing task performance and API cost. BO outperformed random search: >45% cost reduction on average while maintaining comparable performance. Heterogeneous specialized teams achieved cost reductions up to 65.8% vs homogeneous (all same model) baselines. Source: arXiv paper (note: Master's thesis, not peer-reviewed).",
+        "Documents MALBO (arXiv 2511.11788, University of Milano-Bicocca, Master's thesis). A framework that applies multi-objective Bayesian optimization (BO) to search the space of agent team designs, balancing task performance and API cost. BO outperformed random search: >45% cost reduction on average while maintaining comparable performance. Heterogeneous specialized teams achieved cost reductions up to 65.8% vs homogeneous (all same model) baselines. Source: arXiv paper (note: Master's thesis, not peer-reviewed).",
       topology:
-        'Hierarchical (configurable by search). MALBO searches the configuration space: which agent roles, which model per role, which team size. The output is an optimized configuration for a specific task type. The resulting team can be any topology (hierarchical is the primary studied case).',
+        'Supervisor-style team design by search. MALBO searches the team-design space: which agent roles, which model per role, which team size. The output is an optimized team for a specific task type. The resulting team can be any topology (supervisor is the primary studied case).',
       oversight:
         'Multi-objective optimization loop is automated. Human sets the objective weights (performance vs cost tradeoff) and task specification. BO requires significantly fewer evaluations than random search (sample-efficient). Source: arXiv paper.',
       howBuilt:
-        'Python implementation using Bayesian optimization libraries. Task evaluated on a standardized benchmark. Configuration space: model selection per role, number of agents, role assignments. Pareto-frontier search identifies configurations that are not dominated on both objectives simultaneously.',
+        'Python implementation using Bayesian optimization libraries. Task evaluated on a standardized benchmark. Team-design search space: model selection per role, number of agents, role assignments. Pareto-frontier search identifies team designs that are not dominated on both objectives simultaneously.',
       owner: 'malbo-research',
       operationalSince: '2024-11-18',
       seedLayer: 'curated',
@@ -2191,7 +2191,7 @@ export function seed(db: Database.Database): void {
       date: '2025-06-01',
       type: 'artifact',
       title: 'Claude Code Agent Teams documentation published (experimental)',
-      body: 'Peer topology with shared task list and mailbox. Recommended size: 3–5 teammates. Distinct from sub-agents: teammates communicate with each other; sub-agents only report back to the lead.',
+      body: 'Swarm topology with shared task list and mailbox. Recommended size: 3–5 teammates. Distinct from sub-agents: teammates communicate with each other; sub-agents only report back to the lead.',
       evidenceUrl: 'https://code.claude.com/docs/en/agent-teams',
       provenance: 'evidence_linked',
     },

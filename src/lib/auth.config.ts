@@ -15,22 +15,11 @@ import type { NextAuthConfig } from 'next-auth';
 
 // ── Auth secret ──────────────────────────────────────────────────────────────
 
-const DEV_FALLBACK_SECRET = '56ca5bbc8a2d5dde952a370755dc160107c253f1443eacee4f8ff5f87e18a434';
-
 export function resolveSecret(): string {
   if (process.env['AUTH_SECRET']) return process.env['AUTH_SECRET'];
-  if (process.env['NODE_ENV'] === 'production') {
-    console.error(
-      '[AgentCV auth] AUTH_SECRET is not set. This is required in production. ' +
-        'Set it to a random 32-byte hex or base64 string in your environment.'
-    );
-  } else {
-    console.warn(
-      '[AgentCV auth] AUTH_SECRET not set — using dev fallback. ' +
-        'This is fine for local dev. Set AUTH_SECRET in .env.local for production.'
-    );
-  }
-  return DEV_FALLBACK_SECRET;
+  throw new Error(
+    '[AgentCV auth] AUTH_SECRET is not set. Set AUTH_SECRET in the environment before starting the app.'
+  );
 }
 
 // ── Edge-safe config (no DB imports) ─────────────────────────────────────────

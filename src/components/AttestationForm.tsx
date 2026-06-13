@@ -7,7 +7,7 @@ import type { SubjectType, TrustTier } from '@/lib/db/types';
 interface AttestationFormProps {
   subjectType: SubjectType;
   subjectSlug: string;
-  /** Displayed in copy ("Attest to this configuration" vs "Attest to this agent") */
+  /** Displayed in copy ("Attest to this team" vs "Attest to this agent") */
   subjectLabel?: string;
   /**
    * Current evidence count for the subject — used to honestly explain the tier rule.
@@ -24,7 +24,7 @@ const inputClasses =
   'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent focus:outline-none';
 
 const PRESET_RELATIONSHIPS = [
-  'used this configuration',
+  'used this team',
   'collaborated',
   'audited',
   'deployed this agent',

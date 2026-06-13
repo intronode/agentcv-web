@@ -124,8 +124,8 @@ export default function RegisterChooserPage() {
             </div>
           </div>
           <p className="text-xs leading-relaxed text-text-secondary">
-            A multi-agent harness with topology, member agents, and evidence. The configuration is
-            the asset — this is the full documented blueprint.
+            A multi-agent harness with topology, member agents, and evidence. The team record is the
+            asset — this is the full documented blueprint.
           </p>
           <ul className="space-y-1 text-[11px] text-text-tertiary">
             <li className="flex items-center gap-1.5">
@@ -141,7 +141,7 @@ export default function RegisterChooserPage() {
               >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              Topology selection (5 named patterns)
+              Topology selection (7 named patterns)
             </li>
             <li className="flex items-center gap-1.5">
               <svg

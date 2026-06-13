@@ -57,17 +57,38 @@ const INTERNAL_TLD = /\bhttps?:\/\/[^\s"'<>]*\.(?:internal|local|corp|intranet)\
  * Context words that signal a counterparty/named-entity is nearby.
  * Used as the "proximity anchor" for the counterparty-name sub-pass.
  */
-const COUNTERPARTY_CONTEXT = /\b(?:client|customer|partner|vendor|account|contractor|agency)\b/gi;
+const COUNTERPARTY_CONTEXT =
+  /\b(?:client|customer|partner|vendor|account|contractor|agency|contract|agreement|NDA|non-disclosure|SOW|statement of work|engagement|confidential|proprietary)\b/gi;
 
 /** Tight window for counterparty-name detection: ±60 chars of a context word */
 const COUNTERPARTY_NAME_WINDOW = 60;
 
 /**
- * Proper-noun shape: one to three capitalized words (each [A-Z][a-z]+).
- * We require at least the first word to be capitalized.
- * The regex captures multi-word sequences like "Acme Corp" or "Blue Sky Solutions".
+ * Proper-noun shape: one to four capitalized words, including common org suffix
+ * forms like "Acme Labs", "Globex LLC", and "Blue Sky Solutions".
  */
-const PROPER_NOUN_SEQ = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b/g;
+const PROPER_NOUN_SEQ = /\b([A-Z][A-Za-z0-9&]*(?:\s+[A-Z][A-Za-z0-9&]*){0,3})\b/g;
+
+const ORG_HINT_WORDS = new Set([
+  'AI',
+  'Co',
+  'Corp',
+  'Corporation',
+  'Inc',
+  'LLC',
+  'Ltd',
+  'Labs',
+  'Systems',
+  'Solutions',
+  'Group',
+  'Partners',
+  'Holdings',
+  'Technologies',
+  'Tech',
+  'Studios',
+  'Works',
+  'Ventures',
+]);
 
 /**
  * Small stoplist: common words that look like proper nouns but are not company names.
@@ -200,7 +221,11 @@ function isLikelyProperName(seq: string): boolean {
   const words = seq.split(/\s+/);
   // All words in stoplist → not a company name
   if (words.every((w) => COUNTERPARTY_STOPLIST.has(w))) return false;
-  return true;
+  if (words.length === 1 && /^[A-Z]{2,}$/.test(seq) && !ORG_HINT_WORDS.has(seq)) return false;
+  if (words.some((w) => ORG_HINT_WORDS.has(w))) return true;
+  if (words.length > 1 && words.some((w) => !COUNTERPARTY_STOPLIST.has(w))) return true;
+  if (/^[A-Z][a-z]{2,}$/.test(seq)) return true;
+  return false;
 }
 
 function findAllMatches(

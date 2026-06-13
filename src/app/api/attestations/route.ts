@@ -9,7 +9,7 @@ const SUBJECT_TYPES = ['agent', 'configuration'] as const;
 
 // Preset relationships; "other" is accepted but caller must supply statement content.
 const RELATIONSHIP_VALUES = [
-  'used this configuration',
+  'used this team',
   'collaborated',
   'audited',
   'deployed this agent',

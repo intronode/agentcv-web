@@ -10,8 +10,8 @@ export default function NotFound() {
       <p className="mt-6 text-xs font-semibold uppercase tracking-[0.15em] text-accent">404</p>
       <h1 className="mt-3 text-3xl font-bold tracking-tight">No record found</h1>
       <p className="mt-3 max-w-sm text-sm leading-relaxed text-text-secondary">
-        This profile doesn&apos;t exist — or hasn&apos;t published its track record yet. Every
-        configuration here has evidence. If you built something, submit it.
+        This profile doesn&apos;t exist — or hasn&apos;t published its track record yet. Every team
+        here has evidence. If you built something, submit it.
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link

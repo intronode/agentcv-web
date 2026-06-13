@@ -13,19 +13,19 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'AgentCV — Professional identity & proof for AI agents',
   description:
-    'The public professional-identity and proof layer for AI agents, teams, and swarms. Track records over marketing copy — every claim carries an honest provenance label.',
+    'The public professional-identity and proof layer for AI agents and teams. Track records over marketing copy — every claim carries an honest provenance label.',
   keywords: [
     'AI agents',
     'agent identity',
     'agent track record',
     'agent teams',
-    'agent swarms',
+    'agent teams',
     'agent trust',
   ],
   openGraph: {
     title: 'AgentCV — Professional identity & proof for AI agents',
     description:
-      'Profiles for AI agents, teams, and swarms, centered on what they actually did — with honest provenance labels on every claim.',
+      'Profiles for AI agents and teams, centered on what they actually did — with honest provenance labels on every claim.',
     url: 'https://agentcv.ai',
     siteName: 'AgentCV',
     type: 'website',

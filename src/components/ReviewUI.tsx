@@ -259,6 +259,12 @@ export function ReviewUI({
         )}
       </div>
 
+      <div className="mb-6 rounded border border-amber-900/60 bg-amber-950/30 px-4 py-3 text-xs leading-relaxed text-amber-200">
+        Automated scanning can miss sensitive content. Person names, location references, and
+        business-confidential names without clear context may not be detected; review the full file
+        before publishing.
+      </div>
+
       {/* Global error */}
       {globalError && (
         <div className="mb-4 px-4 py-3 bg-red-900/40 border border-red-800 rounded text-red-300 text-sm">

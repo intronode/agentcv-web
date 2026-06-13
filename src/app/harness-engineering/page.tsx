@@ -62,7 +62,7 @@ export default function HarnessEngineeringPage() {
       <div className="mt-5 -mx-6 px-6 sm:mx-0 sm:px-0">
         <nav
           aria-label="Page sections"
-          className="flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-x-visible"
+          className="flex flex-wrap gap-1.5 overflow-x-visible pb-0.5"
         >
           {TOC_ITEMS.map(({ id, label }) => (
             <a
@@ -112,8 +112,8 @@ export default function HarnessEngineeringPage() {
             <p className="font-medium text-text-primary">Harness engineering</p>
             <p className="mt-0.5 text-sm text-text-secondary">
               Design the system the model runs inside. Topology, roles, tool access, memory
-              architecture, handoff protocol, oversight loops — the full configuration that
-              determines how much of the model&apos;s capability reaches real work.
+              architecture, handoff protocol, oversight loops — the full team design that determines
+              how much of the model&apos;s capability reaches real work.
             </p>
           </div>
         </div>
@@ -154,7 +154,7 @@ export default function HarnessEngineeringPage() {
         The composition problem
       </h2>
       <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-        Accept that framing and the hard problem comes into focus: composition. A configuration is a
+        Accept that framing and the hard problem comes into focus: composition. A team design is a
         combinatorial choice: which roles (main / dev / watcher / ops?), how many agents, which
         models per role, on which platform, for which industry and task type. The space is M&times;N
         across each dimension.
@@ -188,18 +188,18 @@ export default function HarnessEngineeringPage() {
             ~88% of enterprise agent projects never reach production
           </p>
           <p className="mt-1 text-xs text-text-tertiary">
-            Widely cited in practitioner surveys (2025–2026); configuration failure and composition
+            Widely cited in practitioner surveys (2025–2026); team-design failure and composition
             uncertainty are the leading causes.
           </p>
         </div>
 
         <div className="rounded-lg border border-border bg-surface-elevated p-4">
           <p className="text-sm font-semibold text-text-primary">
-            Harness configuration swings benchmarks 5+ points
+            Harness design swings benchmarks 5+ points
           </p>
           <p className="mt-1 text-xs text-text-tertiary">
-            Anthropic&apos;s 2026 trends report: the same model in different harness configurations
-            shows 5+ percentage-point benchmark deltas — larger than most model version upgrades.{' '}
+            Anthropic&apos;s 2026 trends report: the same model in different harness designs shows
+            5+ percentage-point benchmark deltas — larger than most model version upgrades.{' '}
             <a
               href="https://www.anthropic.com/research/building-effective-agents"
               target="_blank"
@@ -215,9 +215,9 @@ export default function HarnessEngineeringPage() {
       <p className="mt-5 text-sm leading-relaxed text-text-secondary">
         The existing knowledge infrastructure is link-lists (awesome-harness-engineering),
         coding-agent benchmarks (Terminal Bench), framework pattern docs, and a parts store
-        (personas, skills). What does not exist: a practitioner platform where working swarm and
-        harness configurations for real work are shared with evidence — role topology, agent count,
-        token economics, outcomes, industry fit — and compared. Our scan found none.
+        (personas, skills). What does not exist: a practitioner platform where working teams and
+        harness designs for real work are shared with evidence — role topology, agent count, token
+        economics, outcomes, industry fit — and compared. Our scan found none.
       </p>
 
       {/* ── (c) How AgentCV documents teams ───────────────────────────────── */}
@@ -246,14 +246,17 @@ export default function HarnessEngineeringPage() {
           </thead>
           <tbody className="divide-y divide-border-subtle">
             {[
-              ['Topology type', 'Hub-and-spoke, pipeline, peer, hierarchical, solo+tools, other'],
-              ['Agent count', 'Number of distinct agent roles in the configuration'],
+              [
+                'Topology type',
+                'Supervisor, orchestrator-worker, swarm, pipeline, router, solo+tools, other',
+              ],
+              ['Agent count', 'Number of distinct agent roles in the team'],
               [
                 'Platform',
                 'OpenClaw, Claude Code, CrewAI, LangGraph, AutoGen, MetaGPT, custom, mixed',
               ],
               ['Roster', 'Each role name, model assignment (or [unknown] if unspecified)'],
-              ['Industries', 'The domains where this configuration has been operated'],
+              ['Industries', 'The domains where this team has been operated'],
               ['Task kinds', 'The specific work types it handles'],
               ['Operating since', 'When it first ran in production (or [unknown])'],
               ['Token economics', 'Cost per task and/or per month, provenance-labeled'],
@@ -467,7 +470,7 @@ export default function HarnessEngineeringPage() {
         >
           <span className="font-semibold text-text-primary">Request a setup</span>
           <span className="text-xs text-text-secondary">
-            Describe your work. Intronode will respond with a configuration proposal.
+            Describe your work. Intronode will respond with a team proposal.
           </span>
         </Link>
       </div>

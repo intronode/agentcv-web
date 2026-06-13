@@ -803,15 +803,15 @@ export default function RegisterTeamClient({
     return (
       <div className="space-y-5">
         <p className="text-xs text-text-secondary">
-          Operational DNA — why this configuration works, how it was built, and how it is overseen.
-          Plans, not the house. Not files for sale.
+          Operational DNA — why this team works, how it was built, and how it is overseen. Plans,
+          not the house. Not files for sale.
         </p>
         <CharTextarea
           label="Why it works"
           id="bp-why"
           rows={4}
           maxLength={4000}
-          placeholder="The architectural decisions that make this configuration effective for its domain."
+          placeholder="The architectural decisions that make this team effective for its domain."
           value={form.whyItWorks}
           onChange={(v) => setField('whyItWorks', v)}
         />

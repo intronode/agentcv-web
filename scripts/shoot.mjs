@@ -33,6 +33,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { parseArgs } from 'util';
 import { createRequire } from 'module';
+import { randomUUID } from 'crypto';
 
 // Overflow tolerance: browser sub-pixel rounding can add ≤2 px
 const OVERFLOW_TOLERANCE_PX = 2;
@@ -76,9 +77,9 @@ export const ROUTES = [
 //   5. sanitizer-evidence.txt — JSON evidence of findings before and after masking
 //   6. sanitizer-masked-published.png — file page after masking + publish
 //
-// The test file (QA-PROBE.md) is created via POST /api/files so the scan runs
-// in-server-process. If creation fails (e.g. owner linkage missing) we write
-// a warning to sanitizer-evidence.txt and skip steps 4-6.
+// A unique QA probe file is created via POST /api/files so the scan runs
+// in-server-process. If creation fails (e.g. owner linkage missing), this
+// capture fails and writes the failure detail to sanitizer-evidence.txt.
 
 async function captureSanitizerEvidence(browser, baseUrl, outDir, consoleEntries) {
   // Probe content that triggers all 3 detectors:
@@ -94,6 +95,8 @@ Contact: ops@intronode-qa.example for escalations.
 Per our confidential engagement, our client Initech paid $40,000 under the
 retainer contract. This information is proprietary and not for public release.
 `;
+  const probePath = `QA-PROBE-${Date.now()}-${process.pid}-${randomUUID()}.md`;
+  const encodedProbePath = encodeURIComponent(probePath);
 
   const context = await browser.newContext({
     viewport: DESKTOP,
@@ -165,7 +168,7 @@ retainer contract. This information is proprietary and not for public release.
 
     // ── 2. deny-list-terms.png — add "Initech" to deny-list via owner UI ──────
     // Navigate to the intronode owner profile, add the probe counterparty name
-    // to the deny-list so the scanner picks it up during the QA-PROBE.md scan.
+    // to the deny-list so the scanner picks it up during the QA probe scan.
     // This also exercises the ConfidentialTermsManager component.
     console.log(`    sanitizer [2/6] deny-list-terms.png (add "Initech" to deny-list via owner UI)`);
     try {
@@ -238,29 +241,25 @@ retainer contract. This information is proprietary and not for public release.
     await page.screenshot({ path: `${outDir}/sanitizer-scan-log.png`, fullPage: true });
     evidenceLines.push('sanitizer-scan-log.png: captured');
 
-    // ── 4. Create QA-PROBE.md via API — triggers scanner in-process ──────────
-    console.log(`    sanitizer [4/6] creating QA-PROBE.md via API`);
+    // ── 4. Create unique QA probe via API — triggers scanner in-process ─────
+    console.log(`    sanitizer [4/6] creating ${probePath} via API`);
     const createResp = await page.request.post(`${baseUrl}/api/files`, {
       data: {
         subject_type: 'team',
         subject_slug: 'ari-collective',
-        path: 'QA-PROBE.md',
+        path: probePath,
         content: PROBE_CONTENT,
       },
       headers: { 'Content-Type': 'application/json' },
     });
 
+    evidenceLines.push(`probe-path: ${probePath}`);
     evidenceLines.push(`POST /api/files: HTTP ${createResp.status()}`);
 
     if (!createResp.ok()) {
       const body = await createResp.text().catch(() => '(no body)');
       evidenceLines.push(`  body: ${body.slice(0, 300)}`);
-      // 409 = file already exists from a prior run — try to use it
-      if (createResp.status() === 409) {
-        evidenceLines.push('  409 conflict: QA-PROBE.md already exists — will use existing file');
-      } else {
-        throw new Error(`PRECONDITION FAILED: POST /api/files returned HTTP ${createResp.status()} — ${body.slice(0, 200)}`);
-      }
+      throw new Error(`PRECONDITION FAILED: POST /api/files returned HTTP ${createResp.status()} for ${probePath} — ${body.slice(0, 200)}`);
     } else {
       const created = await createResp.json();
       evidenceLines.push(`  file id: ${created.id}  path: ${created.path}`);
@@ -271,7 +270,7 @@ retainer contract. This information is proprietary and not for public release.
 
     // ── 5. sanitizer-block.png — review page with findings blocking publish ──
     console.log(`    sanitizer [5/6] sanitizer-block.png`);
-    const reviewUrl = `${baseUrl}/teams/ari-collective/files/QA-PROBE.md/review`;
+    const reviewUrl = `${baseUrl}/teams/ari-collective/files/${encodedProbePath}/review`;
     try {
       await page.goto(reviewUrl, { waitUntil: 'networkidle', timeout: 30000 });
     } catch {
@@ -349,9 +348,9 @@ retainer contract. This information is proprietary and not for public release.
 
     // Navigate to public file page to show masked content
     try {
-      await page.goto(`${baseUrl}/teams/ari-collective/files/QA-PROBE.md`, { waitUntil: 'networkidle', timeout: 20000 });
+      await page.goto(`${baseUrl}/teams/ari-collective/files/${encodedProbePath}`, { waitUntil: 'networkidle', timeout: 20000 });
     } catch {
-      await page.goto(`${baseUrl}/teams/ari-collective/files/QA-PROBE.md`, { waitUntil: 'load', timeout: 20000 });
+      await page.goto(`${baseUrl}/teams/ari-collective/files/${encodedProbePath}`, { waitUntil: 'load', timeout: 20000 });
     }
     await sleep(SETTLE_MS);
     await page.screenshot({ path: `${outDir}/sanitizer-masked-published.png`, fullPage: true });
@@ -368,9 +367,9 @@ retainer contract. This information is proprietary and not for public release.
       // File row
       const fileRow = db.prepare(
         `SELECT id, path, visibility, sanitization_state, created_at, updated_at
-         FROM files WHERE path='QA-PROBE.md' AND subject_type='team'
+         FROM files WHERE path=? AND subject_type='team'
          ORDER BY id DESC LIMIT 1`
-      ).get();
+      ).get(probePath);
 
       if (fileRow) {
         evidenceLines.push('');
@@ -399,7 +398,7 @@ retainer contract. This information is proprietary and not for public release.
         }
         evidenceLines.push('=== End SQLite Evidence ===');
       } else {
-        evidenceLines.push('SQLite: QA-PROBE.md file row not found in DB');
+        evidenceLines.push(`SQLite: ${probePath} file row not found in DB`);
       }
       db.close();
     } catch (dbErr) {

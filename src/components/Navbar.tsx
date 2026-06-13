@@ -255,7 +255,7 @@ export default function Navbar({ user }: NavbarProps = {}) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed left-0 right-0 top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-xl">
+    <nav className="fixed left-0 right-0 top-0 z-50 box-border w-full max-w-[100dvw] overflow-x-clip border-b border-border bg-surface/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:h-16 sm:flex-nowrap sm:px-6 sm:py-0">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <LogoMark size={28} />

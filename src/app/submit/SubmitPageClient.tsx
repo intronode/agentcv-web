@@ -672,8 +672,8 @@ export default function SubmitPageClient({ sessionUser }: Props) {
         >
           <h2 className="text-sm font-semibold">Blueprint</h2>
           <p className="text-[11px] text-text-tertiary">
-            Operational DNA: why this configuration works, how it was built, and how it is overseen.
-            Plans, not the house — not files for sale.
+            Operational DNA: why this team works, how it was built, and how it is overseen. Plans,
+            not the house — not files for sale.
           </p>
 
           <CharTextarea
@@ -681,7 +681,7 @@ export default function SubmitPageClient({ sessionUser }: Props) {
             name="whyItWorks"
             rows={4}
             maxLength={4000}
-            placeholder="The architectural decisions that make this configuration effective for its domain."
+            placeholder="The architectural decisions that make this team effective for its domain."
             value={whyItWorks}
             onChange={setWhyItWorks}
           />

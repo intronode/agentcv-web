@@ -246,9 +246,9 @@ Priority rules for operational markdown (these appear in real agent files):
 anthropic:      /\bsk-ant-(?:api03|admin01)-[a-zA-Z0-9_\-]{93}AA\b/
 openai:         /\bsk-(?:proj-)?[a-zA-Z0-9]{48,}\b/  (with entropy ≥ 3.0)
 aws-access-key: /\b(?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16}\b/
-github-pat:     /\bghp_[a-zA-Z0-9]{36}\b/
+github-pat:     /\bgh[pousr]_[a-zA-Z0-9]{36,}\b/
 github-fine:    /\bgithub_pat_[a-zA-Z0-9_]{82}\b/
-github-app:     /\b(?:ghs_|gho_)[a-zA-Z0-9]{36}\b/
+stripe:         /\b(?:sk|rk)_(?:live|test)_[a-zA-Z0-9]{24,}\b/
 slack-bot:      /\bxoxb-[0-9]{11}-[0-9]{11}-[a-zA-Z0-9]{24}\b/
 slack-user:     /\bxoxp-[0-9]+-[0-9]+-[0-9]+-[a-f0-9]+\b/
 slack-webhook:  /https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[a-zA-Z0-9]+/
@@ -422,8 +422,8 @@ shape and linguistic proximity.
 
 **Algorithm:**
 
-1. Find all counterparty context words (client|customer|partner|vendor|account|agency) in the segment.
-2. Find all capitalized proper-noun sequences (1–3 consecutive `[A-Z][a-z]+` words) in the segment.
+1. Find all counterparty/context words (client|customer|partner|vendor|account|agency plus contract/confidential/proprietary terms) in the segment.
+2. Find all capitalized proper-noun sequences (1–4 consecutive capitalized tokens, including common org suffixes such as Labs, Systems, LLC, Corp) in the segment.
 3. For each proper-noun sequence, check whether it falls within ±60 characters of any context word.
 4. If yes, and the sequence is not in the common-word stoplist, emit a `confidential.counterparty-name` finding with suggested mask `[client]`.
 
@@ -690,6 +690,11 @@ permanently visible on any publicly-viewable file:
 > identified. Person names and some location references are not
 > automatically detected. You are responsible for reviewing this file
 > before making it public."
+
+The review surface also shows a pre-publication warning: "Automated
+scanning can miss sensitive content. Person names, location references,
+and business-confidential names without clear context may not be detected;
+review the full file before publishing."
 
 This copy is non-negotiable and must appear verbatim or with only editorial
 smoothing (no weakening). It is part of the honesty architecture.

@@ -30,11 +30,19 @@ export const PROVIDER_PREFIX_RULES: ProviderPrefixRule[] = [
     severity: 'critical',
     suggestedMaskBase: 'api-key',
   },
-  // GitHub personal access tokens: ghp_ or gho_
+  // Stripe secret keys: sk_live_... or sk_test_...
+  {
+    id: 'secrets.provider-prefix.stripe',
+    version: '1.0',
+    pattern: /\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{24,}\b/g,
+    severity: 'critical',
+    suggestedMaskBase: 'stripe-key',
+  },
+  // GitHub tokens: classic PATs, OAuth/app tokens, fine-grained PATs, refresh tokens
   {
     id: 'secrets.provider-prefix.github',
     version: '1.0',
-    pattern: /\b(ghp_|gho_)[A-Za-z0-9]{36,}\b/g,
+    pattern: /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{82,})\b/g,
     severity: 'critical',
     suggestedMaskBase: 'github-token',
   },
@@ -46,13 +54,21 @@ export const PROVIDER_PREFIX_RULES: ProviderPrefixRule[] = [
     severity: 'critical',
     suggestedMaskBase: 'slack-token',
   },
-  // AWS access key IDs: AKIA...
+  // AWS access key IDs: includes IAM/user/session variants from gitleaks.
   {
     id: 'secrets.provider-prefix.aws',
     version: '1.0',
-    pattern: /\bAKIA[A-Z0-9]{16}\b/g,
+    pattern: /\b(?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16}\b/g,
     severity: 'critical',
     suggestedMaskBase: 'aws-key',
+  },
+  // AWS STS session tokens and secret access keys are usually seen in assignments.
+  {
+    id: 'secrets.provider-prefix.aws-session-token',
+    version: '1.0',
+    pattern: /\b(?:AQoDYXdzEJr[0-9A-Za-z+/=_-]{40,}|FQoGZXIvYXdzE[0-9A-Za-z+/=_-]{40,})\b/g,
+    severity: 'critical',
+    suggestedMaskBase: 'aws-session-token',
   },
   // PEM private keys
   {

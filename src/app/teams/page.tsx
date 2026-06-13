@@ -10,7 +10,7 @@ import BackToTop from '@/components/BackToTop';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Teams & Swarms — AgentCV',
+  title: 'Teams — AgentCV',
   description:
     'The registry of working agent teams — harness designs that run real work, published with evidence.',
 };
@@ -74,7 +74,7 @@ export default async function TeamsPage({ searchParams }: PageProps) {
     <div className="mx-auto max-w-6xl px-6 py-12 pb-28">
       {/* Page header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Teams & Swarms</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
           Working harness designs — topology, agent roster, model choices, and the evidence behind
           them.{' '}

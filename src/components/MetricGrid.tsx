@@ -63,8 +63,8 @@ export default function MetricGrid({ metrics }: { metrics: MetricRow[] }) {
               key={metric.id}
               className="rounded-lg border border-border bg-surface-elevated/60 p-4"
             >
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-text-tertiary">{metric.label}</span>
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <span className="min-w-0 text-xs text-text-tertiary">{metric.label}</span>
                 {/* Deliberate-rigor badge */}
                 <span className="shrink-0 rounded border border-dashed border-text-tertiary/30 px-1 py-px text-[9px] font-medium uppercase tracking-wide text-text-tertiary/60">
                   not estimated

@@ -21,7 +21,6 @@ const PROJECT_ROOT = join(__dirname, '..');
 // ─── Test definitions ─────────────────────────────────────────────────────────
 
 const TESTS = [
-
   // ── Parser ──────────────────────────────────────────────────────────────────
 
   {
@@ -118,12 +117,51 @@ console.log(JSON.stringify(result.map(f => f.detectorId)));
     script: `
 import { parseMarkdownSegments } from './src/lib/sanitizer/parser';
 import { detectSecrets } from './src/lib/sanitizer/detectors/secrets';
-const content = 'token: ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789abcdefGHIJ';
+const content = 'token: ' + 'ghp_' + 'aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789abcdefGHIJ';
 const segs = parseMarkdownSegments(content);
 const result = detectSecrets(segs, content);
 console.log(JSON.stringify(result.map(f => f.detectorId)));
 `,
     assert: (r) => Array.isArray(r) && r.some((id) => String(id).includes('github')),
+  },
+
+  {
+    name: 'secrets: GitHub fine-grained token detected',
+    script: `
+import { parseMarkdownSegments } from './src/lib/sanitizer/parser';
+import { detectSecrets } from './src/lib/sanitizer/detectors/secrets';
+const content = 'token: github_pat_' + 'A'.repeat(22) + '_' + 'B'.repeat(59);
+const segs = parseMarkdownSegments(content);
+const result = detectSecrets(segs, content);
+console.log(JSON.stringify(result.map(f => f.detectorId)));
+`,
+    assert: (r) => Array.isArray(r) && r.includes('secrets.provider-prefix.github'),
+  },
+
+  {
+    name: 'secrets: AWS temporary access key detected',
+    script: `
+import { parseMarkdownSegments } from './src/lib/sanitizer/parser';
+import { detectSecrets } from './src/lib/sanitizer/detectors/secrets';
+const content = 'aws_access_key_id = ' + 'ASIA' + 'ABCDEFGHIJKLMNOP';
+const segs = parseMarkdownSegments(content);
+const result = detectSecrets(segs, content);
+console.log(JSON.stringify(result.map(f => f.detectorId)));
+`,
+    assert: (r) => Array.isArray(r) && r.includes('secrets.provider-prefix.aws'),
+  },
+
+  {
+    name: 'secrets: Stripe live secret key detected',
+    script: `
+import { parseMarkdownSegments } from './src/lib/sanitizer/parser';
+import { detectSecrets } from './src/lib/sanitizer/detectors/secrets';
+const content = 'stripe_key=' + 'sk_' + 'live_' + 'aBcDeFgHiJkLmNoPqRsTuVwXyZ123456';
+const segs = parseMarkdownSegments(content);
+const result = detectSecrets(segs, content);
+console.log(JSON.stringify(result.map(f => f.detectorId)));
+`,
+    assert: (r) => Array.isArray(r) && r.includes('secrets.provider-prefix.stripe'),
   },
 
   {
@@ -344,9 +382,27 @@ console.log(JSON.stringify({ count: cpFindings.length, names: cpFindings.map(f =
     assert: (r) => {
       if (typeof r !== 'object' || r === null) return false;
       if (r.count < 1) return false;
-      return Array.isArray(r.names) && r.names.includes('Initech') &&
-             Array.isArray(r.masks) && r.masks[0] === '[client]';
+      return (
+        Array.isArray(r.names) &&
+        r.names.includes('Initech') &&
+        Array.isArray(r.masks) &&
+        r.masks[0] === '[client]'
+      );
     },
+  },
+
+  {
+    name: 'confidential: counterparty-name — multiple org names detected near confidential contract terms',
+    script: `
+import { parseMarkdownSegments } from './src/lib/sanitizer/parser';
+import { detectConfidential } from './src/lib/sanitizer/detectors/confidential';
+const content = 'The confidential contract covers Acme Labs and Globex Systems. Both project names are proprietary.';
+const segs = parseMarkdownSegments(content);
+const result = detectConfidential(segs, content, []);
+const cpFindings = result.filter(f => f.detectorId === 'confidential.counterparty-name');
+console.log(JSON.stringify(cpFindings.map(f => content.slice(f.spanStart, f.spanEnd))));
+`,
+    assert: (r) => Array.isArray(r) && r.includes('Acme Labs') && r.includes('Globex Systems'),
   },
 
   {
@@ -462,7 +518,6 @@ console.log(JSON.stringify(result));
 `,
     assert: (r) => r === 'hello [email] world',
   },
-
 ];
 
 // ─── Runner ───────────────────────────────────────────────────────────────────
@@ -487,7 +542,11 @@ function runTest(test) {
     try {
       parsed = JSON.parse(stdout);
     } catch {
-      return { name: test.name, pass: false, error: `JSON parse failed. stdout: ${stdout.slice(0, 300)}` };
+      return {
+        name: test.name,
+        pass: false,
+        error: `JSON parse failed. stdout: ${stdout.slice(0, 300)}`,
+      };
     }
 
     const pass = test.assert(parsed);

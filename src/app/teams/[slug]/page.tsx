@@ -43,9 +43,9 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function SpecRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 py-2.5 border-b border-border-subtle last:border-0">
+    <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5 border-b border-border-subtle last:border-0">
       <dt className="shrink-0 text-xs text-text-tertiary">{label}</dt>
-      <dd className="text-right text-sm text-text-secondary">{children}</dd>
+      <dd className="min-w-0 text-right text-sm text-text-secondary">{children}</dd>
     </div>
   );
 }
@@ -258,7 +258,7 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
             <p className="mt-1 text-xs text-text-tertiary">
               The benchmark fields — designed for comparison across teams.
             </p>
-            <dl className="mt-4 rounded-xl border border-border bg-surface-elevated px-5 py-1">
+            <dl className="mt-4 min-w-0 rounded-xl border border-border bg-surface-elevated px-4 py-1 sm:px-5">
               {topologyType && (
                 <SpecRow label="Topology">
                   <span className="inline-flex items-center gap-1.5">
@@ -292,9 +292,9 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
           <section>
             <SectionHeading>Topology &amp; roster</SectionHeading>
             {topologyType && (
-              <div className="mt-3 flex items-center gap-3 rounded-lg border border-border bg-surface-elevated px-4 py-3">
+              <div className="mt-3 flex min-w-0 items-start gap-3 rounded-lg border border-border bg-surface-elevated px-4 py-3">
                 <TopologyGlyph topology={topologyType} size={40} className="shrink-0 text-accent" />
-                <div>
+                <div className="min-w-0">
                   <div className="text-sm font-medium text-text-primary">
                     {TOPOLOGY_LABELS[topologyType]}
                   </div>
@@ -574,7 +574,7 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
         </div>
 
         {/* ── Sidebar ── */}
-        <aside className="space-y-5">
+        <aside className="min-w-0 space-y-5">
           {/* CTAs */}
           <div className="space-y-2">
             <Link
@@ -619,51 +619,53 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
           </div>
 
           {/* Facts panel */}
-          <div className="rounded-xl border border-border bg-surface-elevated p-4">
+          <div className="min-w-0 rounded-xl border border-border bg-surface-elevated p-4">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
               Quick facts
             </h3>
             <dl className="mt-3 space-y-2.5 text-sm">
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1">
                 <dt className="text-text-tertiary">Owner</dt>
-                <dd>
+                <dd className="min-w-0 break-words text-right">
                   <Link href={`/owners/${owner.handle}`} className="text-accent hover:underline">
                     {owner.display_name}
                   </Link>
                 </dd>
               </div>
               {topologyType && (
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1">
                   <dt className="text-text-tertiary">Topology</dt>
-                  <dd className="inline-flex items-center gap-1 text-text-secondary">
+                  <dd className="inline-flex min-w-0 items-center gap-1 text-right text-text-secondary">
                     <TopologyGlyph topology={topologyType} size={13} className="text-accent" />
                     {TOPOLOGY_LABELS[topologyType]}
                   </dd>
                 </div>
               )}
               {team.agent_count !== null && (
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1">
                   <dt className="text-text-tertiary">Agents</dt>
                   <dd className="text-text-secondary">{team.agent_count}</dd>
                 </div>
               )}
               {team.platform && (
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1">
                   <dt className="text-text-tertiary">Platform</dt>
-                  <dd className="text-text-secondary">{team.platform}</dd>
+                  <dd className="min-w-0 break-words text-right text-text-secondary">
+                    {team.platform}
+                  </dd>
                 </div>
               )}
               {team.operational_since && (
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1">
                   <dt className="text-text-tertiary">Operating since</dt>
                   <dd className="text-text-secondary">{formatDate(team.operational_since)}</dd>
                 </div>
               )}
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1">
                 <dt className="text-text-tertiary">Status</dt>
                 <dd className="text-text-secondary capitalize">{team.status}</dd>
               </div>
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1">
                 <dt className="text-text-tertiary">Layer</dt>
                 <dd>
                   <LayerLabel
