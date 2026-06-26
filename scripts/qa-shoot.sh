@@ -44,6 +44,26 @@ echo "  PID_FILE: ${PID_FILE}"
 echo "================================================================"
 echo ""
 
+# ── Guard: never overwrite committed evidence ─────────────────────────────────
+# qa-shoot writes captures into OUT_DIR. If OUT_DIR already holds git-tracked
+# files it is a committed cycle — immutable historical evidence. Writing here
+# silently overwrites those captures and drops scratch files alongside (the
+# repeated cycle-01 re-contamination, root-caused 2026-06-26: this script took
+# OUT_DIR as $1 with no guard). Refuse unless the operator explicitly opts in.
+if [[ "${ALLOW_OVERWRITE:-0}" != "1" ]]; then
+  TRACKED_COUNT="$(git ls-files -- "${OUT_DIR}" 2>/dev/null | wc -l | tr -d ' ')"
+  if [[ "${TRACKED_COUNT}" != "0" ]]; then
+    echo "ABORT: OUT_DIR already holds ${TRACKED_COUNT} git-tracked file(s) — committed evidence."
+    echo "  ${OUT_DIR}"
+    echo ""
+    echo "  Writing here would overwrite immutable historical captures."
+    echo "  Use a NEW cycle dir (e.g. docs/evidence/cycles/cycle-NN). To deliberately"
+    echo "  re-shoot this committed cycle, set ALLOW_OVERWRITE=1:"
+    echo "    ALLOW_OVERWRITE=1 scripts/qa-shoot.sh <out-dir> [port]"
+    exit 1
+  fi
+fi
+
 # ── Helper: cleanup on exit ───────────────────────────────────────────────────
 _cleanup() {
   if [[ -f "${PID_FILE}" ]]; then
