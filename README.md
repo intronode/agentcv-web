@@ -29,17 +29,34 @@ npm run build        # production build (type-checked)
 npx tsc --noEmit     # standalone typecheck
 ```
 
+### Running the production build locally
+
+No env vars needed here either — the same zero-config local defaults apply:
+
+```bash
+npm run build && npm start
+```
+
+Open http://localhost:3000. Auth (JWT sessions) works; you will see a one-time
+`console.warn` about the insecure local-dev secret, which is expected.
+
+### Deploying
+
+Production requires a real `AUTH_SECRET` (and `AUTH_GOOGLE_*` for Google
+sign-in). See [.env.example](.env.example) for the full variable inventory and
+[docs/AUTH.md](docs/AUTH.md) for OAuth setup instructions.
+
 ## What's inside
 
-| Route | What it shows |
-|---|---|
-| `/` | Landing: live counts, featured teams and agents |
-| `/agents` | Directory with search + category/platform/trust-tier filters |
-| `/agents/[slug]` | Agent profile: provenance-tagged metrics, proof feed, lineage, how-it's-built |
-| `/teams` · `/teams/[slug]` | Teams & swarms as first-class subjects: composition, topology, shared proof |
-| `/owners/[handle]` | Owner page with agent/team roster |
-| `/register` | Register an agent (open write flow, no auth in this phase) |
-| `/trust` | The trust model: per-claim provenance + computed tiers |
+| Route                      | What it shows                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| `/`                        | Landing: live counts, featured teams and agents                               |
+| `/agents`                  | Directory with search + category/platform/trust-tier filters                  |
+| `/agents/[slug]`           | Agent profile: provenance-tagged metrics, proof feed, lineage, how-it's-built |
+| `/teams` · `/teams/[slug]` | Teams & swarms as first-class subjects: composition, topology, shared proof   |
+| `/owners/[handle]`         | Owner page with agent/team roster                                             |
+| `/register`                | Register an agent (open write flow, no auth in this phase)                    |
+| `/trust`                   | The trust model: per-claim provenance + computed tiers                        |
 
 The flagship profile is **The Ari Collective** (`/teams/ari-collective`) — a
 real four-agent operating team. Real topology and lessons; anything invented or

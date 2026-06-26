@@ -141,3 +141,76 @@ width. Any width with `scrollWidth > viewport + 2px` causes
 320 or 360px will now fail the gate before a reviewer ever sees it.
 
 Vigilance is not the fix. The harness measures it directly.
+
+## Root cause — fresh-clone prod-mode startup broke (env config)
+
+> Identified 2026-06-26. Two confirmed failures reproduced from a clean clone
+> with zero env vars.
+
+### (a) The two failures
+
+**Failure 1 — `npm run build` throws at page-data collection:**
+`resolveSecret()` in `src/lib/auth.config.ts` is called at module scope
+(once for `authConfig.secret` and once for `fullConfig.secret` in `auth.ts`).
+Post-commit 752ef79 it hard-throws when `AUTH_SECRET` is absent, causing Next.js
+to crash during the static page-data collection phase of `npm run build`:
+`[AgentCV auth] AUTH_SECRET is not set. Set AUTH_SECRET...`
+
+**Failure 2 — `npm start` (NODE_ENV=production) logs "UntrustedHost" on every
+request:**
+Auth.js v5 (`@auth/core`) defaults `trustHost` to `false` under
+`NODE_ENV=production` unless one of `AUTH_URL`, `AUTH_TRUST_HOST`, `VERCEL`, or
+`CF_PAGES` is present. Neither `authConfig` nor `fullConfig` previously set
+`trustHost`. Pages still return HTTP 200 (Next.js renders them) but auth is
+fully broken — session reads fail silently. A route-status-only smoke test
+(checking HTTP 200) does not catch this; only a log scan does.
+
+### (b) The causal twist — commit 752ef79
+
+Commit 752ef79 remediated Laplace gate finding F2: a hardcoded
+`DEV_FALLBACK_SECRET` that was returned by `resolveSecret()` even in production
+(only logging a `console.error`). That original fallback was legitimately
+insecure — it allowed a production deployment to boot on a known, committed
+secret. The remediation replaced the silent fallback with a hard throw, which
+was correct for production but removed the only mechanism that let a zero-env
+local build succeed.
+
+### (c) Why every prior examiner / QA / gate cycle missed it
+
+All cycles ran via `scripts/qa-shoot.sh` from the canonical working directory
+(`/Users/aribot/projects/agentcv-web`). That directory has a gitignored
+`.env.local` containing `AUTH_SECRET` and `AUTH_TRUST_HOST`. Additionally,
+`qa-shoot.sh` passes `AUTH_URL="http://localhost:${PORT}"` on the `npm start`
+line, which also satisfies Auth.js's host-trust check independently.
+
+This double-masked both gaps:
+
+- `.env.local` supplied `AUTH_SECRET` → `resolveSecret()` never threw.
+- `AUTH_URL` on the start line → `trustHost` was inferred true at runtime.
+
+No test ever ran `npm run build` or `npm start` from a fresh clone with a
+scrubbed environment. The quickstart claimed "no env vars" but the build had
+silently depended on `.env.local` being present since 752ef79.
+
+### (d) The structural fix
+
+**auth.config.ts** — `isLocalRuntime()` gate: `resolveSecret()` now returns
+`LOCAL_DEV_FALLBACK` (a low-entropy plain-English constant — no "secret/key/
+token" in the variable name, no hex/base64 in the value, gitleaks-clean) with a one-time `console.warn` when
+`AUTH_SECRET` is absent and none of `VERCEL`, `VERCEL_ENV`, `CF_PAGES`, or
+`AGENTCV_PRODUCTION=1` is set. On any recognized cloud platform the hard throw
+is retained. `trustHost` is set in `authConfig` to `true` locally and inferred
+`true` for Vercel/CF Pages / explicit `AUTH_TRUST_HOST`/`AUTH_URL`.
+
+**scripts/smoke-prod-fresh.sh** (new, wired default-on into `qa-shoot.sh`):
+Clones the canonical repo to a temp dir, runs `npm ci`, builds and starts with
+`env -u AUTH_SECRET -u AUTH_URL -u AUTH_TRUST_HOST -u DEV_LOGIN -u SANITIZER_KEY`,
+then asserts HTTP 200 on five routes AND absence of `UntrustedHost` /
+`MissingSecret` / `AUTH_SECRET is not set` in the server log (a 200-only check
+would miss failure 2). Runs early in `qa-shoot.sh` so a zero-env boot failure
+aborts before the long screenshot pipeline. Skip is possible via
+`SKIP_FRESH_SMOKE=1` but prints a loud warning in the summary; silent skip
+would recreate the same masking pattern that let these bugs through.
+
+A reversion of the zero-env fallback without a fresh-clone gate is the same
+class of error as the original oversight. Both structural pieces are required.

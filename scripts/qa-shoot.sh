@@ -60,6 +60,26 @@ _cleanup() {
 # Register cleanup on abnormal exits (not on normal PASS exit — we do it manually there)
 trap '_cleanup' ERR INT TERM
 
+# ── STEP 0: Fresh-clone prod smoke (default-on; SKIP_FRESH_SMOKE=1 to skip) ──
+# Runs BEFORE the main pipeline so a zero-env boot failure aborts fast.
+# Uses port PORT+40 to avoid colliding with the main qa-shoot port.
+SMOKE_PORT=$((PORT + 40))
+
+if [[ "${SKIP_FRESH_SMOKE:-0}" == "1" ]]; then
+  echo ""
+  echo "================================================================"
+  echo "  ⚠ fresh-clone prod smoke SKIPPED (SKIP_FRESH_SMOKE=1)"
+  echo "    Run 'npm run smoke:prod' before any release/gate."
+  echo "================================================================"
+  echo ""
+else
+  echo ""
+  echo "[0] Running fresh-clone prod smoke on port ${SMOKE_PORT}..."
+  bash "${SCRIPT_DIR}/smoke-prod-fresh.sh" "${SMOKE_PORT}"
+  echo "[0] Fresh-clone prod smoke PASSED."
+  echo ""
+fi
+
 # ── STEP A: Assert port free ──────────────────────────────────────────────────
 echo "[a] Checking port ${PORT} is free..."
 OCCUPIED_PIDS="$(lsof -ti "tcp:${PORT}" 2>/dev/null || true)"

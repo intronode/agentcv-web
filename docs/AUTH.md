@@ -36,12 +36,15 @@ The internal `users.id` is stored in the JWT `sub` claim and exposed as
 
 ## AUTH_SECRET
 
-| Environment | Behavior                                                                  |
-| ----------- | ------------------------------------------------------------------------- |
-| Dev / local | Falls back to hardcoded hex. `console.warn` emitted.                      |
-| Production  | Must be set. `console.error` emitted if missing; Auth.js will also throw. |
+| Environment                | Behavior                                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Dev / local (no cloud env) | Falls back to a low-entropy plain-text constant. `console.warn` emitted once per process.              |
+| Production (cloud deploy)  | Must be set. Throws immediately at startup if absent. Gated by `isLocalRuntime()` in `auth.config.ts`. |
 
-Generate a production secret: `openssl rand -hex 32`
+"Local" means: none of `VERCEL`, `VERCEL_ENV`, `CF_PAGES`, `AGENTCV_PRODUCTION=1` is set — i.e. your dev machine
+or a local `npm start` of the production build. A Vercel or CF Pages deploy always has one of those vars.
+
+Generate a production secret: `openssl rand -base64 32`
 
 ## Owner claim flow
 
@@ -91,7 +94,7 @@ signed in, or a "Sign in" link otherwise.
 ```
 AUTH_GOOGLE_ID=<your-client-id>
 AUTH_GOOGLE_SECRET=<your-client-secret>
-AUTH_SECRET=<generate with: openssl rand -hex 32>
+AUTH_SECRET=<generate with: openssl rand -base64 32>
 ```
 
 **Production (Vercel)** — add to project environment variables:
@@ -99,7 +102,7 @@ AUTH_SECRET=<generate with: openssl rand -hex 32>
 ```
 AUTH_GOOGLE_ID=<your-client-id>
 AUTH_GOOGLE_SECRET=<your-client-secret>
-AUTH_SECRET=<different value from local — openssl rand -hex 32>
+AUTH_SECRET=<different value from local — openssl rand -base64 32>
 SANITIZER_KEY=<generate with: openssl rand -hex 32>  # 64 hex chars, AES-256-GCM key for deny-list term encryption — [[HJ ACTION]]
 ```
 

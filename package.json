@@ -10,7 +10,8 @@
     "prepare": "husky || true",
     "db:reset": "tsx scripts/db-reset.ts",
     "shoot": "node scripts/shoot.mjs",
-    "check:contrast": "node scripts/check-contrast.mjs --port 3190"
+    "check:contrast": "node scripts/check-contrast.mjs --port 3190",
+    "smoke:prod": "bash scripts/smoke-prod-fresh.sh"
   },
   "dependencies": {
     "better-sqlite3": "^12.10.0",
