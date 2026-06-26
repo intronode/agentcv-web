@@ -214,3 +214,144 @@ would recreate the same masking pattern that let these bugs through.
 
 A reversion of the zero-env fallback without a fresh-clone gate is the same
 class of error as the original oversight. Both structural pieces are required.
+
+## WCAG AA contrast gate — remediation (2026-06-26)
+
+### Prior "contrast PASS" results were NOT trustworthy
+
+All prior runs of `check-contrast.mjs` that reported "ZERO contrast failures" were
+false passes. Three compounding defects:
+
+**(a) Import-time side effect in shoot.mjs:** `check-contrast.mjs` imports `{ ROUTES }`
+from `shoot.mjs`. `shoot.mjs` called `main().catch(...)` at module top level (bare, not
+guarded). Importing shoot.mjs therefore launched a full screenshot run as an unintended
+side effect — the contrast check was running inside an already-broken context.
+
+**(b) Silent false pass on server-absent runs:** When a route's navigation or
+`page.evaluate` failed (e.g. because no server was running), the script pushed
+`{ slug, failures: [], scanned: 0 }` and continued. The final gate only exited 1 when
+`uniquePairs > 0`. With no server running, every route was skipped → `uniquePairs === 0`
+→ it printed "ZERO contrast failures" and exited 0. A completely silent false pass.
+There was also no server-reachability preflight.
+
+**(c) Never wired into qa-shoot.sh:** `check-contrast.mjs` was never called by
+`qa-shoot.sh`. It had a comment at line 25 saying "run as a SEPARATE verification step,
+not inside qa-shoot.sh." It never gated anything.
+
+### Fixes applied (2026-06-26)
+
+**scripts/shoot.mjs** — ESM main-module guard: added `import { fileURLToPath } from 'url'`
+and replaced the bare `main().catch(...)` with:
+
+    const INVOKED_DIRECTLY =
+      process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+    if (INVOKED_DIRECTLY) {
+      main().catch(err => { console.error('shoot.mjs fatal:', err); process.exit(1); });
+    }
+
+Importing `shoot.mjs` now only exports `ROUTES` without triggering any screenshot run.
+
+**scripts/check-contrast.mjs** — three fixes:
+
+- Server preflight: fetches `${baseUrl}/` before browser launch; exits 2 with explicit
+  error message if server is unreachable. Cannot silently skip routes because no server.
+- Skip-as-failure: both skip branches (load failed, evaluate failed) now push
+  `{ ..., skipped: true, reason: '...' }`. Zero text nodes after evaluate also marks as
+  skipped. Final gate computes `skippedRoutes` and exits 1 if any route was skipped.
+- Comment at line 25 updated to reflect integration into qa-shoot.sh.
+
+**scripts/qa-shoot.sh** — Step E2 added immediately after `npm run shoot`:
+
+    # -- STEP E2: WCAG AA contrast gate -------------------------------------------
+    echo "[e2] Running contrast gate (WCAG AA)..."
+    node scripts/check-contrast.mjs --port "${PORT}"
+    echo "    Contrast gate PASSED."
+
+`set -euo pipefail` is active in qa-shoot.sh; if check-contrast exits non-zero the ERR
+trap fires `_cleanup` (kills the server). Contrast regression now fails the pipeline.
+
+### Real contrast results (2026-06-26)
+
+First real run against 20 routes (prod-mode build, port 3190):
+
+- **20 routes checked, 0 routes with failures, 0 routes skipped, 0 unique failing pairs**
+- Exit 0, summary: "ZERO contrast failures across all routes. All routes evaluated."
+- Design tokens in `globals.css` (--color-text-primary #fafafa, --color-text-secondary
+  #a3a3a3, --color-text-tertiary #838383) all pass WCAG AA on the #0a0a0a surface.
+- No raw Tailwind muted utilities (text-zinc-500/600) were found in rendered output on
+  any of the 20 routes — all text uses the token system, which passes.
+
+**Genuine failures found and fixed:** zero. No color pairs required remediation.
+
+Evidence: `docs/evidence/contrast/contrast-before-fix-2026-06-26.txt` and
+`docs/evidence/contrast/contrast-after-fix-2026-06-26.txt` (identical — no failures
+either run).
+
+### Contrast is now a hard gate
+
+Contrast regressions now fail `scripts/qa-shoot.sh` at Step e2 before the pipeline
+completes. A future PR introducing a failing pair will be caught automatically.
+
+### Second-layer fix: canvas-based color resolver (2026-06-26, pass 2)
+
+The first pass had a remaining element-level silent skip: `parseRgbInBrowser` used a regex
+that could not parse `color-mix(in oklab, ...)` — Chromium's serialization of Tailwind v4
+opacity modifiers like `text-text-tertiary/60`. These elements silently disappeared from the
+scan, producing a false "0 failures" result even after the first pass.
+
+**Root cause:** `getComputedStyle(el).color` for a Tailwind class like `text-text-tertiary/60`
+returns `oklab(0.609983 0.0000276864 0.0000122488 / 0.6)` in Chromium, not `rgba(...)`.
+The regex `/rgba?\(...\)/` returned null → `if (!fgParsed) continue` → element silently dropped.
+
+**Fix:** Replaced `parseRgbInBrowser` (regex-based) with `resolveColor` (canvas-based) inside
+the `browserContrastScan()` function. A 1×1 canvas with `getImageData` resolves ANY valid CSS
+color string — `color-mix()`, `oklch()`, `hsl()`, named colors — by delegating to the browser's
+own color parser. Elements whose color truly cannot be resolved are now tracked in an `uncheckable`
+array and treated as gate failures.
+
+**Real failures uncovered:**
+
+- `MetricGrid.tsx:69` — badge "not estimated": `text-text-tertiary/60` at 9px → ≈2.59:1 (threshold 4.5:1) FAIL
+- `MetricGrid.tsx:82` — link "why?": `text-text-tertiary/60` at 9px → ≈2.59:1 (threshold 4.5:1) FAIL
+- `MetricGrid.tsx:94` — fallback note: `text-text-tertiary/70` at 11px → ≈3.1:1 (threshold 4.5:1) FAIL
+- `teams/[slug]/page.tsx:76` — token-economics note span: `text-text-tertiary/70` at 12px → ≈3.1:1 FAIL
+- `teams/[slug]/page.tsx:83` — cost-tracking note span: `text-text-tertiary/70` at 12px → ≈3.1:1 FAIL
+- `FileViewer.tsx:207` — public-disclosure text: `text-zinc-500` at 11px → ≈4.1:1 (threshold 4.5:1) FAIL
+
+These failures appeared on /teams/ari-collective, /teams/magentic-one, /teams/helios-swarm,
+/teams/ari-collective/files/lessons, /teams/ari-collective/files/topology.
+
+**CSS fixes applied:**
+
+- Removed `/60` and `/70` opacity modifiers from three `text-text-tertiary/*` classes in MetricGrid.tsx.
+- Removed `/70` opacity modifiers from two `text-text-tertiary/*` classes in teams/[slug]/page.tsx.
+- Bumped `text-zinc-500` → `text-zinc-400` in FileViewer.tsx public-disclosure block.
+  `text-text-tertiary` (#838383) already reads as muted/tertiary; opacity modifiers were decorative,
+  not semantic, and caused the AA failures. zinc-400 (#a1a1aa) passes AA on all dark surfaces.
+
+**After fix:** All 20 routes checked, 0 failures, 0 skipped, 0 uncheckable. Exit 0.
+
+Evidence: `docs/evidence/contrast/contrast-before-fix-2026-06-26.txt` (overwritten — now shows
+real failures) and `docs/evidence/contrast/contrast-after-fix-2026-06-26.txt` (clean run).
+
+### Contrast gate — scope & known limitations (2026-06-26, pass 3)
+
+The contrast gate (`scripts/check-contrast.mjs`) scans the 20 public ROUTES in default
+(unauthenticated, pre-interaction) render state. Auth-gated routes and post-interaction
+states (modal open, drawer expanded, etc.) are not auto-covered by the current gate.
+
+A manual source review additionally fixed four sub-AA `text-zinc-600` "private" file-visibility
+badges (~2.8:1) that are only rendered when `f.visibility === 'private'` — correctly not surfaced
+by the public-routes gate, but genuinely sub-AA for any owner viewing private files. Fixed to
+`text-zinc-400` (~5.9:1):
+
+- `src/app/teams/[slug]/page.tsx:540`
+- `src/app/agents/[slug]/page.tsx:401`
+- `src/components/FileViewer.tsx:108`
+- `src/components/FileViewer.tsx:140`
+
+The sanitizer owner UI (`src/components/ReviewUI.tsx`, `src/components/ScanLogPanel.tsx`)
+still contains `text-zinc-500`/`text-zinc-600` on auth-gated surfaces. These are flagged as
+a follow-up requiring an authenticated contrast pass to verify properly. Out of scope for
+this fix — the gate correctly does not see them, and authenticated-session QA has not yet
+been designed.

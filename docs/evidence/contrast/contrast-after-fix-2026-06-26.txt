@@ -1,0 +1,47 @@
+
+check-contrast.mjs — WCAG AA audit
+Base URL: http://localhost:3190
+Routes:   20
+Thresholds: normal text >=4.5:1, large text >=3:1
+
+Checking server reachability at http://localhost:3190/...
+Server reachable (HTTP 200). OK.
+
+  -> home                                      PASS (31 pairs, 152 els)
+  -> teams-directory                           PASS (16 pairs, 262 els)
+  -> teams-filtered-orchestrator-worker        PASS (14 pairs, 115 els)
+  -> teams-ari-collective                      PASS (20 pairs, 163 els)
+  -> teams-magentic-one                        PASS (20 pairs, 135 els)
+  -> teams-helios-swarm                        PASS (19 pairs, 108 els)
+  -> compare-three                             PASS (12 pairs, 209 els)
+  -> agents-directory                          PASS (15 pairs, 208 els)
+  -> agents-filtered-openclaw                  PASS (12 pairs, 87 els)
+  -> agents-ari                                PASS (16 pairs, 90 els)
+  -> owners-intronode                          PASS (17 pairs, 240 els)
+  -> harness-engineering                       PASS (32 pairs, 124 els)
+  -> register-chooser                          PASS (15 pairs, 31 els)
+  -> register-agent                            PASS (10 pairs, 37 els)
+  -> signin                                    PASS (7 pairs, 19 els)
+  -> submit                                    PASS (11 pairs, 47 els)
+  -> request                                   PASS (11 pairs, 29 els)
+  -> not-found                                 PASS (7 pairs, 17 els)
+  -> teams-ari-collective-files-lessons        PASS (9 pairs, 46 els)
+  -> teams-ari-collective-files-topology       PASS (9 pairs, 66 els)
+
+--------------------------------------------------------------------------------
+PER-ROUTE CONTRAST FAILURES
+--------------------------------------------------------------------------------
+
+  (no per-route failures)
+
+--------------------------------------------------------------------------------
+UNIQUE FAILING PAIRS SUMMARY
+--------------------------------------------------------------------------------
+
+  (no failing pairs)
+
+--------------------------------------------------------------------------------
+SUMMARY: 20 routes checked, 0 routes with failures, 0 routes skipped, 0 unique failing pairs, 0 uncheckable elements
+--------------------------------------------------------------------------------
+
+ZERO contrast failures across all routes. All routes evaluated.

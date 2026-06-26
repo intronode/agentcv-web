@@ -66,7 +66,7 @@ export default function MetricGrid({ metrics }: { metrics: MetricRow[] }) {
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                 <span className="min-w-0 text-xs text-text-tertiary">{metric.label}</span>
                 {/* Deliberate-rigor badge */}
-                <span className="shrink-0 rounded border border-dashed border-text-tertiary/30 px-1 py-px text-[9px] font-medium uppercase tracking-wide text-text-tertiary/60">
+                <span className="shrink-0 rounded border border-dashed border-text-tertiary/30 px-1 py-px text-[9px] font-medium uppercase tracking-wide text-text-tertiary">
                   not estimated
                 </span>
               </div>
@@ -79,7 +79,7 @@ export default function MetricGrid({ metrics }: { metrics: MetricRow[] }) {
                 {/* Why link */}
                 <Link
                   href="/harness-engineering#trust-ladder"
-                  className="text-[9px] text-text-tertiary/60 underline underline-offset-2 hover:text-text-tertiary"
+                  className="text-[9px] text-text-tertiary underline underline-offset-2 hover:text-text-secondary"
                   title="Why we don't invent numbers we haven't reconciled"
                 >
                   why?
@@ -91,7 +91,7 @@ export default function MetricGrid({ metrics }: { metrics: MetricRow[] }) {
                   {metric.note}
                 </p>
               ) : (
-                <p className="mt-2 border-t border-border-subtle pt-2 text-[11px] leading-relaxed text-text-tertiary/70">
+                <p className="mt-2 border-t border-border-subtle pt-2 text-[11px] leading-relaxed text-text-tertiary">
                   Deliberately not estimated — we publish what we can stand behind.
                 </p>
               )}

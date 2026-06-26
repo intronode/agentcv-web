@@ -33,6 +33,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { parseArgs } from 'util';
 import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 
 // Overflow tolerance: browser sub-pixel rounding can add ≤2 px
@@ -999,7 +1000,11 @@ async function main() {
   console.log(`\nDone. Output: ${outDir}\n`);
 }
 
-main().catch(err => {
-  console.error('shoot.mjs fatal:', err);
-  process.exit(1);
-});
+const INVOKED_DIRECTLY =
+  process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (INVOKED_DIRECTLY) {
+  main().catch(err => {
+    console.error('shoot.mjs fatal:', err);
+    process.exit(1);
+  });
+}

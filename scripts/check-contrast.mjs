@@ -22,7 +22,7 @@
  *   - De-duplicates by (fg hex, bg hex, is-large-text) pair
  *   - Reports per-route table + unique-failing-pairs summary
  *
- * Integration note: run as a SEPARATE verification step, not inside qa-shoot.sh.
+ * Integration note: wired into qa-shoot.sh as a hard gate (Step e2). Also runnable standalone.
  * To verify after a build: npm run check:contrast
  * Or with explicit port: node scripts/check-contrast.mjs --port 3190
  */
@@ -104,21 +104,30 @@ function toHex({ r, g, b }) {
  */
 function browserContrastScan() {
   /**
-   * @param {string} str
-   * @returns {{r:number,g:number,b:number,a:number}|null}
+   * Resolve ANY CSS color string to { r, g, b, a } using a 1×1 canvas.
+   * Handles rgb(), rgba(), hsl(), color-mix(), oklab(), named colors, etc.
+   * Returns null ONLY if the string is empty, transparent, or truly unresolvable.
    */
-  function parseRgbInBrowser(str) {
-    if (!str) return null;
-    const m = str.match(
-      /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/,
-    );
-    if (!m) return null;
-    return {
-      r: parseInt(m[1], 10),
-      g: parseInt(m[2], 10),
-      b: parseInt(m[3], 10),
-      a: m[4] !== undefined ? parseFloat(m[4]) : 1,
-    };
+  function resolveColor(str) {
+    if (!str || str === 'transparent' || str === 'rgba(0, 0, 0, 0)') return null;
+    try {
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = 1;
+      const ctx = cv.getContext('2d', { willReadFrequently: true });
+      // Test if the color is parseable: set sentinel then attempt target
+      ctx.fillStyle = 'rgba(0,0,0,0)'; // clear sentinel
+      ctx.fillStyle = str;             // attempt to set the target color
+      const resolved = ctx.fillStyle;  // browser normalizes to rgb(...) if valid
+      if (resolved === 'rgba(0, 0, 0, 0)') return null; // rejected / transparent
+      // Measure the actual pixel value
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillStyle = str;
+      ctx.fillRect(0, 0, 1, 1);
+      const d = ctx.getImageData(0, 0, 1, 1).data;
+      return { r: d[0], g: d[1], b: d[2], a: d[3] / 255 };
+    } catch (_e) {
+      return null;
+    }
   }
 
   function alphaBlendInBrowser(fg, bg) {
@@ -153,7 +162,7 @@ function browserContrastScan() {
       const cs = window.getComputedStyle(node);
       const bgColor = cs.backgroundColor;
       if (!bgColor || bgColor === 'transparent' || bgColor === 'rgba(0, 0, 0, 0)') continue;
-      const parsed = parseRgbInBrowser(bgColor);
+      const parsed = resolveColor(bgColor);
       if (!parsed) continue;
       if (parsed.a === 0) continue;
       if (parsed.a < 1) {
@@ -205,6 +214,7 @@ function browserContrastScan() {
     return classes || el.tagName.toLowerCase();
   }
 
+  const uncheckable = [];
   const results = [];
 
   // Walk all elements — get those with direct text children
@@ -231,8 +241,19 @@ function browserContrastScan() {
     // Get foreground color
     const fgStr = cs.color;
     if (!fgStr) continue;
-    const fgParsed = parseRgbInBrowser(fgStr);
-    if (!fgParsed) continue;
+    const fgParsed = resolveColor(fgStr);
+    if (!fgParsed) {
+      // Not transparent/empty but canvas couldn't parse — track as uncheckable
+      if (fgStr && fgStr !== 'transparent' && fgStr !== 'rgba(0, 0, 0, 0)') {
+        uncheckable.push({
+          tag: el.tagName.toLowerCase(),
+          classSig: classSignature(el),
+          colorStr: fgStr.slice(0, 100),
+          textSample: el.textContent.trim().slice(0, 40),
+        });
+      }
+      continue;
+    }
 
     // Get effective background
     const bgComposited = effectiveBg(el);
@@ -264,7 +285,7 @@ function browserContrastScan() {
     });
   }
 
-  return results;
+  return { results, uncheckable };
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
@@ -276,7 +297,21 @@ async function main() {
   console.log(`\ncheck-contrast.mjs — WCAG AA audit`);
   console.log(`Base URL: ${baseUrl}`);
   console.log(`Routes:   ${ROUTES.length}`);
-  console.log(`Thresholds: normal text ≥4.5:1, large text ≥3:1\n`);
+  console.log(`Thresholds: normal text >=4.5:1, large text >=3:1\n`);
+
+  // ── 2a. SERVER PREFLIGHT ────────────────────────────────────────────────────
+  console.log(`Checking server reachability at ${baseUrl}/...`);
+  try {
+    const preflight = await fetch(`${baseUrl}/`, { signal: AbortSignal.timeout(5000) });
+    if (!preflight.ok) {
+      console.error(`ERROR: cannot reach server at ${baseUrl} — HTTP ${preflight.status} (expected 2xx). Start a server first (the gate runs this while the qa-shoot server is up; standalone: npm start) before running check-contrast.`);
+      process.exit(2);
+    }
+    console.log(`Server reachable (HTTP ${preflight.status}). OK.\n`);
+  } catch (err) {
+    console.error(`ERROR: cannot reach server at ${baseUrl} — ${err.message}. Start a server first (the gate runs this while the qa-shoot server is up; standalone: npm start) before running check-contrast.`);
+    process.exit(2);
+  }
 
   const browser = await chromium.launch({ headless: true });
 
@@ -287,7 +322,7 @@ async function main() {
 
   for (const route of ROUTES) {
     const url = `${baseUrl}${route.path}`;
-    process.stdout.write(`  → ${route.slug.padEnd(42)}`);
+    process.stdout.write(`  -> ${route.slug.padEnd(42)}`);
 
     const context = await browser.newContext({
       viewport: DESKTOP,
@@ -300,10 +335,11 @@ async function main() {
     } catch {
       try {
         await page.goto(url, { waitUntil: 'load', timeout: 30000 });
-      } catch {
+      } catch (loadErr) {
         console.log(`SKIP (load failed)`);
         await context.close();
-        routeResults.push({ slug: route.slug, failures: [], scanned: 0 });
+        // 2b. Track skips as failures
+        routeResults.push({ slug: route.slug, failures: [], scanned: 0, skipped: true, reason: `load failed: ${loadErr.message}` });
         continue;
       }
     }
@@ -312,16 +348,31 @@ async function main() {
 
     // Run the contrast scan in browser context
     let rawResults;
+    let uncheckable;
     try {
-      rawResults = await page.evaluate(browserContrastScan);
+      const evalResult = await page.evaluate(browserContrastScan);
+      rawResults = evalResult.results;
+      uncheckable = evalResult.uncheckable;
     } catch (err) {
       console.log(`SKIP (evaluate failed: ${err.message})`);
       await context.close();
-      routeResults.push({ slug: route.slug, failures: [], scanned: 0 });
+      // 2b. Track skips as failures
+      routeResults.push({ slug: route.slug, failures: [], scanned: 0, skipped: true, reason: `evaluate failed: ${err.message}` });
       continue;
     }
 
     await context.close();
+
+    if (uncheckable.length > 0) {
+      console.log(`     (${uncheckable.length} uncheckable: ${uncheckable.map(u => `"${u.textSample}"`).join(', ').slice(0, 80)})`);
+    }
+
+    // 2b. Zero text nodes = page did not render — treat as skip/failure
+    if (rawResults.length === 0) {
+      console.log(`SKIP (0 text nodes — page likely did not render)`);
+      routeResults.push({ slug: route.slug, failures: [], scanned: 0, skipped: true, reason: '0 text nodes scanned — page likely did not render' });
+      continue;
+    }
 
     // Process results
     const failures = [];
@@ -382,17 +433,25 @@ async function main() {
       }
     }
 
-    const status = failures.length === 0 ? 'PASS' : `FAIL (${failures.length} pair${failures.length === 1 ? '' : 's'})`;
+    const uncheckableCount = uncheckable.length;
+    let status;
+    if (failures.length === 0 && uncheckableCount === 0) {
+      status = `PASS (${seenPairs.size} pairs, ${rawResults.length} els)`;
+    } else if (failures.length > 0) {
+      status = `FAIL (${failures.length} pair${failures.length === 1 ? '' : 's'}${uncheckableCount > 0 ? `; ${uncheckableCount} uncheckable` : ''})`;
+    } else {
+      status = `FAIL (${uncheckableCount} uncheckable)`;
+    }
     console.log(status);
-    routeResults.push({ slug: route.slug, failures, scanned: seenPairs.size + failures.length });
+    routeResults.push({ slug: route.slug, failures, scanned: seenPairs.size + failures.length, uncheckableCount });
   }
 
   await browser.close();
 
   // ── Per-route report ───────────────────────────────────────────────────────
-  console.log('\n' + '─'.repeat(80));
+  console.log('\n' + '-'.repeat(80));
   console.log('PER-ROUTE CONTRAST FAILURES');
-  console.log('─'.repeat(80));
+  console.log('-'.repeat(80));
 
   let totalRouteFailures = 0;
   for (const r of routeResults) {
@@ -400,7 +459,7 @@ async function main() {
     totalRouteFailures++;
     console.log(`\nRoute: ${r.slug}`);
     console.log(`  ${'FG'.padEnd(10)} ${'BG'.padEnd(10)} ${'Ratio'.padEnd(8)} ${'Threshold'.padEnd(11)} ${'Size'.padEnd(8)} Text sample`);
-    console.log(`  ${'─'.repeat(70)}`);
+    console.log(`  ${'-'.repeat(70)}`);
     for (const f of r.failures) {
       const large = f.isLargeText ? ' (large)' : '';
       console.log(
@@ -414,20 +473,20 @@ async function main() {
   }
 
   // ── Unique failing pairs summary ──────────────────────────────────────────
-  console.log('\n' + '─'.repeat(80));
+  console.log('\n' + '-'.repeat(80));
   console.log('UNIQUE FAILING PAIRS SUMMARY');
-  console.log('─'.repeat(80));
+  console.log('-'.repeat(80));
 
   const globalFails = Array.from(globalFailMap.values()).sort((a, b) => a.ratio - b.ratio);
 
   if (globalFails.length === 0) {
-    console.log('\n  ✅ ZERO contrast failures across all routes.');
+    console.log('\n  (no failing pairs)');
   } else {
     console.log(`\n  ${globalFails.length} unique failing pair${globalFails.length === 1 ? '' : 's'}:\n`);
     console.log(
       `  ${'FG'.padEnd(10)} ${'BG'.padEnd(10)} ${'Ratio'.padEnd(8)} ${'Thresh'.padEnd(8)} ${'Type'.padEnd(10)} Routes`,
     );
-    console.log(`  ${'─'.repeat(70)}`);
+    console.log(`  ${'-'.repeat(70)}`);
     for (const f of globalFails) {
       const type = f.isLargeText ? 'large' : 'normal';
       console.log(
@@ -437,18 +496,36 @@ async function main() {
     }
   }
 
-  // ── Final summary line ─────────────────────────────────────────────────────
+  // ── 2c. Final gate logic (fail-loud) ─────────────────────────────────────
+  const skippedRoutes = routeResults.filter((r) => r.skipped);
   const routesChecked = routeResults.length;
   const routesFailed = routeResults.filter((r) => r.failures.length > 0).length;
   const uniquePairs = globalFails.length;
 
-  console.log('\n' + '─'.repeat(80));
-  console.log(`SUMMARY: ${routesChecked} routes checked, ${routesFailed} routes with failures, ${uniquePairs} unique failing pair${uniquePairs === 1 ? '' : 's'}`);
-  console.log('─'.repeat(80) + '\n');
+  const totalUncheckable = routeResults.reduce((s, r) => s + (r.uncheckableCount || 0), 0);
+
+  console.log('\n' + '-'.repeat(80));
+  console.log(`SUMMARY: ${routesChecked} routes checked, ${routesFailed} routes with failures, ${skippedRoutes.length} routes skipped, ${uniquePairs} unique failing pair${uniquePairs === 1 ? '' : 's'}, ${totalUncheckable} uncheckable elements`);
+  console.log('-'.repeat(80) + '\n');
+
+  if (skippedRoutes.length > 0) {
+    console.error(`CHECK FAILED: ${skippedRoutes.length} route(s) could not be evaluated (skipped) — a skipped route is a failure of the check, NOT a pass:`);
+    for (const r of skippedRoutes) {
+      console.error(`  - ${r.slug}: ${r.reason}`);
+    }
+    console.error('');
+    process.exit(1);
+  }
 
   if (uniquePairs > 0) {
     process.exit(1);
   }
+
+  if (totalUncheckable > 0) {
+    process.exit(1);
+  }
+
+  console.log('ZERO contrast failures across all routes. All routes evaluated.');
 }
 
 main().catch((err) => {

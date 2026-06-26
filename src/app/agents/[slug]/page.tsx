@@ -398,7 +398,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
                     >
                       <span className="font-mono truncate">{f.path}</span>
                       {f.visibility === 'private' && (
-                        <span className="shrink-0 text-[10px] uppercase tracking-wide text-zinc-600 border border-zinc-700 rounded px-1.5 py-0.5">
+                        <span className="shrink-0 text-[10px] uppercase tracking-wide text-zinc-400 border border-zinc-700 rounded px-1.5 py-0.5">
                           private
                         </span>
                       )}

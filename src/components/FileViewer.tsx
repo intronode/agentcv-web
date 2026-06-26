@@ -105,7 +105,7 @@ export function FileViewer({
                     {f.path}
                   </a>
                   {f.visibility === 'private' && (
-                    <span className="ml-2 text-[10px] text-zinc-600 uppercase tracking-wide">
+                    <span className="ml-2 text-[10px] text-zinc-400 uppercase tracking-wide">
                       private
                     </span>
                   )}
@@ -137,7 +137,7 @@ export function FileViewer({
                   {f.path}
                 </a>
                 {f.visibility === 'private' && (
-                  <span className="ml-2 text-[10px] text-zinc-600 uppercase tracking-wide">
+                  <span className="ml-2 text-[10px] text-zinc-400 uppercase tracking-wide">
                     private
                   </span>
                 )}
@@ -203,7 +203,7 @@ export function FileViewer({
 
           {/* Disclosure copy — public files only (§9.2 verbatim) */}
           {publicDisclosure && (
-            <div className="mb-4 px-3 py-2 border border-zinc-800 rounded text-[11px] text-zinc-500 leading-relaxed">
+            <div className="mb-4 px-3 py-2 border border-zinc-800 rounded text-[11px] text-zinc-400 leading-relaxed">
               This file was scanned for secrets, personal information, and confidential business
               references before publication. Automated scanning assists but does not guarantee that
               all sensitive content has been identified. Person names and some location references

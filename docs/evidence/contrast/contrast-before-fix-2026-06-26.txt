@@ -1,0 +1,79 @@
+
+check-contrast.mjs — WCAG AA audit
+Base URL: http://localhost:3190
+Routes:   20
+Thresholds: normal text >=4.5:1, large text >=3:1
+
+Checking server reachability at http://localhost:3190/...
+Server reachable (HTTP 200). OK.
+
+  -> home                                      PASS (31 pairs, 152 els)
+  -> teams-directory                           PASS (16 pairs, 262 els)
+  -> teams-filtered-orchestrator-worker        PASS (14 pairs, 115 els)
+  -> teams-ari-collective                      FAIL (2 pairs)
+  -> teams-magentic-one                        FAIL (1 pair)
+  -> teams-helios-swarm                        FAIL (1 pair)
+  -> compare-three                             PASS (12 pairs, 209 els)
+  -> agents-directory                          PASS (15 pairs, 208 els)
+  -> agents-filtered-openclaw                  PASS (12 pairs, 87 els)
+  -> agents-ari                                PASS (16 pairs, 90 els)
+  -> owners-intronode                          PASS (17 pairs, 240 els)
+  -> harness-engineering                       PASS (32 pairs, 124 els)
+  -> register-chooser                          PASS (15 pairs, 31 els)
+  -> register-agent                            PASS (10 pairs, 37 els)
+  -> signin                                    PASS (7 pairs, 19 els)
+  -> submit                                    PASS (11 pairs, 47 els)
+  -> request                                   PASS (11 pairs, 29 els)
+  -> not-found                                 PASS (7 pairs, 17 els)
+  -> teams-ari-collective-files-lessons        FAIL (1 pair)
+  -> teams-ari-collective-files-topology       FAIL (1 pair)
+
+--------------------------------------------------------------------------------
+PER-ROUTE CONTRAST FAILURES
+--------------------------------------------------------------------------------
+
+Route: teams-ari-collective
+  FG         BG         Ratio    Threshold   Size     Text sample
+  ----------------------------------------------------------------------
+  #565656    #101010    2.59     4.5         9px      "not estimated"
+  #5F5F5F    #0A0A0A    3.1      4.5         12px     "[unknown] means it was not tracked — not"
+
+Route: teams-magentic-one
+  FG         BG         Ratio    Threshold   Size     Text sample
+  ----------------------------------------------------------------------
+  #5F5F5F    #0A0A0A    3.1      4.5         12px     "[unknown] means it was not tracked — not"
+
+Route: teams-helios-swarm
+  FG         BG         Ratio    Threshold   Size     Text sample
+  ----------------------------------------------------------------------
+  #5F5F5F    #0A0A0A    3.1      4.5         12px     "[unknown] means it was not tracked — not"
+
+Route: teams-ari-collective-files-lessons
+  FG         BG         Ratio    Threshold   Size     Text sample
+  ----------------------------------------------------------------------
+  #71717B    #0A0A0A    4.1      4.5         11px     "This file was scanned for secrets, perso"
+
+Route: teams-ari-collective-files-topology
+  FG         BG         Ratio    Threshold   Size     Text sample
+  ----------------------------------------------------------------------
+  #71717B    #0A0A0A    4.1      4.5         11px     "This file was scanned for secrets, perso"
+
+--------------------------------------------------------------------------------
+UNIQUE FAILING PAIRS SUMMARY
+--------------------------------------------------------------------------------
+
+  3 unique failing pairs:
+
+  FG         BG         Ratio    Thresh   Type       Routes
+  ----------------------------------------------------------------------
+  #565656    #101010    2.59     4.5      normal     teams-ari-collective
+       Sample: "not estimated"
+  #5F5F5F    #0A0A0A    3.1      4.5      normal     teams-ari-collective, teams-magentic-one, teams-helios-swarm
+       Sample: "[unknown] means it was not tracked — not"
+  #71717B    #0A0A0A    4.1      4.5      normal     teams-ari-collective-files-lessons, teams-ari-collective-files-topology
+       Sample: "This file was scanned for secrets, perso"
+
+--------------------------------------------------------------------------------
+SUMMARY: 20 routes checked, 5 routes with failures, 0 routes skipped, 3 unique failing pairs, 0 uncheckable elements
+--------------------------------------------------------------------------------
+

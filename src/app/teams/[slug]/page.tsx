@@ -73,14 +73,14 @@ function TokenEconomicsSection({ metrics }: { metrics: MetricRow[] }) {
       <SectionHeading>Token economics</SectionHeading>
       <p className="mt-1 text-xs text-text-tertiary">
         Cost transparency is part of the honesty architecture.{' '}
-        <span className="text-text-tertiary/70">
+        <span className="text-text-tertiary">
           [unknown] means it was not tracked — not that it is zero.
         </span>
       </p>
       {costMetrics.length === 0 ? (
         <div className="mt-3 rounded-lg border border-dashed border-border p-5 text-sm text-text-tertiary">
           No cost metrics on record.{' '}
-          <span className="text-text-tertiary/70">
+          <span className="text-text-tertiary">
             Cost tracking is hard across runtimes; honest absence beats invented figures.
           </span>
         </div>
@@ -537,7 +537,7 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
                     >
                       <span className="font-mono truncate">{f.path}</span>
                       {f.visibility === 'private' && (
-                        <span className="shrink-0 text-[10px] uppercase tracking-wide text-zinc-600 border border-zinc-700 rounded px-1.5 py-0.5">
+                        <span className="shrink-0 text-[10px] uppercase tracking-wide text-zinc-400 border border-zinc-700 rounded px-1.5 py-0.5">
                           private
                         </span>
                       )}

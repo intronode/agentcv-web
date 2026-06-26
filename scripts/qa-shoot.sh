@@ -9,6 +9,7 @@
 #   c. Start npm start on PORT, resolve real next-server PID via lsof
 #   d. Health gate: HTTP 200 on /, stylesheet 200, buildId match
 #   e. npm run shoot
+#   e2. WCAG AA contrast gate (check-contrast.mjs)
 #   f. Kill server, assert port free
 #   g. Print PASS summary
 #
@@ -252,6 +253,12 @@ echo ""
 echo "[e] Running npm run shoot..."
 npm run shoot -- --port "${PORT}" --out "${OUT_DIR}"
 
+# ── STEP E2: WCAG AA contrast gate -------------------------------------------
+echo ""
+echo "[e2] Running contrast gate (WCAG AA)..."
+node scripts/check-contrast.mjs --port "${PORT}"
+echo "    Contrast gate PASSED."
+
 # ── STEP F: Kill server, assert port free ─────────────────────────────────────
 echo ""
 echo "[f] Stopping server (PID ${SERVER_PID})..."
@@ -327,7 +334,7 @@ fi
 
 echo "================================================================"
 echo "  PASS  |  ${SHOT_COUNT} shots captured  |  ${UNEXPECTED_COUNT} unexpected console error(s)"
-echo "  Interaction captures: register-team-success ✓  register-chooser ✓  request-success ✓  agents-filtered ✓  sanitizer ✓"
+echo "  Interaction captures: register-team-success check  register-chooser check  request-success check  agents-filtered check  sanitizer check  contrast-gate check"
 echo "  Output: ${OUT_DIR}"
 echo "  Console log: ${CONSOLE_LOG}"
 echo "================================================================"
