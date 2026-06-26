@@ -52,16 +52,44 @@ echo ""
 # repeated cycle-01 re-contamination, root-caused 2026-06-26: this script took
 # OUT_DIR as $1 with no guard). Refuse unless the operator explicitly opts in.
 if [[ "${ALLOW_OVERWRITE:-0}" != "1" ]]; then
-  TRACKED_COUNT="$(git ls-files -- "${OUT_DIR}" 2>/dev/null | wc -l | tr -d ' ')"
-  if [[ "${TRACKED_COUNT}" != "0" ]]; then
-    echo "ABORT: OUT_DIR already holds ${TRACKED_COUNT} git-tracked file(s) — committed evidence."
-    echo "  ${OUT_DIR}"
-    echo ""
-    echo "  Writing here would overwrite immutable historical captures."
-    echo "  Use a NEW cycle dir (e.g. docs/evidence/cycles/cycle-NN). To deliberately"
-    echo "  re-shoot this committed cycle, set ALLOW_OVERWRITE=1:"
-    echo "    ALLOW_OVERWRITE=1 scripts/qa-shoot.sh <out-dir> [port]"
+  # git ls-files lists git-tracked files under OUT_DIR. It exits 128 when
+  # OUT_DIR is OUTSIDE this repo's working tree (e.g. /tmp or a scratchpad dir) —
+  # an out-of-repo dir cannot hold this repo's committed evidence, so that is NOT
+  # an abort condition. Capture stdout and exit status SEPARATELY (no pipe) so a
+  # 128 cannot be swallowed by `2>/dev/null` and then abort the whole script via
+  # `set -e` — which previously masqueraded as the committed-cycle abort below.
+  set +e
+  TRACKED_FILES="$(git ls-files -- "${OUT_DIR}" 2>/dev/null)"
+  GIT_LS_STATUS=$?
+  set -e
+
+  if [[ ${GIT_LS_STATUS} -eq 128 ]]; then
+    # OUT_DIR is outside the git working tree — overwrite-guard not applicable.
+    echo "[guard] OUT_DIR is outside the git working tree; no committed evidence"
+    echo "        can live here. Overwrite-guard not applicable — proceeding."
+  elif [[ ${GIT_LS_STATUS} -ne 0 ]]; then
+    # Unexpected git failure — surface it loudly instead of guessing.
+    echo "ABORT: 'git ls-files' failed (exit ${GIT_LS_STATUS}) while checking OUT_DIR"
+    echo "  for committed evidence: ${OUT_DIR}"
+    echo "  Run from inside the repo, or pass an in-repo OUT_DIR. To bypass the"
+    echo "  guard deliberately, set ALLOW_OVERWRITE=1."
     exit 1
+  else
+    if [[ -z "${TRACKED_FILES}" ]]; then
+      TRACKED_COUNT=0
+    else
+      TRACKED_COUNT="$(printf '%s\n' "${TRACKED_FILES}" | wc -l | tr -d ' ')"
+    fi
+    if [[ "${TRACKED_COUNT}" != "0" ]]; then
+      echo "ABORT: OUT_DIR already holds ${TRACKED_COUNT} git-tracked file(s) — committed evidence."
+      echo "  ${OUT_DIR}"
+      echo ""
+      echo "  Writing here would overwrite immutable historical captures."
+      echo "  Use a NEW cycle dir (e.g. docs/evidence/cycles/cycle-NN). To deliberately"
+      echo "  re-shoot this committed cycle, set ALLOW_OVERWRITE=1:"
+      echo "    ALLOW_OVERWRITE=1 scripts/qa-shoot.sh <out-dir> [port]"
+      exit 1
+    fi
   fi
 fi
 
@@ -256,7 +284,7 @@ npm run shoot -- --port "${PORT}" --out "${OUT_DIR}"
 # ── STEP E2: WCAG AA contrast gate -------------------------------------------
 echo ""
 echo "[e2] Running contrast gate (WCAG AA)..."
-node scripts/check-contrast.mjs --port "${PORT}"
+node scripts/check-contrast.mjs --port "${PORT}" --auth
 echo "    Contrast gate PASSED."
 
 # ── STEP F: Kill server, assert port free ─────────────────────────────────────

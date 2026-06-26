@@ -4,6 +4,7 @@
  *
  * Usage:
  *   node scripts/check-contrast.mjs --port 3190
+ *   node scripts/check-contrast.mjs --port 3190 --auth
  *
  * Or via npm script:
  *   npm run check:contrast
@@ -19,12 +20,22 @@
  *   - Classifies as large text (≥24px normal, or ≥18.66px bold) → threshold 3:1
  *     else normal text → threshold 4.5:1
  *   - Skips aria-hidden elements (decorative)
+ *   - Skips disabled controls (WCAG 1.4.3 exemption — button/input/select/textarea/fieldset
+ *     with disabled attribute, or aria-disabled="true" on any ancestor)
  *   - De-duplicates by (fg hex, bg hex, is-large-text) pair
  *   - Reports per-route table + unique-failing-pairs summary
+ *
+ * --auth flag: after the public ROUTES pass, runs an authenticated pass that
+ *   signs in as owner handle `intronode` via the dev credentials form (DEV_LOGIN=1
+ *   required on the server) and checks:
+ *     auth:review     — ReviewUI rendered on a probe file's /review route
+ *     auth:scan-log   — ScanLogPanel rendered on LESSONS.md with toggle opened
+ *   Failures from the auth pass count toward the gate exit alongside public ones.
  *
  * Integration note: wired into qa-shoot.sh as a hard gate (Step e2). Also runnable standalone.
  * To verify after a build: npm run check:contrast
  * Or with explicit port: node scripts/check-contrast.mjs --port 3190
+ * Or with auth pass:      node scripts/check-contrast.mjs --port 3190 --auth
  */
 
 import { chromium } from 'playwright';
@@ -41,9 +52,10 @@ function parseCliArgs() {
     args: process.argv.slice(2),
     options: {
       port: { type: 'string', default: '3190' },
+      auth: { type: 'boolean', default: false },
     },
   });
-  return { port: parseInt(values.port, 10) };
+  return { port: parseInt(values.port, 10), auth: values.auth ?? false };
 }
 
 async function sleep(ms) {
@@ -187,6 +199,22 @@ function browserContrastScan() {
   }
 
   /**
+   * WCAG 1.4.3 exempts disabled controls — skip them to avoid false failures.
+   * Checks the element itself and all ancestors for disabled state.
+   */
+  function isDisabledControl(el) {
+    let cur = el;
+    while (cur && cur !== document.body) {
+      const tag = cur.tagName;
+      if ((tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' ||
+           tag === 'TEXTAREA' || tag === 'FIELDSET') && cur.disabled) return true;
+      if (cur.getAttribute && cur.getAttribute('aria-disabled') === 'true') return true;
+      cur = cur.parentElement;
+    }
+    return false;
+  }
+
+  /**
    * Returns true if element is actually visible (not display:none, not visibility:hidden,
    * has non-zero dimensions, is within the document).
    */
@@ -230,11 +258,14 @@ function browserContrastScan() {
     }
     if (!hasDirectText) continue;
 
-    // Skip aria-hidden trees
+    // Skip aria-hidden trees (decorative)
     if (isAriaHidden(el)) continue;
 
     // Skip invisible elements
     if (!isVisible(el)) continue;
+
+    // Skip disabled controls (WCAG 1.4.3 exemption)
+    if (isDisabledControl(el)) continue;
 
     const cs = window.getComputedStyle(el);
 
@@ -288,15 +319,94 @@ function browserContrastScan() {
   return { results, uncheckable };
 }
 
+// ── Shared helper: process one route's contrast results ──────────────────────
+
+/**
+ * Analyze rawResults from browserContrastScan() for a single route slug.
+ * Updates globalFailMap in-place with any failing pairs tagged to that slug.
+ * @returns {{ failures, scanned, uncheckableCount, statusStr }}
+ */
+function processRouteContrast(slug, rawResults, uncheckable, globalFailMap) {
+  const failures = [];
+  /** De-duplicate by (fgHex, bgHex, isLargeText) within this route */
+  const seenPairs = new Set();
+
+  for (const r of rawResults) {
+    const fg = { r: r.fgR, g: r.fgG, b: r.fgB };
+    const bg = { r: r.bgR, g: r.bgG, b: r.bgB };
+    const fgHex = toHex(fg);
+    const bgHex = toHex(bg);
+    const key = `${fgHex}|${bgHex}|${r.isLargeText ? 'L' : 'N'}`;
+
+    if (seenPairs.has(key)) continue;
+    seenPairs.add(key);
+
+    const fgL = relativeLuminance(fg);
+    const bgL = relativeLuminance(bg);
+    const ratio = contrastRatio(fgL, bgL);
+    const threshold = r.isLargeText ? 3.0 : 4.5;
+
+    if (ratio < threshold) {
+      const failure = {
+        fg: fgHex,
+        bg: bgHex,
+        ratio: Math.round(ratio * 100) / 100,
+        threshold,
+        isLargeText: r.isLargeText,
+        fontSize: r.fontSize,
+        fontWeight: r.fontWeight,
+        tag: r.tag,
+        classSig: r.classSig,
+        textSample: r.textSample,
+      };
+      failures.push(failure);
+
+      // Register in global map
+      const globalKey = `${fgHex}|${bgHex}|${r.isLargeText ? 'L' : 'N'}`;
+      if (!globalFailMap.has(globalKey)) {
+        globalFailMap.set(globalKey, {
+          fg: fgHex,
+          bg: bgHex,
+          ratio: Math.round(ratio * 100) / 100,
+          threshold,
+          isLargeText: r.isLargeText,
+          fontSize: r.fontSize,
+          fontWeight: r.fontWeight,
+          tag: r.tag,
+          classSig: r.classSig,
+          textSample: r.textSample,
+          routes: [],
+        });
+      }
+      globalFailMap.get(globalKey).routes.push(slug);
+      // keep lowest ratio in global map
+      const existing = globalFailMap.get(globalKey);
+      if (ratio < existing.ratio) existing.ratio = Math.round(ratio * 100) / 100;
+    }
+  }
+
+  const uncheckableCount = uncheckable.length;
+  let statusStr;
+  if (failures.length === 0 && uncheckableCount === 0) {
+    statusStr = `PASS (${seenPairs.size} pairs, ${rawResults.length} els)`;
+  } else if (failures.length > 0) {
+    statusStr = `FAIL (${failures.length} pair${failures.length === 1 ? '' : 's'}${uncheckableCount > 0 ? `; ${uncheckableCount} uncheckable` : ''})`;
+  } else {
+    statusStr = `FAIL (${uncheckableCount} uncheckable)`;
+  }
+
+  return { failures, scanned: seenPairs.size + failures.length, uncheckableCount, statusStr };
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const { port } = parseCliArgs();
+  const { port, auth } = parseCliArgs();
   const baseUrl = `http://localhost:${port}`;
 
   console.log(`\ncheck-contrast.mjs — WCAG AA audit`);
   console.log(`Base URL: ${baseUrl}`);
-  console.log(`Routes:   ${ROUTES.length}`);
+  console.log(`Routes:   ${ROUTES.length} public${auth ? ' + authenticated pass (--auth)' : ''}`);
   console.log(`Thresholds: normal text >=4.5:1, large text >=3:1\n`);
 
   // ── 2a. SERVER PREFLIGHT ────────────────────────────────────────────────────
@@ -317,8 +427,12 @@ async function main() {
 
   /** All failing pairs across all routes: Map<"fg|bg|isLarge", {fg, bg, isLarge, ratio, threshold, routes[]}> */
   const globalFailMap = new Map();
-  /** Per-route results */
+  /** Per-route results (public) */
   const routeResults = [];
+
+  // ── PUBLIC ROUTES pass ─────────────────────────────────────────────────────
+  console.log('PUBLIC ROUTES');
+  console.log('─'.repeat(60));
 
   for (const route of ROUTES) {
     const url = `${baseUrl}${route.path}`;
@@ -374,76 +488,233 @@ async function main() {
       continue;
     }
 
-    // Process results
-    const failures = [];
-    /** De-duplicate by (fgHex, bgHex, isLargeText) within this route */
-    const seenPairs = new Set();
+    const { failures, scanned, uncheckableCount, statusStr } = processRouteContrast(
+      route.slug, rawResults, uncheckable, globalFailMap
+    );
+    console.log(statusStr);
+    routeResults.push({ slug: route.slug, failures, scanned, uncheckableCount });
+  }
 
-    for (const r of rawResults) {
-      const fg = { r: r.fgR, g: r.fgG, b: r.fgB };
-      const bg = { r: r.bgR, g: r.bgG, b: r.bgB };
-      const fgHex = toHex(fg);
-      const bgHex = toHex(bg);
-      const key = `${fgHex}|${bgHex}|${r.isLargeText ? 'L' : 'N'}`;
+  // ── AUTHENTICATED ROUTES pass (--auth flag) ────────────────────────────────
+  /** Per-route results (auth) */
+  const authResults = [];
 
-      if (seenPairs.has(key)) continue;
-      seenPairs.add(key);
+  if (auth) {
+    console.log('\n');
+    console.log('AUTHENTICATED ROUTES');
+    console.log('─'.repeat(60));
 
-      const fgL = relativeLuminance(fg);
-      const bgL = relativeLuminance(bg);
-      const ratio = contrastRatio(fgL, bgL);
-      const threshold = r.isLargeText ? 3.0 : 4.5;
+    // Probe content matching the pattern in shoot.mjs — triggers all 3 detectors
+    const PROBE_CONTENT = `# CONTRAST-PROBE: Auth Surface Contrast Test
 
-      if (ratio < threshold) {
-        const failure = {
-          fg: fgHex,
-          bg: bgHex,
-          ratio: Math.round(ratio * 100) / 100,
-          threshold,
-          isLargeText: r.isLargeText,
-          fontSize: r.fontSize,
-          fontWeight: r.fontWeight,
-          tag: r.tag,
-          classSig: r.classSig,
-          textSample: r.textSample,
-        };
-        failures.push(failure);
+API key for staging: sk-testABCDEFGHIJKLMNOPQRST
 
-        // Register in global map
-        const globalKey = `${fgHex}|${bgHex}|${r.isLargeText ? 'L' : 'N'}`;
-        if (!globalFailMap.has(globalKey)) {
-          globalFailMap.set(globalKey, {
-            fg: fgHex,
-            bg: bgHex,
-            ratio: Math.round(ratio * 100) / 100,
-            threshold,
-            isLargeText: r.isLargeText,
-            fontSize: r.fontSize,
-            fontWeight: r.fontWeight,
-            tag: r.tag,
-            classSig: r.classSig,
-            textSample: r.textSample,
-            routes: [],
+Contact: ops@intronode-qa.example for escalations.
+
+Per our confidential engagement, our client Initech paid $40,000 under the
+retainer contract. This information is proprietary and not for public release.
+`;
+    // Unique path to avoid collisions across runs
+    const probePath = `CONTRAST-PROBE-${process.pid}-${Math.random().toString(36).slice(2, 10)}.md`;
+
+    // Single persistent browser context with cookies for all auth routes
+    const authContext = await browser.newContext({
+      viewport: DESKTOP,
+      reducedMotion: 'reduce',
+    });
+    const authPage = await authContext.newPage();
+
+    try {
+      // ── Sign in as intronode via dev credentials form ──────────────────────
+      process.stdout.write(`  -> ${'auth:sign-in'.padEnd(42)}`);
+      try {
+        await authPage.goto(`${baseUrl}/signin`, { waitUntil: 'networkidle', timeout: 30000 });
+      } catch {
+        await authPage.goto(`${baseUrl}/signin`, { waitUntil: 'load', timeout: 30000 });
+      }
+      await sleep(SETTLE_MS);
+
+      // Assert: dev disclosure toggle must be present (DEV_LOGIN=1 gate)
+      const devToggle = authPage.locator('#dev-disclosure-toggle');
+      const devToggleCount = await devToggle.count();
+      if (devToggleCount === 0) {
+        const msg = 'PRECONDITION FAILED: dev sign-in disclosure toggle not found — DEV_LOGIN=1 must be set on the server.';
+        console.log(`FAIL (${msg})`);
+        authResults.push({ slug: 'auth:sign-in', failures: [], scanned: 0, skipped: true, reason: msg });
+        throw new Error(msg);
+      }
+
+      await devToggle.click();
+      await sleep(200);
+      await authPage.fill('#dev-handle', 'intronode');
+      await authPage.fill('#dev-name', 'Intronode QA');
+      await Promise.all([
+        authPage.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }).catch(() => null),
+        authPage.locator('button[type="submit"]:has-text("Sign in")').click(),
+      ]);
+      await sleep(SETTLE_MS);
+
+      const afterSignInUrl = authPage.url();
+      if (afterSignInUrl.includes('/api/auth/error') || afterSignInUrl.includes('/signin')) {
+        const msg = `PRECONDITION FAILED: sign-in redirected to error/signin page: ${afterSignInUrl}`;
+        console.log(`FAIL (${msg})`);
+        authResults.push({ slug: 'auth:sign-in', failures: [], scanned: 0, skipped: true, reason: msg });
+        throw new Error(msg);
+      }
+      console.log(`OK (authenticated as intronode)`);
+
+      // ── Create probe file (triggers findings for the review route) ──────────
+      process.stdout.write(`  -> ${'auth:probe-create'.padEnd(42)}`);
+      const createResp = await authPage.request.post(`${baseUrl}/api/files`, {
+        data: {
+          subject_type: 'team',
+          subject_slug: 'ari-collective',
+          path: probePath,
+          content: PROBE_CONTENT,
+        },
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!createResp.ok()) {
+        const body = await createResp.text().catch(() => '(no body)');
+        const msg = `POST /api/files returned HTTP ${createResp.status()} — ${body.slice(0, 200)}`;
+        console.log(`FAIL (${msg})`);
+        authResults.push({ slug: 'auth:probe-create', failures: [], scanned: 0, skipped: true, reason: msg });
+        throw new Error(msg);
+      }
+      const created = await createResp.json();
+      console.log(`OK (file id=${created.id}, path=${created.path})`);
+      // Allow scan to complete (runScan is synchronous in the API route)
+      await sleep(500);
+
+      // ── AUTH ROUTE 1: ReviewUI ─────────────────────────────────────────────
+      process.stdout.write(`  -> ${'auth:review'.padEnd(42)}`);
+      const reviewUrl = `${baseUrl}/teams/ari-collective/files/${encodeURIComponent(probePath)}/review`;
+      try {
+        await authPage.goto(reviewUrl, { waitUntil: 'networkidle', timeout: 30000 });
+      } catch {
+        await authPage.goto(reviewUrl, { waitUntil: 'load', timeout: 30000 });
+      }
+      await sleep(SETTLE_MS);
+
+      // Assert: at least one finding card must be rendered (confirms ReviewUI is displayed)
+      const findingCards = authPage.locator('.border.border-zinc-800.rounded.p-4');
+      const findingCount = await findingCards.count();
+      if (findingCount === 0) {
+        const msg = 'review page shows 0 findings — scanner did not detect probe content or ReviewUI not rendered';
+        console.log(`FAIL (${msg})`);
+        authResults.push({ slug: 'auth:review', failures: [], scanned: 0, skipped: true, reason: msg });
+        throw new Error(msg);
+      }
+
+      let reviewRaw;
+      let reviewUncheckable;
+      try {
+        const evalResult = await authPage.evaluate(browserContrastScan);
+        reviewRaw = evalResult.results;
+        reviewUncheckable = evalResult.uncheckable;
+      } catch (err) {
+        const msg = `evaluate failed: ${err.message}`;
+        console.log(`SKIP (${msg})`);
+        authResults.push({ slug: 'auth:review', failures: [], scanned: 0, skipped: true, reason: msg });
+        throw err;
+      }
+
+      if (reviewRaw.length === 0) {
+        const msg = '0 text nodes — review page likely did not render';
+        console.log(`SKIP (${msg})`);
+        authResults.push({ slug: 'auth:review', failures: [], scanned: 0, skipped: true, reason: msg });
+        throw new Error(msg);
+      }
+
+      {
+        const { failures, scanned, uncheckableCount, statusStr } = processRouteContrast(
+          'auth:review', reviewRaw, reviewUncheckable, globalFailMap
+        );
+        if (reviewUncheckable.length > 0) {
+          console.log(`     (${reviewUncheckable.length} uncheckable)`);
+        }
+        console.log(statusStr);
+        authResults.push({ slug: 'auth:review', failures, scanned, uncheckableCount });
+      }
+
+      // ── AUTH ROUTE 2: ScanLogPanel ──────────────────────────────────────────
+      process.stdout.write(`  -> ${'auth:scan-log'.padEnd(42)}`);
+      try {
+        await authPage.goto(`${baseUrl}/teams/ari-collective/files/LESSONS.md`, { waitUntil: 'networkidle', timeout: 30000 });
+      } catch {
+        await authPage.goto(`${baseUrl}/teams/ari-collective/files/LESSONS.md`, { waitUntil: 'load', timeout: 30000 });
+      }
+      await sleep(SETTLE_MS);
+
+      // Assert: "Scan log" toggle must exist (owner-only — if missing, that is a gate FAILURE)
+      const scanLogToggle = authPage.locator('button:has-text("Scan log")');
+      const toggleCount = await scanLogToggle.count();
+      if (toggleCount === 0) {
+        const msg = '"Scan log" toggle button not found on LESSONS.md — owner auth may not be active or ScanLogPanel not rendered';
+        console.log(`FAIL (${msg})`);
+        authResults.push({ slug: 'auth:scan-log', failures: [], scanned: 0, skipped: true, reason: msg });
+        throw new Error(msg);
+      }
+
+      // Click toggle to open the scan log panel
+      await scanLogToggle.click();
+      await sleep(400);
+
+      let scanLogRaw;
+      let scanLogUncheckable;
+      try {
+        const evalResult = await authPage.evaluate(browserContrastScan);
+        scanLogRaw = evalResult.results;
+        scanLogUncheckable = evalResult.uncheckable;
+      } catch (err) {
+        const msg = `evaluate failed: ${err.message}`;
+        console.log(`SKIP (${msg})`);
+        authResults.push({ slug: 'auth:scan-log', failures: [], scanned: 0, skipped: true, reason: msg });
+        throw err;
+      }
+
+      if (scanLogRaw.length === 0) {
+        const msg = '0 text nodes — LESSONS.md page likely did not render';
+        console.log(`SKIP (${msg})`);
+        authResults.push({ slug: 'auth:scan-log', failures: [], scanned: 0, skipped: true, reason: msg });
+        throw new Error(msg);
+      }
+
+      {
+        const { failures, scanned, uncheckableCount, statusStr } = processRouteContrast(
+          'auth:scan-log', scanLogRaw, scanLogUncheckable, globalFailMap
+        );
+        if (scanLogUncheckable.length > 0) {
+          console.log(`     (${scanLogUncheckable.length} uncheckable)`);
+        }
+        console.log(statusStr);
+        authResults.push({ slug: 'auth:scan-log', failures, scanned, uncheckableCount });
+      }
+
+    } catch (outerErr) {
+      // Fail-loud: an unhandled exception (network/timeout throw from goto or
+      // request.post, etc.) can abort the auth pass AFTER sign-in but BEFORE a
+      // graceful per-route skip was recorded. Record a synthetic skip for any
+      // expected auth route not yet covered so the skipped-route check below
+      // exits 1 — a mid-pass throw must never produce a false pass. (Routes that
+      // already produced a result are left intact; a late throw in teardown does
+      // not erase real coverage.)
+      const covered = new Set(authResults.map((r) => r.slug));
+      for (const expected of ['auth:review', 'auth:scan-log']) {
+        if (!covered.has(expected)) {
+          authResults.push({
+            slug: expected,
+            failures: [],
+            scanned: 0,
+            skipped: true,
+            reason: `authenticated pass threw before evaluating ${expected}: ${outerErr.message}`,
           });
         }
-        globalFailMap.get(globalKey).routes.push(route.slug);
-        // keep lowest ratio in global map
-        const existing = globalFailMap.get(globalKey);
-        if (ratio < existing.ratio) existing.ratio = Math.round(ratio * 100) / 100;
       }
+      console.log(`  auth pass terminated: ${outerErr.message}`);
+    } finally {
+      await authContext.close();
     }
-
-    const uncheckableCount = uncheckable.length;
-    let status;
-    if (failures.length === 0 && uncheckableCount === 0) {
-      status = `PASS (${seenPairs.size} pairs, ${rawResults.length} els)`;
-    } else if (failures.length > 0) {
-      status = `FAIL (${failures.length} pair${failures.length === 1 ? '' : 's'}${uncheckableCount > 0 ? `; ${uncheckableCount} uncheckable` : ''})`;
-    } else {
-      status = `FAIL (${uncheckableCount} uncheckable)`;
-    }
-    console.log(status);
-    routeResults.push({ slug: route.slug, failures, scanned: seenPairs.size + failures.length, uncheckableCount });
   }
 
   await browser.close();
@@ -468,7 +739,28 @@ async function main() {
     }
   }
 
-  if (totalRouteFailures === 0) {
+  if (auth && authResults.length > 0) {
+    console.log('\nAUTHENTICATED ROUTES:');
+    let authRouteFailures = 0;
+    for (const r of authResults) {
+      if (!r.failures || r.failures.length === 0) continue;
+      authRouteFailures++;
+      console.log(`\nRoute: ${r.slug}`);
+      console.log(`  ${'FG'.padEnd(10)} ${'BG'.padEnd(10)} ${'Ratio'.padEnd(8)} ${'Threshold'.padEnd(11)} ${'Size'.padEnd(8)} Text sample`);
+      console.log(`  ${'-'.repeat(70)}`);
+      for (const f of r.failures) {
+        const large = f.isLargeText ? ' (large)' : '';
+        console.log(
+          `  ${f.fg.padEnd(10)} ${f.bg.padEnd(10)} ${String(f.ratio).padEnd(8)} ${String(f.threshold).padEnd(11)} ${String(f.fontSize + 'px').padEnd(8)} "${f.textSample}"${large}`,
+        );
+      }
+    }
+    if (authRouteFailures === 0) {
+      console.log('\n  (no authenticated-route failures)');
+    }
+  }
+
+  if (totalRouteFailures === 0 && authResults.every(r => !r.failures || r.failures.length === 0)) {
     console.log('\n  (no per-route failures)');
   }
 
@@ -496,16 +788,22 @@ async function main() {
     }
   }
 
-  // ── 2c. Final gate logic (fail-loud) ─────────────────────────────────────
-  const skippedRoutes = routeResults.filter((r) => r.skipped);
+  // ── 2c. Final gate logic (fail-loud) — combines public + auth results ──────
+  const allResults = [...routeResults, ...authResults];
+  const skippedRoutes = allResults.filter((r) => r.skipped);
   const routesChecked = routeResults.length;
-  const routesFailed = routeResults.filter((r) => r.failures.length > 0).length;
+  const authChecked = authResults.filter(r => !r.skipped && r.slug !== 'auth:sign-in' && r.slug !== 'auth:probe-create').length;
+  const routesFailed = allResults.filter((r) => r.failures && r.failures.length > 0).length;
   const uniquePairs = globalFails.length;
 
-  const totalUncheckable = routeResults.reduce((s, r) => s + (r.uncheckableCount || 0), 0);
+  const totalUncheckable = allResults.reduce((s, r) => s + (r.uncheckableCount || 0), 0);
 
   console.log('\n' + '-'.repeat(80));
-  console.log(`SUMMARY: ${routesChecked} routes checked, ${routesFailed} routes with failures, ${skippedRoutes.length} routes skipped, ${uniquePairs} unique failing pair${uniquePairs === 1 ? '' : 's'}, ${totalUncheckable} uncheckable elements`);
+  if (auth) {
+    console.log(`SUMMARY: ${routesChecked} public routes + ${authChecked} auth routes checked, ${routesFailed} routes with failures, ${skippedRoutes.length} routes skipped, ${uniquePairs} unique failing pair${uniquePairs === 1 ? '' : 's'}, ${totalUncheckable} uncheckable elements`);
+  } else {
+    console.log(`SUMMARY: ${routesChecked} routes checked, ${routesFailed} routes with failures, ${skippedRoutes.length} routes skipped, ${uniquePairs} unique failing pair${uniquePairs === 1 ? '' : 's'}, ${totalUncheckable} uncheckable elements`);
+  }
   console.log('-'.repeat(80) + '\n');
 
   if (skippedRoutes.length > 0) {

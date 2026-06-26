@@ -351,7 +351,65 @@ by the public-routes gate, but genuinely sub-AA for any owner viewing private fi
 - `src/components/FileViewer.tsx:140`
 
 The sanitizer owner UI (`src/components/ReviewUI.tsx`, `src/components/ScanLogPanel.tsx`)
-still contains `text-zinc-500`/`text-zinc-600` on auth-gated surfaces. These are flagged as
-a follow-up requiring an authenticated contrast pass to verify properly. Out of scope for
-this fix — the gate correctly does not see them, and authenticated-session QA has not yet
-been designed.
+contained `text-zinc-500`/`text-zinc-600` on auth-gated surfaces (follow-up from pass 3).
+These are now fixed and verified — see pass 4 below.
+
+### Auth-gated contrast pass (2026-06-26, pass 4)
+
+This pass closed the auth-route gap identified in pass 3. Three independent changes were made:
+
+**Part A — qa-shoot.sh overwrite-guard fix (exit 128)**
+
+The existing guard piped `git ls-files` through `wc -l` while `set -euo pipefail` was active.
+When `OUT_DIR` is outside the git working tree, `git ls-files` exits 128; pipefail propagated
+that exit code through the pipe, killing the script silently before printing any message —
+masquerading as the committed-cycle ABORT. Fixed by capturing stdout and exit status separately
+via `set +e`/`set -e`, branching on exit 128 (out-of-repo → proceed with notice), other
+non-zero (loud ABORT), and zero (check tracked-file count as before). Committed-cycle ABORT
+message preserved verbatim.
+
+**Part B — Authenticated contrast pass in check-contrast.mjs**
+
+Three sub-changes to `scripts/check-contrast.mjs`:
+
+- **B1 (component fixes)**: In `src/components/ReviewUI.tsx`, 12 readable-text
+  `text-zinc-500`/`text-zinc-600` class instances (ratio 2.6–4.1:1) replaced with
+  `text-zinc-400` (~5.9:1 on dark surface). Two decorative `|` divider spans marked
+  `aria-hidden="true"`. In `src/components/ScanLogPanel.tsx`, two readable-text
+  `text-zinc-500`/`text-zinc-600` instances replaced with `text-zinc-400`; decorative
+  caret already aria-hidden. Disabled Publish button (`bg-zinc-800 text-zinc-600
+cursor-not-allowed`) **left unchanged** — WCAG 1.4.3 exempts disabled controls.
+
+- **B2 (--auth flag)**: New `--auth` boolean CLI flag enables an authenticated pass after the
+  public ROUTES pass. Signs in as `intronode` via the dev credentials form (`DEV_LOGIN=1`),
+  creates a probe file via POST `/api/files` to trigger the sanitizer, then scans two routes:
+  - `auth:review` — ReviewUI rendered on the probe file's `/review` route
+  - `auth:scan-log` — ScanLogPanel rendered on LESSONS.md with "Scan log" toggle clicked
+    Sign-in failure, probe-create failure, missing finding cards, or missing toggle button
+    are all gate failures (not skips). Failures merge into the same global failing-pairs map
+    as the public pass; exit 1 on any failure. An unhandled mid-pass exception (network/timeout
+    throw after sign-in) records a synthetic skip for any uncovered auth route, so a transient
+    throw fails the gate rather than producing a false pass. Backward compatible — omitting
+    `--auth` is identical to previous behavior.
+
+- **B3 (disabled-control skip)**: `isDisabledControl(el)` helper added inside
+  `browserContrastScan()`. Walks the element's ancestor chain checking `.disabled` on
+  `BUTTON/INPUT/SELECT/TEXTAREA/FIELDSET` elements and `aria-disabled="true"` on any
+  ancestor. Matching elements are skipped before color-contrast math. WCAG 1.4.3 explicitly
+  exempts disabled controls from the 4.5:1 requirement.
+
+- **B4 (qa-shoot.sh wiring)**: Step e2 changed from `node scripts/check-contrast.mjs
+--port "${PORT}"` to `node scripts/check-contrast.mjs --port "${PORT}" --auth`.
+
+**Evidence**
+
+Before-fix (original colors, showing 3 failing pairs on auth:review + auth:scan-log):
+`docs/evidence/contrast/contrast-auth-before-fix-2026-06-26.txt` — exit 1
+
+After-fix (B1 colors applied, 0 failures):
+`docs/evidence/contrast/contrast-auth-after-fix-2026-06-26.txt` — exit 0
+
+Summary line from after-fix run:
+`SUMMARY: 20 public routes + 2 auth routes checked, 0 routes with failures, 0 routes skipped, 0 unique failing pairs, 0 uncheckable elements`
+
+All auth-route scan-log and review surfaces now pass WCAG AA at 4.5:1 or above.

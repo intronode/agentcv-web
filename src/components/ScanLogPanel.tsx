@@ -33,7 +33,9 @@ export function ScanLogPanel({ entries }: ScanLogPanelProps) {
         aria-expanded={open}
       >
         <span>Scan log</span>
-        <span className="text-zinc-600">{open ? '▲' : '▼'}</span>
+        <span className="text-zinc-600" aria-hidden="true">
+          {open ? '▲' : '▼'}
+        </span>
       </button>
 
       {open && (
@@ -49,7 +51,7 @@ export function ScanLogPanel({ entries }: ScanLogPanelProps) {
               <div key={entry.id} className="px-4 py-3 text-xs">
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="text-zinc-300 font-mono">{entry.scan_ts}</span>
-                  <span className="text-zinc-500">
+                  <span className="text-zinc-400">
                     {TRIGGER_LABEL[entry.triggered_by] ?? entry.triggered_by}
                   </span>
                   <span className={entry.error_message ? 'text-red-400' : 'text-green-400'}>
@@ -59,7 +61,7 @@ export function ScanLogPanel({ entries }: ScanLogPanelProps) {
                   </span>
                 </div>
                 {Object.keys(versions).length > 0 && (
-                  <div className="mt-1 text-zinc-600">
+                  <div className="mt-1 text-zinc-400">
                     Detectors:{' '}
                     {Object.entries(versions)
                       .map(([k, v]) => `${k}@${v}`)

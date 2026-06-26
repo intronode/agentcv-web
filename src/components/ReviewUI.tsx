@@ -200,7 +200,7 @@ export function ReviewUI({
       {/* Header */}
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <a href={backUrl} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+          <a href={backUrl} className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors">
             &larr; {filePath}
           </a>
           <h1 className="mt-1 text-xl font-semibold text-zinc-100">Sanitization Review</h1>
@@ -247,13 +247,17 @@ export function ReviewUI({
           </span>{' '}
           unresolved finding{unresolvedCount !== 1 ? 's' : ''}
         </span>
-        <span className="text-zinc-700">|</span>
+        <span className="text-zinc-700" aria-hidden="true">
+          |
+        </span>
         <span>
           <span className="text-zinc-200 font-semibold">{initialFindings.length}</span> total
         </span>
         {!canPublish && (
           <>
-            <span className="text-zinc-700">|</span>
+            <span className="text-zinc-700" aria-hidden="true">
+              |
+            </span>
             <span className="text-amber-500 text-xs">Scan required before publish</span>
           </>
         )}
@@ -287,7 +291,7 @@ export function ReviewUI({
 
       {/* Finding list */}
       {initialFindings.length === 0 ? (
-        <div className="text-center py-16 text-zinc-500">
+        <div className="text-center py-16 text-zinc-400">
           <p className="text-lg mb-2">No findings</p>
           <p className="text-sm">The scan found no secrets, PII, or confidential references.</p>
           {canPublishNow && (
@@ -329,7 +333,7 @@ export function ReviewUI({
       )}
 
       {/* Disclosure copy — SANITIZER.md §9.2 (verbatim) */}
-      <div className="mt-10 px-4 py-3 border border-zinc-800 rounded text-xs text-zinc-500 leading-relaxed">
+      <div className="mt-10 px-4 py-3 border border-zinc-800 rounded text-xs text-zinc-400 leading-relaxed">
         This file was scanned for secrets, personal information, and confidential business
         references before publication. Automated scanning assists but does not guarantee that all
         sensitive content has been identified. Person names and some location references are not
@@ -377,7 +381,7 @@ function FindingCard({
         <div className="flex items-center gap-2 flex-wrap">
           <TypeBadge type={finding.finding_type} />
           <SevBadge severity={finding.severity} />
-          <span className="text-xs text-zinc-500 font-mono">{finding.detector_id}</span>
+          <span className="text-xs text-zinc-400 font-mono">{finding.detector_id}</span>
           <span className="ml-auto text-xs font-medium text-green-400 uppercase tracking-wide">
             {uiState.status === 'masked'
               ? `Masked as ${uiState.resolvedMask ?? finding.suggested_mask}`
@@ -410,15 +414,15 @@ function FindingCard({
       <div className="flex items-center gap-2 flex-wrap mb-3">
         <TypeBadge type={finding.finding_type} />
         <SevBadge severity={finding.severity} />
-        <span className="text-xs text-zinc-500 font-mono">{finding.detector_id}</span>
-        <span className="ml-auto text-xs text-zinc-600 font-mono">#{finding.id}</span>
+        <span className="text-xs text-zinc-400 font-mono">{finding.detector_id}</span>
+        <span className="ml-auto text-xs text-zinc-400 font-mono">#{finding.id}</span>
       </div>
 
       {/* Excerpt */}
       <Excerpt text={finding.excerpt} />
 
       {/* Suggested mask */}
-      <div className="mt-2 text-xs text-zinc-500">
+      <div className="mt-2 text-xs text-zinc-400">
         Suggested mask:{' '}
         <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded font-mono">
           {finding.suggested_mask}
@@ -479,7 +483,7 @@ function FindingCard({
               </button>
               <button
                 onClick={onCancelEdit}
-                className="text-xs px-3 py-1.5 rounded border border-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="text-xs px-3 py-1.5 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-300 transition-colors"
               >
                 Cancel
               </button>
@@ -522,12 +526,12 @@ function FindingCard({
               </button>
               <button
                 onClick={onCancelDismiss}
-                className="text-xs px-3 py-1.5 rounded border border-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="text-xs px-3 py-1.5 rounded border border-zinc-700 text-zinc-400 hover:text-zinc-300 transition-colors"
               >
                 Cancel
               </button>
               {isSecret && (
-                <span className="text-xs text-zinc-600 ml-1">
+                <span className="text-xs text-zinc-400 ml-1">
                   {uiState.reason.trim().length}/{dismissMinLen} chars
                 </span>
               )}
