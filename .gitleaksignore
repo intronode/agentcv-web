@@ -2,11 +2,17 @@
 #
 # Each entry below is a gitleaks fingerprint (commit:file:rule:startline) for a
 # match that is a labeled dummy / test fixture / dev-only fallback — NOT a real
-# credential. Every entry is justified inline. No blanket rules: only these five
-# exact fingerprints in commit history are suppressed.
+# credential. Every entry is justified inline. No blanket rules: only these exact
+# fingerprints in commit history are suppressed.
 #
-# All five live in IMMUTABLE git history. Each underlying pattern has already
-# been remediated in the working tree (HEAD):
+# Entries (1)-(5) are the underlying historical findings; entries (6)-(9) are the
+# unavoidable echoes where THIS remediation's own docs (BUILD-REPORT.md and this
+# file, in commit e008bf8) quoted those known-safe dummy values before they were
+# redacted. The working-tree copies are now redacted (`gitleaks dir` is clean);
+# the e008bf8 blobs are immutable history, so they are fingerprint-suppressed.
+#
+# Entries (1)-(5) live in IMMUTABLE git history. Each underlying pattern has
+# already been remediated in the working tree (HEAD):
 #   - scripts/qa-shoot.sh  → SANITIZER_KEY now `openssl rand -hex 32` (random per run)
 #   - src/lib/auth.config.ts → fallback now the low-entropy plain-English
 #     LOCAL_DEV_FALLBACK, and resolveSecret() THROWS in production when
@@ -14,9 +20,8 @@
 # Verify with: gitleaks git --log-opts="9d752ce..HEAD" -v   → expect 0 leaks.
 
 # (1) Sanitizer detection-test table row in the v4 gate report. The value
-#     `db_password = "aB3xK9mP2nQ7rT1sW6vY..."` (note trailing `...`) is an
-#     ILLUSTRATIVE test input documenting that the sanitizer DETECTS it. Not a
-#     credential.
+#     `db_password = "aB3x…"` (a redacted illustrative high-entropy assignment)
+#     is a test input documenting that the sanitizer DETECTS it. Not a credential.
 b63925b58839f13575add88e34d5e5b076bb329c:docs/evidence/gate-v4/laplace-gate-v4-report.md:generic-api-key:118
 
 # (2) Gate report QUOTING the historical qa-shoot.sh dummy SANITIZER_KEY while
@@ -40,3 +45,19 @@ b63925b58839f13575add88e34d5e5b076bb329c:docs/evidence/gate-v4/laplace-gate-v4-r
 #     by the low-entropy plain-English LOCAL_DEV_FALLBACK and resolveSecret()
 #     now THROWS in production. Nothing to rotate (never live).
 0942b44aeef77fe95abf0c8663245c82aba08746:src/lib/auth.config.ts:generic-api-key:18
+
+# ── (6)-(9) Self-echo: commit e008bf8 (this remediation) quoted the same
+# known-safe dummies in its own docs before they were redacted. Working-tree
+# copies are now redacted; these four suppress only the immutable e008bf8 blobs.
+
+# (6) .gitleaksignore comment (1) quoting the redacted db_password test input.
+e008bf84af28a7ba76c310c22b7dc8b1ac6dd82d:.gitleaksignore:generic-api-key:17
+
+# (7) BUILD-REPORT.md table row 1 — same db_password illustrative test input.
+e008bf84af28a7ba76c310c22b7dc8b1ac6dd82d:docs/BUILD-REPORT.md:generic-api-key:431
+
+# (8) BUILD-REPORT.md table row 2 — historical qa-shoot.sh dummy SANITIZER_KEY.
+e008bf84af28a7ba76c310c22b7dc8b1ac6dd82d:docs/BUILD-REPORT.md:generic-api-key:432
+
+# (9) BUILD-REPORT.md table row 4 — same historical qa-shoot.sh dummy key.
+e008bf84af28a7ba76c310c22b7dc8b1ac6dd82d:docs/BUILD-REPORT.md:generic-api-key:434

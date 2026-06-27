@@ -426,13 +426,13 @@ Laplace's integrated re-gate of commit `8c73cfb` returned overall REJECT on
 (`gitleaks git --log-opts="9d752ce..HEAD"`) — 5 `generic-api-key` findings, all
 in **commit history** (not the working tree). Classified each:
 
-| #   | Fingerprint (commit:file:rule:line)                                            | Matched value                             | Classification                                                                                                                                                                                                                                                                                           |
-| --- | ------------------------------------------------------------------------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `b63925b…:docs/evidence/gate-v4/laplace-gate-v4-report.md:generic-api-key:118` | `db_password = "aB3xK9mP2nQ7rT1sW6vY..."` | **Safe** — illustrative row in the sanitizer detection-test table (note trailing `...`); documents a DETECTED test input.                                                                                                                                                                                |
-| 2   | `b63925b…:…/laplace-gate-v4-report.md:generic-api-key:188`                     | `SANITIZER_KEY="0123456789abcdef"×4`      | **Safe** — gate report quoting the historical qa-shoot.sh dummy key while assessing it; ascending-hex dummy.                                                                                                                                                                                             |
-| 3   | `b63925b…:…/laplace-gate-v4-report.md:generic-api-key:200`                     | `DEV_FALLBACK_SECRET = '56ca5bbc…'`       | **Safe** — gate report quoting the historical auth.config.ts dev-fallback while assessing it.                                                                                                                                                                                                            |
-| 4   | `69cd488…:scripts/qa-shoot.sh:generic-api-key:109`                             | `SANITIZER_KEY="0123456789abcdef"×4`      | **Safe** — historical hardcoded QA-LOCAL key (ascending-hex). Already remediated in HEAD → now `openssl rand -hex 32` per run.                                                                                                                                                                           |
-| 5   | `0942b44…:src/lib/auth.config.ts:generic-api-key:18`                           | `DEV_FALLBACK_SECRET = '56ca5bbc…'`       | **Safe** — historical DEV-ONLY fallback JWT secret; never the secret of any live deployment (app not deployed). Already remediated in HEAD → low-entropy plain-English `LOCAL_DEV_FALLBACK`, and `resolveSecret()` now THROWS in production when `AUTH_SECRET` is unset. Nothing to rotate (never live). |
+| #   | Fingerprint (commit:file:rule:line)                                            | Matched value                              | Classification                                                                                                                                                                                                                                                                                           |
+| --- | ------------------------------------------------------------------------------ | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `b63925b…:docs/evidence/gate-v4/laplace-gate-v4-report.md:generic-api-key:118` | `db_password = "aB3x…"` (redacted)         | **Safe** — illustrative row in the sanitizer detection-test table (literal ends in `...`); documents a DETECTED test input.                                                                                                                                                                              |
+| 2   | `b63925b…:…/laplace-gate-v4-report.md:generic-api-key:188`                     | `SANITIZER_KEY="0123…"` (64-hex ascending) | **Safe** — gate report quoting the historical qa-shoot.sh dummy key while assessing it; ascending-hex dummy.                                                                                                                                                                                             |
+| 3   | `b63925b…:…/laplace-gate-v4-report.md:generic-api-key:200`                     | `DEV_FALLBACK_SECRET = '56ca5bbc…'`        | **Safe** — gate report quoting the historical auth.config.ts dev-fallback while assessing it.                                                                                                                                                                                                            |
+| 4   | `69cd488…:scripts/qa-shoot.sh:generic-api-key:109`                             | `SANITIZER_KEY="0123…"` (64-hex ascending) | **Safe** — historical hardcoded QA-LOCAL key (ascending-hex). Already remediated in HEAD → now `openssl rand -hex 32` per run.                                                                                                                                                                           |
+| 5   | `0942b44…:src/lib/auth.config.ts:generic-api-key:18`                           | `DEV_FALLBACK_SECRET = '56ca5bbc…'`        | **Safe** — historical DEV-ONLY fallback JWT secret; never the secret of any live deployment (app not deployed). Already remediated in HEAD → low-entropy plain-English `LOCAL_DEV_FALLBACK`, and `resolveSecret()` now THROWS in production when `AUTH_SECRET` is unset. Nothing to rotate (never live). |
 
 No finding is a genuine live credential: items 4 & 5 are labeled dummy/dev-only
 values already removed from the working tree (`gitleaks dir` over tracked source
@@ -440,12 +440,21 @@ is clean — the only `dir`-scan hits are untracked `.next/cache` build artifact
 in an agent worktree, not source); items 1–3 are documentation that quotes those
 known-safe values for assessment.
 
-**Fix.** Added `.gitleaksignore` with **5 fingerprint-scoped entries** (no blanket
-rules), each with an inline justification comment. Re-ran the exact bounce scan:
+**Fix.** Added `.gitleaksignore` with fingerprint-scoped entries (no blanket
+rules), each with an inline justification comment. Entries (1)-(5) suppress the
+historical findings above. A second pass was needed because committing this very
+remediation re-introduced the strings: the first commit (`e008bf8`) quoted the
+same dummy values in its own docs (this report's table + the ignore file's
+comments), which gitleaks then flagged as 4 new hits at new line numbers. Fixed
+structurally rather than chasing the recursion — **redacted the live-looking
+literals in the working-tree docs** (so future edits never re-trigger; `gitleaks
+dir` over tracked source is clean), and fingerprint-suppressed the 4 immutable
+`e008bf8` blobs as entries (6)-(9) (force-pushing the canonical `main` to rewrite
+them would be destructive and is not authorized). Final scan:
 
 ```
 $ gitleaks git --log-opts="9d752ce..HEAD" -v
-24 commits scanned.
+26 commits scanned.
 no leaks found        (exit 0)
 ```
 
