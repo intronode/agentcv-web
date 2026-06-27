@@ -290,3 +290,43 @@ de-facto downloads AND that demonstrably erodes the consulting wedge
 (measure request-setup conversion before/after); or sanitization
 failures leak real secrets/PII (visibility gate must fail closed —
 see docs/SANITIZER.md).
+
+---
+
+# Goal 3 addendum (2026-06-27)
+
+## D8 — Production data layer: libSQL (Turso) via `@libsql/client`
+
+**Decision.** The production data layer is **libSQL / Turso** (`@libsql/client`),
+replacing `better-sqlite3` (the build-phase driver, deferred to Goal 3 by D5).
+Full reasoning + architecture in docs/DEPLOY.md; operator steps in
+docs/DEPLOY-RUNBOOK.md.
+
+**Reasoning.**
+
+- **Dialect continuity.** libSQL is a SQLite fork — `schema.ts` and every SQL
+  string in `queries.ts`/`seed.ts` work essentially unchanged. Postgres
+  (Vercel Postgres / Neon) would force a full dialect rewrite (`SERIAL`, `$1`
+  params, datetime/JSON) across the query layer — far more change surface on a
+  QA-accepted codebase.
+- **Fixes the documented gap.** `better-sqlite3` writes to the local filesystem,
+  which on Vercel serverless is ephemeral and per-instance (writes vanish, are
+  not shared). libSQL stores data in a remote Turso DB over HTTP — persistent,
+  shared. (This was the explicit Goal-3 deploy blocker in BUILD-REPORT.)
+- **Same code path local↔prod.** The client runs against a local `file:` URL
+  (zero cloud credentials) and a remote `libsql://…turso.io` URL with the
+  identical API, so QA and the fresh-clone zero-env smoke exercise the _same_
+  adapter that runs in production.
+- **Cost.** Turso free tier is ample at launch scale; account provisioning is an
+  `[[HJ ACTION]]` (the cloud-secrets gate).
+
+**Cost accepted.** libSQL is async; `better-sqlite3` was sync. Absorbed by an
+adapter that preserves the `prepare().get/all/run` shape as async methods; the
+two write transactions use the libSQL transaction API explicitly. (~50 call sites
+converted to `await`; verified by tsc-strict + the full sweep.)
+
+**Wrong if:** libSQL's local `file:` mode diverges from remote behavior in a way
+the sweep misses (mitigation: the runbook's preview-deploy gate runs the full
+sweep against the _remote_ Turso DB before any DNS cutover); or a transaction
+isolation bug surfaces (mitigation: explicit commit/rollback + registration-flow
+QA); or launch scale outgrows the Turso free tier (revisit plan, not driver).

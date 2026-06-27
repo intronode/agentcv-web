@@ -484,3 +484,69 @@ commit — no `set -e`/`&&` needed. Project tsc runs in ~1.1s.
 
 Both items resolved; changes are `.gitleaksignore` (new) + `.husky/pre-commit`
 (typecheck gate) + this report. No deploys, no vercel-fork.
+
+## Goal 3 — production-ready & deployable (2026-06-27)
+
+Branch `goal-3-production` (off `d945934`). The four Goal-3 scope items from the
+"Known issues / deploy blockers" list above are closed. Builder-side evidence in
+docs/evidence/goal-3/; final acceptance is Laplace's gate (against the production
+adapter + docs/DEPLOY-RUNBOOK.md) + HJ's browser pass.
+
+### Scope items — status
+
+| Goal-3 item                                                    | Status                                                                                                                                                                                                                                                                                                                                      |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Production data layer (replace better-sqlite3)                 | **Done** — libSQL/Turso via `@libsql/client` (DECISIONS D8, docs/DEPLOY.md). Async adapter preserves the `prepare().get/all/run` shape; ~50 call sites + the 2 write transactions + the sanitizer converted; `file:` local default keeps zero-env boot. better-sqlite3 removed entirely. Production seed via `npm run db:push`.             |
+| Open writes (auth + rate limits)                               | **Done** — all content-creation POSTs (agents/teams/proof/attestations) require auth (401); files/claim/confidential-terms already were. DB-backed fixed-window rate limiting (schema v9 `rate_limits`) on every mutating route. **Deviation:** `/api/contact` stays public (DECISIONS D4 lead-gen funnel) but IP-rate-limited — see below. |
+| contact_requests sentinel                                      | **Done** — schema v8: `subject_type`/`subject_id` nullable; the `(owner,0)` sentinel removed; `createContactRequest` stores NULL for subjectless rows.                                                                                                                                                                                      |
+| postcss accepted-risk                                          | **Resolved, not just re-justified** — see below.                                                                                                                                                                                                                                                                                            |
+| Hardening (error pages, headers, OG/SEO, sitemap, robots, 404) | **Done** — security headers (CSP + HSTS + X-Frame-Options + nosniff + Referrer/Permissions-Policy); metadata (metadataBase, Twitter, robots, OG positioning line); dynamic `sitemap.ts` (109 URLs); `robots.ts`; `global-error.tsx`; error.tsx/not-found.tsx already designed.                                                              |
+
+### postcss — RESOLVED
+
+The flagged advisory (GHSA-qx2v-qp2m-jg93, XSS via unescaped `</style>` in CSS
+stringify) requires attacker-controlled CSS through postcss. AgentCV never feeds
+user input to postcss — it runs at build time on our own Tailwind source; user
+submissions are markdown rendered by react-markdown (HTML-escaped), never CSS. So
+it was non-exploitable here. The vulnerable copy was postcss 8.4.31 vendored
+inside Next 15; npm's "fix" would downgrade Next 15→9 (unacceptable). Instead an
+`overrides: { postcss: ^8.5.10 }` dedupes the tree to a single patched postcss
+8.5.15 (build still passes), and `npm audit fix` cleared the two dev-only
+transitives (esbuild via tsx, js-yaml via eslint — never in the prod runtime).
+**`npm audit` → 0 vulnerabilities.**
+
+### Flagged for review — `/api/contact` stays public
+
+The goal says "all POST require auth," but `/api/contact` is the "request this
+setup" / general-contact lead-gen path (DECISIONS D4 conversion funnel) — anonymous
+visitors must be able to reach it. Requiring auth there would break the documented
+funnel. So it is **public but IP-rate-limited** (5/hr) with the existing validation.
+This is a reasoned deviation, flagged for Laplace/HJ; flipping to auth-required is
+one line (`currentUserId()` + `unauthorized()` in the handler).
+
+### Recommended follow-ups (not blocking launch)
+
+- **Proof ownership scoping.** `/api/proof` now requires auth but not _ownership_ —
+  any signed-in user can add a proof entry to any entity. Attestations are
+  intentionally third-party (peer testimony, no ownership), but proof entries
+  arguably should be owner-only. Recommend scoping proof to the entity owner in a
+  follow-up (resolve owner from subject slug, compare to userId).
+- **CSP nonce hardening.** The CSP uses `script-src/style-src 'unsafe-inline'`
+  because Next injects inline hydration script/style; a nonce-based policy
+  (reworking the Edge middleware) would remove `unsafe-inline`. Stored-XSS is
+  independently mitigated today by react-markdown's HTML escaping. Roadmap.
+
+### Verification (docs/evidence/goal-3/)
+
+- Fresh-clone zero-env prod smoke: **PASS** (libSQL file fallback).
+- Full qa-shoot vs the libSQL adapter, prod mode: **71 shots, 0 console errors, 0
+  overflow** (320/360/390/1440px), **contrast AA PASS** (20 public + 2 auth
+  routes, 0 failing pairs), all interaction captures pass incl. the authed
+  `register-team-success`.
+- Runtime security: unauthenticated content POSTs → 401; contact → 201 then 429
+  (Retry-After) after 5/hr/IP.
+- `tsc` 0 · `npm run build` 0 · `npm audit` 0.
+
+Deploy steps for HJ: **docs/DEPLOY-RUNBOOK.md** (every `[[HJ ACTION]]` isolated;
+Laplace gate + HJ go precede the DNS cutover). Pushed to origin only; the
+vercel-fork mirror push is an `[[HJ ACTION]]` in the runbook.
