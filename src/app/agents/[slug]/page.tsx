@@ -82,6 +82,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
 
   // Files — show public files to everyone; show private files only to owner
   const session = await auth();
+  const authed = !!session?.user?.id;
   const userId = session?.user?.id ? Number(session.user.id) : null;
   const db = getDb();
   const ownerRow = (await db.prepare('SELECT user_id FROM owners WHERE id=?').get(owner.id)) as
@@ -258,7 +259,12 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
               <ProofFeed entries={proof} />
             </div>
             <div className="mt-5" id="add-proof">
-              <ProofForm subjectType="agent" subjectSlug={agent.slug} defaultOpen={openProofForm} />
+              <ProofForm
+                subjectType="agent"
+                subjectSlug={agent.slug}
+                defaultOpen={openProofForm}
+                authed={authed}
+              />
             </div>
             {/* Next-steps guidance — shown only on fresh profiles with no evidence yet */}
             {proof.length === 0 && metrics.length === 0 && (
@@ -377,6 +383,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
                 subjectSlug={agent.slug}
                 subjectLabel="agent"
                 evidenceCount={proof.filter((p) => p.evidence_url !== null).length}
+                authed={authed}
               />
             </div>
           </section>

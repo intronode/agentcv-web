@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { tooManyRequests } from '@/lib/api-auth';
+import { rateLimit } from '@/lib/rate-limit';
 import { getDb } from '@/lib/db';
 import { getFileById, updateFile } from '@/lib/db/queries';
 import type { OwnerRow } from '@/lib/db/types';
@@ -67,6 +69,9 @@ export async function PUT(request: Request, { params }: Params): Promise<NextRes
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = Number(session.user.id);
+
+    const rl = await rateLimit(`file-update:user:${userId}`, 30, 3600);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
 
     const file = await getFileById(id);
     if (!file) {

@@ -9,6 +9,8 @@ import {
   DATE_PATTERN,
   URL_PATTERN,
 } from '@/lib/validate';
+import { currentUserId, unauthorized, tooManyRequests } from '@/lib/api-auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,8 +19,13 @@ const PROOF_TYPES = ['task', 'incident', 'lesson', 'milestone', 'artifact'] as c
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
+    const userId = await currentUserId();
+    if (!userId) return unauthorized();
+    const rl = await rateLimit(`proof:user:${userId}`, 30, 3600);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
+
     const body = await readJsonBody(request);
-    const result = addProofEntry({
+    const result = await addProofEntry({
       subjectType: reqStr(body, 'subjectType', { oneOf: SUBJECT_TYPES }) as SubjectType,
       subjectSlug: reqStr(body, 'subjectSlug', { max: 80 }),
       type: reqStr(body, 'type', { oneOf: PROOF_TYPES }) as ProofType,

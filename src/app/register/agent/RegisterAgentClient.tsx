@@ -363,13 +363,22 @@ export default function RegisterAgentClient({ sessionUser, agentCategories = [] 
         )}
 
         <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-accent-button px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover disabled:opacity-50"
-          >
-            {submitting ? 'Registering…' : 'Register agent'}
-          </button>
+          {sessionUser ? (
+            <button
+              type="submit"
+              disabled={submitting}
+              className="rounded-lg bg-accent-button px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover disabled:opacity-50"
+            >
+              {submitting ? 'Registering…' : 'Register agent'}
+            </button>
+          ) : (
+            <Link
+              href="/signin"
+              className="rounded-lg bg-accent-button px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover"
+            >
+              Sign in to submit
+            </Link>
+          )}
           <Link
             href="/register"
             className="text-xs text-text-tertiary hover:text-text-primary transition-colors"

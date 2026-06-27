@@ -5,6 +5,8 @@
  */
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { tooManyRequests } from '@/lib/api-auth';
+import { rateLimit } from '@/lib/rate-limit';
 import { getDb } from '@/lib/db';
 import {
   addConfidentialTerm,
@@ -78,6 +80,9 @@ export async function POST(request: Request, { params }: Params): Promise<NextRe
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = Number(session.user.id);
+
+    const rl = await rateLimit(`cterm-add:user:${userId}`, 30, 3600);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
 
     const ownerOrError = await resolveOwnerAndCheckAccess(handle, userId);
     if (ownerOrError instanceof NextResponse) return ownerOrError;

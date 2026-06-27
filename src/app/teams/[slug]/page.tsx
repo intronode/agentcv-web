@@ -122,6 +122,7 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
 
   // Files — show public files to everyone; show private files only to owner
   const session = await auth();
+  const authed = !!session?.user?.id;
   const userId = session?.user?.id ? Number(session.user.id) : null;
   const db = getDb();
   const ownerRow = (await db
@@ -414,7 +415,12 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
               <ProofFeed entries={proof} />
             </div>
             <div className="mt-5" id="add-proof">
-              <ProofForm subjectType="team" subjectSlug={team.slug} defaultOpen={openProofForm} />
+              <ProofForm
+                subjectType="team"
+                subjectSlug={team.slug}
+                defaultOpen={openProofForm}
+                authed={authed}
+              />
             </div>
             {/* Next-steps guidance — on fresh pages also absorbs Performance/Economics/Attestations */}
             {isFreshPage && (
@@ -513,6 +519,7 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
                   subjectSlug={team.slug}
                   subjectLabel="team"
                   evidenceCount={proof.filter((p) => p.evidence_url !== null).length}
+                  authed={authed}
                 />
               </div>
             </section>

@@ -7,7 +7,8 @@
 // v6: operational files per agent/team (files, file_findings, file_scan_log).
 // v7: owner_confidential_terms table for per-owner deny-list (AES-256-GCM encrypted).
 // v8: contact_requests.subject_type/subject_id nullable — drop the (owner,0) sentinel.
-export const SCHEMA_VERSION = 8;
+// v9: rate_limits table (DB-backed write-path rate limiting).
+export const SCHEMA_VERSION = 9;
 
 export const SCHEMA_SQL = `
 PRAGMA user_version = ${SCHEMA_VERSION};
@@ -233,4 +234,14 @@ CREATE TABLE owner_confidential_terms (
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX idx_oct_owner ON owner_confidential_terms(owner_id);
+
+-- v9: DB-backed fixed-window rate limiter (serverless-correct — shared across
+-- instances via the same DB, no extra cloud dependency). One row per
+-- (bucket, window_start); count incremented per request; old windows pruned.
+CREATE TABLE rate_limits (
+  bucket        TEXT NOT NULL,
+  window_start  INTEGER NOT NULL,
+  count         INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (bucket, window_start)
+);
 `;

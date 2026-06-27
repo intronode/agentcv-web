@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { addAttestation } from '@/lib/db/queries';
 import type { SubjectType } from '@/lib/db/types';
 import { ValidationError, readJsonBody, reqStr, optStr, URL_PATTERN } from '@/lib/validate';
+import { currentUserId, unauthorized, tooManyRequests } from '@/lib/api-auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +28,14 @@ const RELATIONSHIP_MAX = 120;
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
+    // Attestations are peer testimony with named-author accountability — the
+    // named author must be a signed-in user (they remain third-party to the
+    // subject; no ownership requirement, by design).
+    const userId = await currentUserId();
+    if (!userId) return unauthorized();
+    const rl = await rateLimit(`attestation:user:${userId}`, 20, 3600);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
+
     const body = await readJsonBody(request);
 
     // disclosure is a required boolean — must be explicitly true.
@@ -61,7 +71,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const result = addAttestation({
+    const result = await addAttestation({
       subjectType,
       subjectSlug,
       authorName,

@@ -1052,7 +1052,7 @@ export default function RegisterTeamClient({
             >
               Next →
             </button>
-          ) : (
+          ) : sessionUser ? (
             <button
               type="button"
               onClick={handleSubmit}
@@ -1061,6 +1061,13 @@ export default function RegisterTeamClient({
             >
               {submitting ? 'Submitting…' : 'Submit team'}
             </button>
+          ) : (
+            <Link
+              href="/signin"
+              className="rounded-lg bg-accent-button px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover"
+            >
+              Sign in to submit
+            </Link>
           )}
         </div>
       </div>

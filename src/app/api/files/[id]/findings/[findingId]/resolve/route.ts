@@ -5,6 +5,8 @@
  */
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { tooManyRequests } from '@/lib/api-auth';
+import { rateLimit } from '@/lib/rate-limit';
 import { getDb } from '@/lib/db';
 import { getFileById, getFileFinding, resolveFileFinding } from '@/lib/db/queries';
 import type { OwnerRow } from '@/lib/db/types';
@@ -28,6 +30,9 @@ export async function POST(request: Request, { params }: Params): Promise<NextRe
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = Number(session.user.id);
+
+    const rl = await rateLimit(`finding-resolve:user:${userId}`, 100, 3600);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
 
     const file = await getFileById(fileId);
     if (!file) {

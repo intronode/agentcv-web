@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { SubjectType, TrustTier } from '@/lib/db/types';
 
 interface AttestationFormProps {
@@ -16,6 +17,8 @@ interface AttestationFormProps {
    * i.e. adding an attestation alone is only enough if evidence >= 3 already.
    */
   evidenceCount: number;
+  /** When false, render a sign-in CTA instead of the form body. */
+  authed?: boolean;
 }
 
 type FormState = 'idle' | 'submitting' | 'done' | 'error';
@@ -42,6 +45,7 @@ export default function AttestationForm({
   subjectSlug,
   subjectLabel,
   evidenceCount,
+  authed = true,
 }: AttestationFormProps) {
   const router = useRouter();
   const label = subjectLabel ?? subjectType;
@@ -105,6 +109,20 @@ export default function AttestationForm({
     } finally {
       if (state === 'submitting') setState('idle');
     }
+  }
+
+  if (!authed) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs text-text-secondary">Sign in to attest to this {label}.</p>
+        <Link
+          href="/signin"
+          className="inline-block rounded-lg bg-accent-button px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover"
+        >
+          Sign in
+        </Link>
+      </div>
+    );
   }
 
   return (

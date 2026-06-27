@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { listAgents, registerAgent } from '@/lib/db/queries';
 import type { TrustTier } from '@/lib/db/types';
 import { ValidationError, readJsonBody, reqStr, optStr, DATE_PATTERN } from '@/lib/validate';
+import { currentUserId, unauthorized, tooManyRequests } from '@/lib/api-auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +17,7 @@ const TIERS: readonly TrustTier[] = [
 export async function GET(request: Request): Promise<NextResponse> {
   const params = new URL(request.url).searchParams;
   const tierParam = params.get('tier');
-  const agents = listAgents({
+  const agents = await listAgents({
     q: params.get('q') ?? undefined,
     category: params.get('category') ?? undefined,
     platform: params.get('platform') ?? undefined,
@@ -30,10 +31,14 @@ export async function GET(request: Request): Promise<NextResponse> {
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
-    const session = await auth();
-    const userId = session?.user?.id ? Number(session.user.id) : undefined;
+    // Content creation requires a signed-in user (accountability + spam control).
+    const userId = await currentUserId();
+    if (!userId) return unauthorized();
+    const rl = await rateLimit(`register-agent:user:${userId}`, 10, 3600);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
+
     const body = await readJsonBody(request);
-    const result = registerAgent({
+    const result = await registerAgent({
       name: reqStr(body, 'name', { max: 80 }),
       tagline: reqStr(body, 'tagline', { max: 200 }),
       category: reqStr(body, 'category', { max: 40 }),

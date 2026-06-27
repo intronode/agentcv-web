@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { SubjectType } from '@/lib/db/types';
 
 interface ProofFormProps {
@@ -9,6 +10,8 @@ interface ProofFormProps {
   subjectSlug: string;
   /** When true, the form opens automatically on mount (used by NextSteps CTA link). */
   defaultOpen?: boolean;
+  /** When false, render a sign-in CTA instead of the form body. */
+  authed?: boolean;
 }
 
 const inputClasses =
@@ -34,6 +37,7 @@ export default function ProofForm({
   subjectType,
   subjectSlug,
   defaultOpen = false,
+  authed = true,
 }: ProofFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(defaultOpen);
@@ -88,6 +92,20 @@ export default function ProofForm({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (!authed) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs text-text-secondary">Sign in to add a proof entry.</p>
+        <Link
+          href="/signin"
+          className="inline-block rounded-lg bg-accent-button px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover"
+        >
+          Sign in
+        </Link>
+      </div>
+    );
   }
 
   return (

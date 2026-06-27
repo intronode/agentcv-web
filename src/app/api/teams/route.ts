@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { listTeams, registerTeam } from '@/lib/db/queries';
 import type { MemberEntry } from '@/lib/db/queries';
 import type { TrustTier } from '@/lib/db/types';
@@ -12,6 +11,8 @@ import {
   optArr,
   DATE_PATTERN,
 } from '@/lib/validate';
+import { currentUserId, unauthorized, tooManyRequests } from '@/lib/api-auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,7 +41,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   const seedParam = params.get('seed_layer');
   const bandParam = params.get('agent_count_band');
 
-  const teams = listTeams({
+  const teams = await listTeams({
     q: params.get('q') ?? undefined,
     topology_type: params.get('topology_type') ?? undefined,
     platform: params.get('platform') ?? undefined,
@@ -67,8 +68,11 @@ export async function GET(request: Request): Promise<NextResponse> {
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
-    const session = await auth();
-    const userId = session?.user?.id ? Number(session.user.id) : undefined;
+    const userId = await currentUserId();
+    if (!userId) return unauthorized();
+    const rl = await rateLimit(`register-team:user:${userId}`, 10, 3600);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
+
     const body = await readJsonBody(request);
 
     // Parse members array — accepts two shapes per member:
@@ -135,7 +139,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       });
     }
 
-    const result = registerTeam({
+    const result = await registerTeam({
       name: reqStr(body, 'name', { max: 80 }),
       tagline: reqStr(body, 'tagline', { max: 200 }),
       topologyType: optStr(body, 'topologyType', { oneOf: TOPOLOGY_TYPES }),

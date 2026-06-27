@@ -5,6 +5,8 @@
  */
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { tooManyRequests } from '@/lib/api-auth';
+import { rateLimit } from '@/lib/rate-limit';
 import { getDb } from '@/lib/db';
 import { deleteConfidentialTerm } from '@/lib/db/queries';
 import type { OwnerRow } from '@/lib/db/types';
@@ -26,6 +28,9 @@ export async function DELETE(_request: Request, { params }: Params): Promise<Nex
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = Number(session.user.id);
+
+    const rl = await rateLimit(`cterm-del:user:${userId}`, 30, 3600);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
 
     const db = getDb();
     const owner = (await db.prepare('SELECT * FROM owners WHERE handle=?').get(handle)) as

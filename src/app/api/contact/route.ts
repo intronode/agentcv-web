@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createContactRequest } from '@/lib/db/queries';
 import type { ContactSubjectType } from '@/lib/db/types';
 import { ValidationError, readJsonBody, reqStr, optStr, EMAIL_PATTERN } from '@/lib/validate';
+import { clientIp, tooManyRequests } from '@/lib/api-auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +12,15 @@ const CONTACT_KINDS = ['request_setup', 'claim', 'general'] as const;
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
+    // PUBLIC by design: this is the "request this setup" / general-contact
+    // lead-gen path (DECISIONS D4 funnel) — anonymous visitors must be able to
+    // reach it, so it is NOT auth-gated. Spam is bounded by IP rate limiting +
+    // the existing validation. (Deviation from "all POST require auth" — see
+    // BUILD-REPORT; flip to auth-required by adding currentUserId()+unauthorized()
+    // if the funnel decision changes.)
+    const rl = await rateLimit(`contact:ip:${clientIp(request)}`, 5, 3600);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
+
     const body = await readJsonBody(request);
 
     const kind = optStr(body, 'kind', { oneOf: CONTACT_KINDS }) ?? 'general';
@@ -37,7 +48,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       subjectSlug = subjectSlugRaw;
     }
 
-    const result = createContactRequest({
+    const result = await createContactRequest({
       subjectType,
       subjectSlug,
       requesterName: reqStr(body, 'requesterName', { max: 80 }),

@@ -36,6 +36,7 @@ export const DB_PATH = LOCAL_DB_FILE;
 
 // FK-safe drop order (children before parents) for idempotent reset/push.
 const TABLES_DROP_ORDER = [
+  'rate_limits',
   'owner_confidential_terms',
   'file_findings',
   'file_scan_log',
