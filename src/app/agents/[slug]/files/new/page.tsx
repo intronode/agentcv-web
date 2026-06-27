@@ -25,14 +25,14 @@ export default async function AgentFileNewPage({ params }: PageProps) {
   }
   const userId = Number(session.user.id);
 
-  const profile = getAgentProfile(slug);
+  const profile = await getAgentProfile(slug);
   if (!profile) notFound();
 
   const { agent, owner } = profile;
 
   // Only owner can upload
   const db = getDb();
-  const ownerRow = db.prepare('SELECT user_id FROM owners WHERE id=?').get(owner.id) as
+  const ownerRow = (await db.prepare('SELECT user_id FROM owners WHERE id=?').get(owner.id)) as
     | { user_id: number | null }
     | undefined;
   if (!ownerRow || ownerRow.user_id !== userId) {

@@ -28,7 +28,7 @@ export async function POST(_request: Request, { params }: Params): Promise<NextR
     }
     const userId = Number(session.user.id);
 
-    const file = getFileById(id);
+    const file = await getFileById(id);
     if (!file) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
@@ -36,20 +36,20 @@ export async function POST(_request: Request, { params }: Params): Promise<NextR
     // Verify ownership
     const db = getDb();
     const table = file.subject_type === 'agent' ? 'agents' : 'teams';
-    const subject = db.prepare(`SELECT owner_id FROM ${table} WHERE id=?`).get(file.subject_id) as
-      | { owner_id: number }
-      | undefined;
+    const subject = (await db
+      .prepare(`SELECT owner_id FROM ${table} WHERE id=?`)
+      .get(file.subject_id)) as { owner_id: number } | undefined;
     if (!subject) {
       return NextResponse.json({ error: 'Subject not found' }, { status: 404 });
     }
-    const owner = db.prepare('SELECT user_id FROM owners WHERE id=?').get(subject.owner_id) as
-      | OwnerRow
-      | undefined;
+    const owner = (await db
+      .prepare('SELECT user_id FROM owners WHERE id=?')
+      .get(subject.owner_id)) as OwnerRow | undefined;
     if (!owner || owner.user_id !== userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const result = runScan(id, 'manual_rescan');
+    const result = await runScan(id, 'manual_rescan');
 
     return NextResponse.json({
       scanLogId: result.scanLogId,

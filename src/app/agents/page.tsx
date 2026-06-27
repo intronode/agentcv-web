@@ -30,7 +30,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
   const params = await searchParams;
   const tier = single(params.tier);
   const sort = single(params.sort);
-  const agents = listAgents({
+  const agents = await listAgents({
     q: single(params.q),
     category: single(params.category),
     platform: single(params.platform),
@@ -40,7 +40,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
         ? (sort as (typeof SORTS)[number])
         : undefined,
   });
-  const options = agentFilterOptions();
+  const options = await agentFilterOptions();
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">

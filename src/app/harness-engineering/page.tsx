@@ -47,8 +47,8 @@ const TOC_ITEMS = [
   { id: 'what-we-dont-verify', label: "What we don't verify" },
 ] as const;
 
-export default function HarnessEngineeringPage() {
-  const layerCounts = getLayerCounts();
+export default async function HarnessEngineeringPage() {
+  const layerCounts = await getLayerCounts();
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">

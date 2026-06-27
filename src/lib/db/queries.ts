@@ -1,4 +1,5 @@
 import { getDb } from './index';
+import type { Transaction } from '@libsql/client';
 import type {
   AgentCardData,
   AgentProfile,
@@ -86,17 +87,20 @@ const CARD_METRIC_KEYS = [
   'success_rate',
 ];
 
-function cardMetricsFor(subjectType: SubjectType, ids: number[]): Map<number, MetricRow[]> {
+async function cardMetricsFor(
+  subjectType: SubjectType,
+  ids: number[]
+): Promise<Map<number, MetricRow[]>> {
   const map = new Map<number, MetricRow[]>();
   if (ids.length === 0) return map;
   const placeholders = ids.map(() => '?').join(',');
   const keyPlaceholders = CARD_METRIC_KEYS.map(() => '?').join(',');
-  const rows = getDb()
+  const rows = (await getDb()
     .prepare(
       `SELECT * FROM metrics WHERE subject_type=? AND subject_id IN (${placeholders}) AND key IN (${keyPlaceholders})
        ORDER BY CASE WHEN value IS NULL THEN 1 ELSE 0 END, CASE key WHEN 'window_reconciliation_pct' THEN 0 WHEN 'uptime_pct' THEN 1 WHEN 'tasks_completed' THEN 2 ELSE 3 END`
     )
-    .all(subjectType, ...ids, ...CARD_METRIC_KEYS) as MetricRow[];
+    .all(subjectType, ...ids, ...CARD_METRIC_KEYS)) as MetricRow[];
   for (const row of rows) {
     const list = map.get(row.subject_id) ?? [];
     list.push(row);
@@ -108,7 +112,7 @@ function cardMetricsFor(subjectType: SubjectType, ids: number[]): Map<number, Me
 type AgentListRow = AgentRow &
   SubjectCounts & { owner_handle: string; owner_name: string; config_count: number };
 
-export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
+export async function listAgents(filters: AgentListFilters = {}): Promise<AgentCardData[]> {
   const where: string[] = [];
   const params: (string | number)[] = [];
   if (filters.q) {
@@ -135,7 +139,7 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
         ? 'a.name COLLATE NOCASE ASC'
         : 'proof_count DESC, a.name COLLATE NOCASE ASC';
 
-  const rows = getDb()
+  const rows = (await getDb()
     .prepare(
       `SELECT a.*, o.handle AS owner_handle, o.display_name AS owner_name,
               ${COUNT_SELECTS('agent', 'a')},
@@ -145,9 +149,9 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
        ORDER BY ${orderBy}
        LIMIT ?`
     )
-    .all(...params, filters.limit ?? 100) as AgentListRow[];
+    .all(...params, filters.limit ?? 100)) as AgentListRow[];
 
-  const metrics = cardMetricsFor(
+  const metrics = await cardMetricsFor(
     'agent',
     rows.map((r) => r.id)
   );
@@ -160,7 +164,7 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
   const configSlugsNeeded = new Set<string>();
   for (const r of rows) {
     if ((metrics.get(r.id) ?? []).length === 0 && r.config_count > 0) {
-      const firstConfig = getDb()
+      const firstConfig = (await getDb()
         .prepare(
           `SELECT c.slug FROM teams c
            JOIN team_members cm ON cm.team_id = c.id
@@ -169,14 +173,14 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
            ORDER BY c.featured DESC, c.id ASC
            LIMIT 1`
         )
-        .get(r.id) as { slug: string } | undefined;
+        .get(r.id)) as { slug: string } | undefined;
       if (firstConfig) {
         agentSlugToConfigSlug.set(r.slug, firstConfig.slug);
         configSlugsNeeded.add(firstConfig.slug);
       }
     }
   }
-  const configHeadlines = getTeamHeadlineMetrics([...configSlugsNeeded]);
+  const configHeadlines = await getTeamHeadlineMetrics([...configSlugsNeeded]);
 
   const cards = rows.map((r): AgentCardData => {
     const ownMetrics = metrics.get(r.id) ?? [];
@@ -213,15 +217,15 @@ export function listAgents(filters: AgentListFilters = {}): AgentCardData[] {
   return filters.tier ? cards.filter((c) => c.tier === filters.tier) : cards;
 }
 
-export function agentFilterOptions(): { categories: string[]; platforms: string[] } {
+export async function agentFilterOptions(): Promise<{ categories: string[]; platforms: string[] }> {
   const db = getDb();
   const categories = (
-    db.prepare('SELECT DISTINCT category FROM agents ORDER BY category').all() as {
+    (await db.prepare('SELECT DISTINCT category FROM agents ORDER BY category').all()) as {
       category: string;
     }[]
   ).map((r) => r.category);
   const platforms = (
-    db.prepare('SELECT DISTINCT platform FROM agents ORDER BY platform').all() as {
+    (await db.prepare('SELECT DISTINCT platform FROM agents ORDER BY platform').all()) as {
       platform: string;
     }[]
   ).map((r) => r.platform);
@@ -247,7 +251,9 @@ export type ConfigurationListFilters = TeamListFilters;
 
 type TeamListRow = TeamRow & SubjectCounts & { owner_handle: string; owner_name: string };
 
-export function listTeams(ownerIdOrFilters?: number | TeamListFilters): TeamCardData[] {
+export async function listTeams(
+  ownerIdOrFilters?: number | TeamListFilters
+): Promise<TeamCardData[]> {
   const ownerId =
     typeof ownerIdOrFilters === 'number' ? ownerIdOrFilters : ownerIdOrFilters?.ownerId;
   const filters: TeamListFilters = typeof ownerIdOrFilters === 'object' ? ownerIdOrFilters : {};
@@ -299,7 +305,7 @@ export function listTeams(ownerIdOrFilters?: number | TeamListFilters): TeamCard
           ? 'evidence_count DESC, attestation_count DESC'
           : 'c.featured DESC, proof_count DESC, c.name COLLATE NOCASE ASC';
 
-  const rows = getDb()
+  const rows = (await getDb()
     .prepare(
       `SELECT c.*, o.handle AS owner_handle, o.display_name AS owner_name, ${COUNT_SELECTS('team', 'c')}
        FROM teams c JOIN owners o ON o.id = c.owner_id
@@ -307,9 +313,9 @@ export function listTeams(ownerIdOrFilters?: number | TeamListFilters): TeamCard
        ORDER BY ${orderBy}
        LIMIT 100`
     )
-    .all(...params) as TeamListRow[];
+    .all(...params)) as TeamListRow[];
 
-  const metrics = cardMetricsFor(
+  const metrics = await cardMetricsFor(
     'team',
     rows.map((r) => r.id)
   );
@@ -317,25 +323,28 @@ export function listTeams(ownerIdOrFilters?: number | TeamListFilters): TeamCard
     `SELECT a.slug, a.name, a.avatar, a.model, m.role FROM team_members m
      JOIN agents a ON a.id = m.agent_id WHERE m.team_id = ? ORDER BY m.ordinal`
   );
-  const cards = rows.map(
-    (r): TeamCardData => ({
-      slug: r.slug,
-      name: r.name,
-      avatar: r.avatar,
-      kind: r.kind,
-      tagline: r.tagline,
-      ownerHandle: r.owner_handle,
-      ownerName: r.owner_name,
-      tier: computeTier(r.evidence_count, r.attestation_count),
-      proofCount: r.proof_count,
-      seedLayer: r.seed_layer,
-      topologyType: r.topology_type,
-      agentCount: r.agent_count,
-      platform: r.platform,
-      industries: r.industries ? (JSON.parse(r.industries) as string[]) : [],
-      members: memberStmt.all(r.id) as TeamCardData['members'],
-      metrics: metrics.get(r.id) ?? [],
-    })
+  // Cannot use await inside .map() — use Promise.all to preserve ordering.
+  const cards = await Promise.all(
+    rows.map(
+      async (r): Promise<TeamCardData> => ({
+        slug: r.slug,
+        name: r.name,
+        avatar: r.avatar,
+        kind: r.kind,
+        tagline: r.tagline,
+        ownerHandle: r.owner_handle,
+        ownerName: r.owner_name,
+        tier: computeTier(r.evidence_count, r.attestation_count),
+        proofCount: r.proof_count,
+        seedLayer: r.seed_layer,
+        topologyType: r.topology_type,
+        agentCount: r.agent_count,
+        platform: r.platform,
+        industries: r.industries ? (JSON.parse(r.industries) as string[]) : [],
+        members: (await memberStmt.all(r.id)) as TeamCardData['members'],
+        metrics: metrics.get(r.id) ?? [],
+      })
+    )
   );
   return filters.tier ? cards.filter((c) => c.tier === filters.tier) : cards;
 }
@@ -343,19 +352,22 @@ export function listTeams(ownerIdOrFilters?: number | TeamListFilters): TeamCard
 /** Deprecated alias — kept for call-sites not yet migrated. */
 export const listConfigurations = listTeams;
 
-export function teamFilterOptions(): { platforms: string[]; topologyTypes: string[] } {
+export async function teamFilterOptions(): Promise<{
+  platforms: string[];
+  topologyTypes: string[];
+}> {
   const db = getDb();
   const platforms = (
-    db
+    (await db
       .prepare('SELECT DISTINCT platform FROM teams WHERE platform IS NOT NULL ORDER BY platform')
-      .all() as { platform: string }[]
+      .all()) as { platform: string }[]
   ).map((r) => r.platform);
   const topologyTypes = (
-    db
+    (await db
       .prepare(
         'SELECT DISTINCT topology_type FROM teams WHERE topology_type IS NOT NULL ORDER BY topology_type'
       )
-      .all() as { topology_type: string }[]
+      .all()) as { topology_type: string }[]
   ).map((r) => r.topology_type);
   return { platforms, topologyTypes };
 }
@@ -370,22 +382,22 @@ export const configurationFilterOptions = teamFilterOptions;
  * so new submissions converge on the existing vocabulary rather than forking
  * it with synonym variants.
  */
-export function getDistinctTagValues(): {
+export async function getDistinctTagValues(): Promise<{
   industries: string[];
   taskKinds: string[];
   agentCategories: string[];
-} {
+}> {
   const db = getDb();
 
   // industries and task_kinds are stored as JSON arrays in TEXT columns.
   // Unpack them by reading all non-null rows and parsing in JS — SQLite has
   // no native JSON array-unnest and the row count is small (<500).
-  const industryRows = db
+  const industryRows = (await db
     .prepare('SELECT industries FROM teams WHERE industries IS NOT NULL')
-    .all() as { industries: string }[];
-  const taskKindRows = db
+    .all()) as { industries: string }[];
+  const taskKindRows = (await db
     .prepare('SELECT task_kinds FROM teams WHERE task_kinds IS NOT NULL')
-    .all() as { task_kinds: string }[];
+    .all()) as { task_kinds: string }[];
 
   const industrySet = new Set<string>();
   for (const row of industryRows) {
@@ -408,9 +420,9 @@ export function getDistinctTagValues(): {
   }
 
   const agentCategories = (
-    db
+    (await db
       .prepare('SELECT DISTINCT category FROM agents WHERE category IS NOT NULL ORDER BY category')
-      .all() as {
+      .all()) as {
       category: string;
     }[]
   ).map((r) => r.category);
@@ -424,48 +436,52 @@ export function getDistinctTagValues(): {
 
 // ---- profiles -------------------------------------------------------------
 
-function subjectExtras(subjectType: SubjectType, id: number) {
+async function subjectExtras(subjectType: SubjectType, id: number) {
   const db = getDb();
-  const metrics = db
+  const metrics = (await db
     .prepare(
       'SELECT * FROM metrics WHERE subject_type=? AND subject_id=? ORDER BY CASE WHEN value IS NULL THEN 1 ELSE 0 END, id'
     )
-    .all(subjectType, id) as MetricRow[];
-  const proof = db
+    .all(subjectType, id)) as MetricRow[];
+  const proof = (await db
     .prepare(
       'SELECT * FROM proof_entries WHERE subject_type=? AND subject_id=? ORDER BY entry_date DESC, id DESC'
     )
-    .all(subjectType, id) as ProofEntryRow[];
-  const attestations = db
+    .all(subjectType, id)) as ProofEntryRow[];
+  const attestations = (await db
     .prepare('SELECT * FROM attestations WHERE subject_type=? AND subject_id=? ORDER BY id')
-    .all(subjectType, id) as AttestationRow[];
+    .all(subjectType, id)) as AttestationRow[];
   const evidenceCount = proof.filter((p) => p.evidence_url !== null).length;
   return { metrics, proof, attestations, tier: computeTier(evidenceCount, attestations.length) };
 }
 
-export function getAgentProfile(slug: string): AgentProfile | null {
+export async function getAgentProfile(slug: string): Promise<AgentProfile | null> {
   const db = getDb();
-  const agent = db.prepare('SELECT * FROM agents WHERE slug=?').get(slug) as AgentRow | undefined;
+  const agent = (await db.prepare('SELECT * FROM agents WHERE slug=?').get(slug)) as
+    | AgentRow
+    | undefined;
   if (!agent) return null;
-  const owner = db.prepare('SELECT * FROM owners WHERE id=?').get(agent.owner_id) as OwnerRow;
-  const { metrics, proof, attestations, tier } = subjectExtras('agent', agent.id);
-  const capabilities = db
+  const owner = (await db
+    .prepare('SELECT * FROM owners WHERE id=?')
+    .get(agent.owner_id)) as OwnerRow;
+  const { metrics, proof, attestations, tier } = await subjectExtras('agent', agent.id);
+  const capabilities = (await db
     .prepare('SELECT * FROM capabilities WHERE agent_id=? ORDER BY level DESC')
-    .all(agent.id) as CapabilityRow[];
-  const configurations = db
+    .all(agent.id)) as CapabilityRow[];
+  const configurations = (await db
     .prepare(
       `SELECT c.slug, c.name, c.avatar, c.kind, m.role FROM team_members m
        JOIN teams c ON c.id = m.team_id WHERE m.agent_id=? ORDER BY c.name`
     )
-    .all(agent.id) as AgentProfile['configurations'];
+    .all(agent.id)) as AgentProfile['configurations'];
   const lineageParent = agent.lineage_of
-    ? ((db.prepare('SELECT slug, name FROM agents WHERE id=?').get(agent.lineage_of) as
+    ? (((await db.prepare('SELECT slug, name FROM agents WHERE id=?').get(agent.lineage_of)) as
         | { slug: string; name: string }
         | undefined) ?? null)
     : null;
-  const lineageChildren = db
+  const lineageChildren = (await db
     .prepare('SELECT slug, name, lineage_kind FROM agents WHERE lineage_of=? ORDER BY name')
-    .all(agent.id) as AgentProfile['lineageChildren'];
+    .all(agent.id)) as AgentProfile['lineageChildren'];
   return {
     agent,
     owner,
@@ -480,19 +496,23 @@ export function getAgentProfile(slug: string): AgentProfile | null {
   };
 }
 
-export function getTeamProfile(slug: string): TeamProfile | null {
+export async function getTeamProfile(slug: string): Promise<TeamProfile | null> {
   const db = getDb();
-  const team = db.prepare('SELECT * FROM teams WHERE slug=?').get(slug) as TeamRow | undefined;
+  const team = (await db.prepare('SELECT * FROM teams WHERE slug=?').get(slug)) as
+    | TeamRow
+    | undefined;
   if (!team) return null;
-  const owner = db.prepare('SELECT * FROM owners WHERE id=?').get(team.owner_id) as OwnerRow;
-  const { metrics, proof, attestations, tier } = subjectExtras('team', team.id);
-  const members = db
+  const owner = (await db
+    .prepare('SELECT * FROM owners WHERE id=?')
+    .get(team.owner_id)) as OwnerRow;
+  const { metrics, proof, attestations, tier } = await subjectExtras('team', team.id);
+  const members = (await db
     .prepare(
       `SELECT a.slug, a.name, a.avatar, a.tagline, a.model, m.role, m.role_detail AS roleDetail, m.ordinal
        FROM team_members m JOIN agents a ON a.id = m.agent_id
        WHERE m.team_id=? ORDER BY m.ordinal`
     )
-    .all(team.id) as TeamMemberData[];
+    .all(team.id)) as TeamMemberData[];
   return { team, owner, tier, members, metrics, proof, attestations };
 }
 
@@ -500,8 +520,8 @@ export function getTeamProfile(slug: string): TeamProfile | null {
  * Deprecated alias — returns shape with .configuration field for backward compat.
  * New code should use getTeamProfile().
  */
-export function getConfigurationProfile(slug: string): ConfigurationProfile | null {
-  const profile = getTeamProfile(slug);
+export async function getConfigurationProfile(slug: string): Promise<ConfigurationProfile | null> {
+  const profile = await getTeamProfile(slug);
   if (!profile) return null;
   return {
     configuration: profile.team,
@@ -519,14 +539,14 @@ export function getConfigurationProfile(slug: string): ConfigurationProfile | nu
  * of the given team slugs.  Used by the agent-profile page to surface
  * team-level metrics when the agent itself has none.
  */
-export function getTeamHeadlineMetrics(
+export async function getTeamHeadlineMetrics(
   slugs: string[]
-): Map<string, MetricRow & { configName: string }> {
+): Promise<Map<string, MetricRow & { configName: string }>> {
   const result = new Map<string, MetricRow & { configName: string }>();
   if (slugs.length === 0) return result;
   const db = getDb();
   for (const slug of slugs) {
-    const team = db.prepare('SELECT id, name FROM teams WHERE slug=?').get(slug) as
+    const team = (await db.prepare('SELECT id, name FROM teams WHERE slug=?').get(slug)) as
       | { id: number; name: string }
       | undefined;
     if (!team) continue;
@@ -535,14 +555,14 @@ export function getTeamHeadlineMetrics(
     // included Ari-specific keys, silently producing no headline for curated teams
     // (e.g. magentic-one uses gaia_score, webarena_score).  Here we want the first
     // non-null metric regardless of key; non-null rows are ranked first.
-    const metric = db
+    const metric = (await db
       .prepare(
         `SELECT * FROM metrics
          WHERE subject_type='team' AND subject_id=?
          ORDER BY CASE WHEN value IS NULL THEN 1 ELSE 0 END, id ASC
          LIMIT 1`
       )
-      .get(team.id) as MetricRow | undefined;
+      .get(team.id)) as MetricRow | undefined;
     if (metric) {
       result.set(slug, { ...metric, configName: team.name });
     }
@@ -557,70 +577,70 @@ export const getConfigurationHeadlineMetrics = getTeamHeadlineMetrics;
  * Fetch the computed trust tier for each of the given team slugs.
  * Used by the agent-detail page to compare agent tier vs. team tier.
  */
-export function getTeamTiers(slugs: string[]): Map<string, TrustTier> {
+export async function getTeamTiers(slugs: string[]): Promise<Map<string, TrustTier>> {
   const result = new Map<string, TrustTier>();
   if (slugs.length === 0) return result;
   const db = getDb();
   for (const slug of slugs) {
-    const team = db.prepare('SELECT id FROM teams WHERE slug=?').get(slug) as
+    const team = (await db.prepare('SELECT id FROM teams WHERE slug=?').get(slug)) as
       | { id: number }
       | undefined;
     if (!team) continue;
     const evidenceCount = (
-      db
+      (await db
         .prepare(
           `SELECT COUNT(*) AS cnt FROM proof_entries WHERE subject_type='team' AND subject_id=? AND evidence_url IS NOT NULL`
         )
-        .get(team.id) as { cnt: number }
+        .get(team.id)) as { cnt: number }
     ).cnt;
     const attestationCount = (
-      db
+      (await db
         .prepare(
           `SELECT COUNT(*) AS cnt FROM attestations WHERE subject_type='team' AND subject_id=?`
         )
-        .get(team.id) as { cnt: number }
+        .get(team.id)) as { cnt: number }
     ).cnt;
     result.set(slug, computeTier(evidenceCount, attestationCount));
   }
   return result;
 }
 
-export function getOwnerProfile(handle: string): OwnerProfile | null {
+export async function getOwnerProfile(handle: string): Promise<OwnerProfile | null> {
   const db = getDb();
-  const owner = db.prepare('SELECT * FROM owners WHERE handle=?').get(handle) as
+  const owner = (await db.prepare('SELECT * FROM owners WHERE handle=?').get(handle)) as
     | OwnerRow
     | undefined;
   if (!owner) return null;
 
-  const agents = listAgents({ ownerId: owner.id });
-  const teams = listTeams(owner.id);
+  const agents = await listAgents({ ownerId: owner.id });
+  const teams = await listTeams(owner.id);
 
   // Build proof feed: aggregate proof entries across all subjects owned by this owner.
   // Each entry is annotated with the subject name + slug so the feed can link back.
-  const agentRows = db
+  const agentRows = (await db
     .prepare('SELECT id, slug, name FROM agents WHERE owner_id=?')
-    .all(owner.id) as { id: number; slug: string; name: string }[];
-  const teamRows = db
+    .all(owner.id)) as { id: number; slug: string; name: string }[];
+  const teamRows = (await db
     .prepare('SELECT id, slug, name FROM teams WHERE owner_id=?')
-    .all(owner.id) as { id: number; slug: string; name: string }[];
+    .all(owner.id)) as { id: number; slug: string; name: string }[];
 
   const proofFeed: OwnerProofFeedEntry[] = [];
 
   for (const a of agentRows) {
-    const rows = db
+    const rows = (await db
       .prepare(
         `SELECT * FROM proof_entries WHERE subject_type='agent' AND subject_id=? ORDER BY entry_date DESC, id DESC LIMIT 10`
       )
-      .all(a.id) as ProofEntryRow[];
+      .all(a.id)) as ProofEntryRow[];
     for (const r of rows)
       proofFeed.push({ ...r, subjectName: a.name, subjectSlug: a.slug, subjectKind: 'agent' });
   }
   for (const c of teamRows) {
-    const rows = db
+    const rows = (await db
       .prepare(
         `SELECT * FROM proof_entries WHERE subject_type='team' AND subject_id=? ORDER BY entry_date DESC, id DESC LIMIT 10`
       )
-      .all(c.id) as ProofEntryRow[];
+      .all(c.id)) as ProofEntryRow[];
     for (const r of rows)
       proofFeed.push({
         ...r,
@@ -668,7 +688,7 @@ export interface ConfigurationCompareData {
  * Returns only found slugs (invalid slugs are silently dropped).
  * Order preserves the input slug order.
  */
-export function getTeamsForCompare(slugs: string[]): ConfigurationCompareData[] {
+export async function getTeamsForCompare(slugs: string[]): Promise<ConfigurationCompareData[]> {
   const db = getDb();
   const results: ConfigurationCompareData[] = [];
   const memberStmt = db.prepare(
@@ -677,12 +697,16 @@ export function getTeamsForCompare(slugs: string[]): ConfigurationCompareData[] 
      WHERE m.team_id=? ORDER BY m.ordinal`
   );
   for (const slug of slugs) {
-    const team = db.prepare('SELECT * FROM teams WHERE slug=?').get(slug) as TeamRow | undefined;
+    const team = (await db.prepare('SELECT * FROM teams WHERE slug=?').get(slug)) as
+      | TeamRow
+      | undefined;
     if (!team) continue;
-    const owner = db.prepare('SELECT * FROM owners WHERE id=?').get(team.owner_id) as OwnerRow;
-    const { metrics, proof, attestations, tier } = subjectExtras('team', team.id);
+    const owner = (await db
+      .prepare('SELECT * FROM owners WHERE id=?')
+      .get(team.owner_id)) as OwnerRow;
+    const { metrics, proof, attestations, tier } = await subjectExtras('team', team.id);
     const evidenceCount = proof.filter((p) => p.evidence_url !== null).length;
-    const members = memberStmt.all(team.id) as TeamMemberData[];
+    const members = (await memberStmt.all(team.id)) as TeamMemberData[];
     results.push({
       configuration: team,
       owner,
@@ -701,14 +725,15 @@ export const getConfigurationsForCompare = getTeamsForCompare;
 
 // ---- landing --------------------------------------------------------------
 
-export function getCounts(): SiteCounts {
+export async function getCounts(): Promise<SiteCounts> {
   const db = getDb();
-  const one = (sql: string): number => (db.prepare(sql).get() as { n: number }).n;
+  const one = async (sql: string): Promise<number> =>
+    ((await db.prepare(sql).get()) as { n: number }).n;
   return {
-    agents: one('SELECT COUNT(*) AS n FROM agents'),
-    teams: one('SELECT COUNT(*) AS n FROM teams'),
-    owners: one('SELECT COUNT(*) AS n FROM owners'),
-    proofEntries: one('SELECT COUNT(*) AS n FROM proof_entries'),
+    agents: await one('SELECT COUNT(*) AS n FROM agents'),
+    teams: await one('SELECT COUNT(*) AS n FROM teams'),
+    owners: await one('SELECT COUNT(*) AS n FROM owners'),
+    proofEntries: await one('SELECT COUNT(*) AS n FROM proof_entries'),
   };
 }
 
@@ -720,37 +745,39 @@ export interface LayerCounts {
 }
 
 /** Counts across both teams + agents per seed layer, plus evidence-linked proof. */
-export function getLayerCounts(): LayerCounts {
+export async function getLayerCounts(): Promise<LayerCounts> {
   const db = getDb();
-  const one = (sql: string, ...params: (string | number)[]): number =>
-    (db.prepare(sql).get(...params) as { n: number }).n;
+  const one = async (sql: string, ...params: (string | number)[]): Promise<number> =>
+    ((await db.prepare(sql).get(...params)) as { n: number }).n;
   return {
     real:
-      one("SELECT COUNT(*) AS n FROM teams WHERE seed_layer='real'") +
-      one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='real'"),
+      (await one("SELECT COUNT(*) AS n FROM teams WHERE seed_layer='real'")) +
+      (await one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='real'")),
     curated:
-      one("SELECT COUNT(*) AS n FROM teams WHERE seed_layer='curated'") +
-      one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='curated'"),
+      (await one("SELECT COUNT(*) AS n FROM teams WHERE seed_layer='curated'")) +
+      (await one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='curated'")),
     illustrative:
-      one("SELECT COUNT(*) AS n FROM teams WHERE seed_layer='illustrative'") +
-      one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='illustrative'"),
-    evidenceLinked: one('SELECT COUNT(*) AS n FROM proof_entries WHERE evidence_url IS NOT NULL'),
+      (await one("SELECT COUNT(*) AS n FROM teams WHERE seed_layer='illustrative'")) +
+      (await one("SELECT COUNT(*) AS n FROM agents WHERE seed_layer='illustrative'")),
+    evidenceLinked: await one(
+      'SELECT COUNT(*) AS n FROM proof_entries WHERE evidence_url IS NOT NULL'
+    ),
   };
 }
 
-export function getFeatured(): {
+export async function getFeatured(): Promise<{
   agents: AgentCardData[];
   teams: TeamCardData[];
   /** @deprecated use teams */
   configurations: TeamCardData[];
-} {
-  const slugsOf = (sql: string): Set<string> =>
-    new Set((getDb().prepare(sql).all() as { slug: string }[]).map((r) => r.slug));
-  const featuredAgents = slugsOf('SELECT slug FROM agents WHERE featured=1');
-  const featuredTeams = slugsOf('SELECT slug FROM teams WHERE featured=1');
+}> {
+  const slugsOf = async (sql: string): Promise<Set<string>> =>
+    new Set(((await getDb().prepare(sql).all()) as { slug: string }[]).map((r) => r.slug));
+  const featuredAgents = await slugsOf('SELECT slug FROM agents WHERE featured=1');
+  const featuredTeams = await slugsOf('SELECT slug FROM teams WHERE featured=1');
 
   // Ensure flagship Ari Collective is first; then fill to at least 3 from all teams.
-  const allTeams = listTeams();
+  const allTeams = await listTeams();
   const flagship = allTeams.find((c) => c.slug === 'ari-collective');
   const otherFeatured = allTeams.filter(
     (c) => featuredTeams.has(c.slug) && c.slug !== 'ari-collective'
@@ -761,7 +788,7 @@ export function getFeatured(): {
   const teams = [...(flagship ? [flagship] : []), ...otherFeatured, ...remainder].slice(0, 3);
 
   return {
-    agents: listAgents({ limit: 100 })
+    agents: (await listAgents({ limit: 100 }))
       .filter((a) => featuredAgents.has(a.slug))
       .slice(0, 6),
     teams,
@@ -784,9 +811,9 @@ export interface OwnerStripEntry {
  * owner profile page.  Returns all owners that have at least one team,
  * ordered by team count descending, then name.
  */
-export function getOwnersStrip(): OwnerStripEntry[] {
+export async function getOwnersStrip(): Promise<OwnerStripEntry[]> {
   const db = getDb();
-  const rows = db
+  const rows = (await db
     .prepare(
       `SELECT o.handle, o.display_name,
               COUNT(c.id) AS config_count,
@@ -796,7 +823,7 @@ export function getOwnersStrip(): OwnerStripEntry[] {
        GROUP BY o.id
        ORDER BY config_count DESC, o.display_name COLLATE NOCASE ASC`
     )
-    .all() as { handle: string; display_name: string; config_count: number; layer_mix: string }[];
+    .all()) as { handle: string; display_name: string; config_count: number; layer_mix: string }[];
   return rows.map((r) => ({
     handle: r.handle,
     displayName: r.display_name,
@@ -819,36 +846,41 @@ export interface UpsertUserInput {
  * For credentials/dev sign-in (no email): always inserts a new row so
  * multiple dev accounts can coexist without collision.
  */
-export function upsertUser(input: UpsertUserInput): UserRow {
+export async function upsertUser(input: UpsertUserInput): Promise<UserRow> {
   const db = getDb();
   if (input.email) {
     // Try update first; insert if not found.
-    const existing = db.prepare('SELECT * FROM users WHERE email=?').get(input.email) as
+    const existing = (await db.prepare('SELECT * FROM users WHERE email=?').get(input.email)) as
       | UserRow
       | undefined;
     if (existing) {
-      db.prepare('UPDATE users SET name=?, image=?, provider=? WHERE id=?').run(
-        input.name || existing.name,
-        input.image ?? existing.image,
-        input.provider,
-        existing.id
-      );
-      return db.prepare('SELECT * FROM users WHERE id=?').get(existing.id) as UserRow;
+      await db
+        .prepare('UPDATE users SET name=?, image=?, provider=? WHERE id=?')
+        .run(
+          input.name || existing.name,
+          input.image ?? existing.image,
+          input.provider,
+          existing.id
+        );
+      return (await db.prepare('SELECT * FROM users WHERE id=?').get(existing.id)) as UserRow;
     }
-    const res = db
+    const res = await db
       .prepare('INSERT INTO users (email, name, image, provider) VALUES (?, ?, ?, ?)')
       .run(input.email, input.name, input.image ?? null, input.provider);
-    return db.prepare('SELECT * FROM users WHERE id=?').get(res.lastInsertRowid) as UserRow;
+    return (await db.prepare('SELECT * FROM users WHERE id=?').get(res.lastInsertRowid)) as UserRow;
   }
   // No email — always insert fresh (dev sign-in creates ephemeral accounts).
-  const res = db
+  const res = await db
     .prepare('INSERT INTO users (email, name, image, provider) VALUES (?, ?, ?, ?)')
     .run(null, input.name, input.image ?? null, input.provider);
-  return db.prepare('SELECT * FROM users WHERE id=?').get(res.lastInsertRowid) as UserRow;
+  return (await db.prepare('SELECT * FROM users WHERE id=?').get(res.lastInsertRowid)) as UserRow;
 }
 
-export function getUserById(id: number): UserRow | null {
-  return (getDb().prepare('SELECT * FROM users WHERE id=?').get(id) as UserRow | undefined) ?? null;
+export async function getUserById(id: number): Promise<UserRow | null> {
+  return (
+    ((await getDb().prepare('SELECT * FROM users WHERE id=?').get(id)) as UserRow | undefined) ??
+    null
+  );
 }
 
 // ---- owner claim flow -----------------------------------------------------
@@ -865,15 +897,15 @@ export interface ClaimOwnerInput {
  * Does NOT auto-grant the claim — manual review required at launch.
  * Returns the contact_request id.
  */
-export function createOwnerClaimRequest(input: ClaimOwnerInput): { id: number } {
+export async function createOwnerClaimRequest(input: ClaimOwnerInput): Promise<{ id: number }> {
   const db = getDb();
-  const owner = db.prepare('SELECT * FROM owners WHERE handle=?').get(input.ownerHandle) as
+  const owner = (await db.prepare('SELECT * FROM owners WHERE handle=?').get(input.ownerHandle)) as
     | OwnerRow
     | undefined;
   if (!owner) throw new Error(`Unknown owner: ${input.ownerHandle}`);
   if (owner.user_id !== null) throw new Error('Owner already claimed');
 
-  const res = db
+  const res = await db
     .prepare(
       `INSERT INTO contact_requests (subject_type, subject_id, requester_name, requester_email, message, kind)
        VALUES ('owner', ?, ?, ?, ?, 'claim')`
@@ -897,12 +929,28 @@ function slugify(name: string): string {
     .slice(0, 60);
 }
 
-function uniqueSlug(table: 'agents' | 'teams', base: string): string {
+async function uniqueSlug(table: 'agents' | 'teams', base: string): Promise<string> {
   const db = getDb();
   const stmt = db.prepare(`SELECT 1 FROM ${table} WHERE slug=?`);
   let slug = base || 'agent';
   let i = 2;
-  while (stmt.get(slug)) {
+  while (await stmt.get(slug)) {
+    slug = `${base}-${i}`;
+    i += 1;
+  }
+  return slug;
+}
+
+async function uniqueSlugTx(
+  tx: Transaction,
+  table: 'agents' | 'teams',
+  base: string
+): Promise<string> {
+  let slug = base || 'agent';
+  let i = 2;
+  while (
+    (await tx.execute({ sql: `SELECT 1 FROM ${table} WHERE slug=?`, args: [slug] })).rows.length > 0
+  ) {
     slug = `${base}-${i}`;
     i += 1;
   }
@@ -925,28 +973,37 @@ export interface RegisterAgentInput {
   userId?: number;
 }
 
-export function registerAgent(input: RegisterAgentInput): { slug: string; id: number } {
+export async function registerAgent(
+  input: RegisterAgentInput
+): Promise<{ slug: string; id: number }> {
   const db = getDb();
-  const tx = db.transaction((): { slug: string; id: number } => {
-    let owner = db.prepare('SELECT * FROM owners WHERE handle=?').get(input.ownerHandle) as
-      | OwnerRow
-      | undefined;
+  const tx = await db.transaction();
+  try {
+    let owner = (
+      await tx.execute({ sql: 'SELECT * FROM owners WHERE handle=?', args: [input.ownerHandle] })
+    ).rows[0] as OwnerRow | undefined;
     if (!owner) {
-      const res = db
-        .prepare('INSERT INTO owners (handle, display_name, user_id) VALUES (?, ?, ?)')
-        .run(slugify(input.ownerHandle), input.ownerName, input.userId ?? null);
-      owner = db.prepare('SELECT * FROM owners WHERE id=?').get(res.lastInsertRowid) as OwnerRow;
+      const ins = await tx.execute({
+        sql: 'INSERT INTO owners (handle, display_name, user_id) VALUES (?, ?, ?)',
+        args: [slugify(input.ownerHandle), input.ownerName, input.userId ?? null],
+      });
+      owner = (
+        await tx.execute({
+          sql: 'SELECT * FROM owners WHERE id=?',
+          args: [ins.lastInsertRowid ?? null],
+        })
+      ).rows[0] as unknown as OwnerRow;
     } else if (input.userId && owner.user_id === null) {
-      // Link user_id to existing unclaimed owner on their first signed-in submit.
-      db.prepare('UPDATE owners SET user_id=? WHERE id=?').run(input.userId, owner.id);
+      await tx.execute({
+        sql: 'UPDATE owners SET user_id=? WHERE id=?',
+        args: [input.userId, owner.id],
+      });
     }
-    const slug = uniqueSlug('agents', slugify(input.name));
-    const res = db
-      .prepare(
-        `INSERT INTO agents (slug, name, tagline, category, platform, model, about, how_built, oversight, operational_since, owner_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
+    const slug = await uniqueSlugTx(tx, 'agents', slugify(input.name));
+    const res = await tx.execute({
+      sql: `INSERT INTO agents (slug, name, tagline, category, platform, model, about, how_built, oversight, operational_since, owner_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
         slug,
         input.name,
         input.tagline,
@@ -957,11 +1014,19 @@ export function registerAgent(input: RegisterAgentInput): { slug: string; id: nu
         input.howBuilt ?? null,
         input.oversight ?? null,
         input.operationalSince ?? null,
-        owner.id
-      );
+        owner.id,
+      ],
+    });
+    await tx.commit();
     return { slug, id: Number(res.lastInsertRowid) };
-  });
-  return tx();
+  } catch (e) {
+    try {
+      await tx.rollback();
+    } catch {
+      /* transaction already finalized */
+    }
+    throw e;
+  }
 }
 
 export interface AddProofInput {
@@ -974,15 +1039,17 @@ export interface AddProofInput {
   entryDate: string;
 }
 
-export function addProofEntry(input: AddProofInput): { id: number; tier: TrustTier } {
+export async function addProofEntry(
+  input: AddProofInput
+): Promise<{ id: number; tier: TrustTier }> {
   const db = getDb();
   const table = input.subjectType === 'agent' ? 'agents' : 'teams';
-  const subject = db.prepare(`SELECT id FROM ${table} WHERE slug=?`).get(input.subjectSlug) as
-    | { id: number }
-    | undefined;
+  const subject = (await db
+    .prepare(`SELECT id FROM ${table} WHERE slug=?`)
+    .get(input.subjectSlug)) as { id: number } | undefined;
   if (!subject) throw new Error(`Unknown ${input.subjectType}: ${input.subjectSlug}`);
   const provenance = input.evidenceUrl ? 'evidence_linked' : 'self_reported';
-  const res = db
+  const res = await db
     .prepare(
       `INSERT INTO proof_entries (subject_type, subject_id, entry_date, type, title, body, evidence_url, provenance)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
@@ -997,7 +1064,7 @@ export function addProofEntry(input: AddProofInput): { id: number; tier: TrustTi
       input.evidenceUrl ?? null,
       provenance
     );
-  const { tier } = subjectExtras(input.subjectType, subject.id);
+  const { tier } = await subjectExtras(input.subjectType, subject.id);
   return { id: Number(res.lastInsertRowid), tier };
 }
 
@@ -1010,14 +1077,16 @@ export interface AddAttestationInput {
   statement: string;
 }
 
-export function addAttestation(input: AddAttestationInput): { id: number; tier: TrustTier } {
+export async function addAttestation(
+  input: AddAttestationInput
+): Promise<{ id: number; tier: TrustTier }> {
   const db = getDb();
   const table = input.subjectType === 'agent' ? 'agents' : 'teams';
-  const subject = db.prepare(`SELECT id FROM ${table} WHERE slug=?`).get(input.subjectSlug) as
-    | { id: number }
-    | undefined;
+  const subject = (await db
+    .prepare(`SELECT id FROM ${table} WHERE slug=?`)
+    .get(input.subjectSlug)) as { id: number } | undefined;
   if (!subject) throw new Error(`Unknown ${input.subjectType}: ${input.subjectSlug}`);
-  const res = db
+  const res = await db
     .prepare(
       `INSERT INTO attestations (subject_type, subject_id, author_name, author_url, relationship, statement, illustrative)
        VALUES (?, ?, ?, ?, ?, ?, 0)`
@@ -1030,7 +1099,7 @@ export function addAttestation(input: AddAttestationInput): { id: number; tier: 
       input.relationship,
       input.statement
     );
-  const { tier } = subjectExtras(input.subjectType, subject.id);
+  const { tier } = await subjectExtras(input.subjectType, subject.id);
   return { id: Number(res.lastInsertRowid), tier };
 }
 
@@ -1043,7 +1112,7 @@ export interface ContactInput {
   kind?: string; // 'request_setup' | 'claim' | 'general'
 }
 
-export function createContactRequest(input: ContactInput): { id: number } {
+export async function createContactRequest(input: ContactInput): Promise<{ id: number }> {
   const db = getDb();
   const kind = input.kind ?? 'general';
 
@@ -1054,22 +1123,18 @@ export function createContactRequest(input: ContactInput): { id: number } {
     const table =
       input.subjectType === 'agent' ? 'agents' : input.subjectType === 'team' ? 'teams' : 'owners';
     const column = input.subjectType === 'owner' ? 'handle' : 'slug';
-    const subject = db
+    const subject = (await db
       .prepare(`SELECT id FROM ${table} WHERE ${column}=?`)
-      .get(input.subjectSlug) as { id: number } | undefined;
+      .get(input.subjectSlug)) as { id: number } | undefined;
     if (!subject) throw new Error(`Unknown ${input.subjectType}: ${input.subjectSlug}`);
     subjectType = input.subjectType;
     subjectId = subject.id;
   }
 
-  // For general requests with no subject, we allow null subject.
-  // The schema CHECK requires subject_type to be in the enum — use a sentinel approach:
-  // we store subjectType as 'owner' and subjectId as 0 for subjectless general requests.
-  // For request_setup with no team ref, same sentinel.
-  const storeType = subjectType ?? 'owner';
-  const storeId = subjectId ?? 0;
+  const storeType = subjectType;
+  const storeId = subjectId;
 
-  const res = db
+  const res = await db
     .prepare(
       `INSERT INTO contact_requests (subject_type, subject_id, requester_name, requester_email, message, kind)
        VALUES (?, ?, ?, ?, ?, ?)`
@@ -1127,36 +1192,41 @@ export interface RegisterTeamInput {
 /** Deprecated alias — kept for call-sites not yet migrated. */
 export type RegisterConfigurationInput = RegisterTeamInput;
 
-export function registerTeam(input: RegisterTeamInput): {
-  slug: string;
-  id: number;
-} {
+export async function registerTeam(
+  input: RegisterTeamInput
+): Promise<{ slug: string; id: number }> {
   const db = getDb();
-  const tx = db.transaction((): { slug: string; id: number } => {
-    // Find or create owner (same pattern as registerAgent).
-    let owner = db.prepare('SELECT * FROM owners WHERE handle=?').get(input.ownerHandle) as
-      | OwnerRow
-      | undefined;
+  const tx = await db.transaction();
+  try {
+    let owner = (
+      await tx.execute({ sql: 'SELECT * FROM owners WHERE handle=?', args: [input.ownerHandle] })
+    ).rows[0] as OwnerRow | undefined;
     if (!owner) {
-      const res = db
-        .prepare('INSERT INTO owners (handle, display_name, user_id) VALUES (?, ?, ?)')
-        .run(slugify(input.ownerHandle), input.ownerName, input.userId ?? null);
-      owner = db.prepare('SELECT * FROM owners WHERE id=?').get(res.lastInsertRowid) as OwnerRow;
+      const ins = await tx.execute({
+        sql: 'INSERT INTO owners (handle, display_name, user_id) VALUES (?, ?, ?)',
+        args: [slugify(input.ownerHandle), input.ownerName, input.userId ?? null],
+      });
+      owner = (
+        await tx.execute({
+          sql: 'SELECT * FROM owners WHERE id=?',
+          args: [ins.lastInsertRowid ?? null],
+        })
+      ).rows[0] as unknown as OwnerRow;
     } else if (input.userId && owner.user_id === null) {
-      // Link user_id to existing unclaimed owner on their first signed-in submit.
-      db.prepare('UPDATE owners SET user_id=? WHERE id=?').run(input.userId, owner.id);
+      await tx.execute({
+        sql: 'UPDATE owners SET user_id=? WHERE id=?',
+        args: [input.userId, owner.id],
+      });
     }
 
-    const slug = uniqueSlug('teams', slugify(input.name));
-    const res = db
-      .prepare(
-        `INSERT INTO teams
-          (slug, name, tagline, topology_type, platform, agent_count,
-           industries, task_kinds, topology, why_it_works, how_built, oversight,
-           operational_since, owner_id, seed_layer)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'real')`
-      )
-      .run(
+    const slug = await uniqueSlugTx(tx, 'teams', slugify(input.name));
+    const res = await tx.execute({
+      sql: `INSERT INTO teams
+              (slug, name, tagline, topology_type, platform, agent_count,
+               industries, task_kinds, topology, why_it_works, how_built, oversight,
+               operational_since, owner_id, seed_layer)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'real')`,
+      args: [
         slug,
         input.name,
         input.tagline,
@@ -1170,65 +1240,70 @@ export function registerTeam(input: RegisterTeamInput): {
         input.howBuilt ?? null,
         input.oversight ?? null,
         input.operationalSince ?? null,
-        owner.id
-      );
+        owner.id,
+      ],
+    });
     const teamId = Number(res.lastInsertRowid);
 
-    // Attach members if provided — supports both existing-slug refs and inline creates.
     if (input.members && input.members.length > 0) {
-      const agentStmt = db.prepare('SELECT id FROM agents WHERE slug=?');
-      const insertAgentStmt = db.prepare(
-        `INSERT INTO agents (slug, name, tagline, category, platform, model, about, how_built, oversight, operational_since, owner_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      );
-      const memberStmt = db.prepare(
-        `INSERT INTO team_members (team_id, agent_id, role, ordinal)
-         VALUES (?, ?, ?, ?)`
-      );
       let ordinal = 0;
       for (const m of input.members) {
         let agentId: number;
         if ('create' in m) {
-          // Inline create: new agent owned by the same owner, same platform default.
           const c = m.create;
           const agentName = c.name.trim().slice(0, 80);
-          const agentSlug = uniqueSlug('agents', slugify(agentName));
+          const agentSlug = await uniqueSlugTx(tx, 'agents', slugify(agentName));
           const agentTagline = (c.tagline ?? c.role).trim().slice(0, 200);
           const agentPlatform =
             (c.platform ?? input.platform ?? '').trim().slice(0, 40) || 'Unknown';
           const agentModel = c.model ? c.model.trim().slice(0, 80) : null;
-          const agentRes = insertAgentStmt.run(
-            agentSlug,
-            agentName,
-            agentTagline,
-            c.role.trim().slice(0, 40), // category = role
-            agentPlatform,
-            agentModel,
-            null, // about
-            null, // how_built
-            null, // oversight
-            null, // operational_since
-            owner.id
-          );
+          const agentRes = await tx.execute({
+            sql: `INSERT INTO agents (slug, name, tagline, category, platform, model, about, how_built, oversight, operational_since, owner_id)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            args: [
+              agentSlug,
+              agentName,
+              agentTagline,
+              c.role.trim().slice(0, 40),
+              agentPlatform,
+              agentModel,
+              null,
+              null,
+              null,
+              null,
+              owner.id,
+            ],
+          });
           agentId = Number(agentRes.lastInsertRowid);
         } else {
-          // Existing agent by slug.
-          const agent = agentStmt.get(m.agentSlug) as { id: number } | undefined;
+          const agent = (
+            await tx.execute({ sql: 'SELECT id FROM agents WHERE slug=?', args: [m.agentSlug] })
+          ).rows[0] as { id: number } | undefined;
           if (!agent) throw new Error(`Unknown agent: ${m.agentSlug}`);
           agentId = agent.id;
         }
-        memberStmt.run(
-          teamId,
-          agentId,
-          'create' in m ? m.create.role.trim().slice(0, 80) : m.role,
-          ordinal++
-        );
+        await tx.execute({
+          sql: `INSERT INTO team_members (team_id, agent_id, role, ordinal) VALUES (?, ?, ?, ?)`,
+          args: [
+            teamId,
+            agentId,
+            'create' in m ? m.create.role.trim().slice(0, 80) : m.role,
+            ordinal++,
+          ],
+        });
       }
     }
 
+    await tx.commit();
     return { slug, id: teamId };
-  });
-  return tx();
+  } catch (e) {
+    try {
+      await tx.rollback();
+    } catch {
+      /* transaction already finalized */
+    }
+    throw e;
+  }
 }
 
 /** Deprecated alias — kept for call-sites not yet migrated. */
@@ -1259,14 +1334,14 @@ export function validateFilePath(path: string): string | null {
   return null;
 }
 
-export function getFilesForSubject(
+export async function getFilesForSubject(
   subjectType: 'agent' | 'team',
   subjectId: number,
   visibleOnly = false
-): FileListItem[] {
+): Promise<FileListItem[]> {
   const db = getDb();
   const visClause = visibleOnly ? "AND f.visibility = 'public'" : '';
-  return db
+  return (await db
     .prepare(
       `SELECT f.id, f.path, f.visibility, f.sanitization_state, f.updated_at,
               (SELECT sl.scan_ts FROM file_scan_log sl WHERE sl.file_id = f.id ORDER BY sl.scan_ts DESC LIMIT 1) AS last_scan_ts
@@ -1274,44 +1349,53 @@ export function getFilesForSubject(
        WHERE f.subject_type = ? AND f.subject_id = ? ${visClause}
        ORDER BY f.path ASC`
     )
-    .all(subjectType, subjectId) as FileListItem[];
+    .all(subjectType, subjectId)) as FileListItem[];
 }
 
 /** Returns the file row (including content_private) — only for server-side use. */
-export function getFileByPath(
+export async function getFileByPath(
   subjectType: 'agent' | 'team',
   subjectId: number,
   path: string
-): FileRow | null {
+): Promise<FileRow | null> {
   return (
-    (getDb()
+    ((await getDb()
       .prepare('SELECT * FROM files WHERE subject_type=? AND subject_id=? AND path=?')
-      .get(subjectType, subjectId, path) as FileRow | undefined) ?? null
+      .get(subjectType, subjectId, path)) as FileRow | undefined) ?? null
   );
 }
 
 /** Returns the file row (including content_private) — only for server-side use. */
-export function getFileById(id: number): FileRow | null {
-  return (getDb().prepare('SELECT * FROM files WHERE id=?').get(id) as FileRow | undefined) ?? null;
+export async function getFileById(id: number): Promise<FileRow | null> {
+  return (
+    ((await getDb().prepare('SELECT * FROM files WHERE id=?').get(id)) as FileRow | undefined) ??
+    null
+  );
 }
 
-export function countPublicFiles(subjectType: 'agent' | 'team', subjectId: number): number {
+export async function countPublicFiles(
+  subjectType: 'agent' | 'team',
+  subjectId: number
+): Promise<number> {
   return (
-    getDb()
+    (await getDb()
       .prepare(
         "SELECT COUNT(*) AS n FROM files WHERE subject_type=? AND subject_id=? AND visibility='public'"
       )
-      .get(subjectType, subjectId) as { n: number }
+      .get(subjectType, subjectId)) as { n: number }
   ).n;
 }
 
-export function countPrivateFiles(subjectType: 'agent' | 'team', subjectId: number): number {
+export async function countPrivateFiles(
+  subjectType: 'agent' | 'team',
+  subjectId: number
+): Promise<number> {
   return (
-    getDb()
+    (await getDb()
       .prepare(
         "SELECT COUNT(*) AS n FROM files WHERE subject_type=? AND subject_id=? AND visibility='private'"
       )
-      .get(subjectType, subjectId) as { n: number }
+      .get(subjectType, subjectId)) as { n: number }
   ).n;
 }
 
@@ -1323,12 +1407,12 @@ export interface CreateFileInput {
   uploadedBy: number | null;
 }
 
-export function createFile(input: CreateFileInput): { id: number } {
+export async function createFile(input: CreateFileInput): Promise<{ id: number }> {
   if (Buffer.byteLength(input.contentPrivate, 'utf8') > MAX_CONTENT_BYTES) {
     throw new Error(`File content exceeds 64 KB limit`);
   }
   const db = getDb();
-  const res = db
+  const res = await db
     .prepare(
       `INSERT INTO files (subject_type, subject_id, path, content_private, uploaded_by)
        VALUES (?, ?, ?, ?, ?)`
@@ -1341,19 +1425,19 @@ export interface UpdateFileInput {
   contentPrivate: string;
 }
 
-export function updateFile(id: number, input: UpdateFileInput): void {
+export async function updateFile(id: number, input: UpdateFileInput): Promise<void> {
   if (Buffer.byteLength(input.contentPrivate, 'utf8') > MAX_CONTENT_BYTES) {
     throw new Error(`File content exceeds 64 KB limit`);
   }
-  getDb()
+  await getDb()
     .prepare(
       `UPDATE files SET content_private=?, sanitization_state='needs_scan', updated_at=datetime('now') WHERE id=?`
     )
     .run(input.contentPrivate, id);
 }
 
-export function setFileVisibility(id: number, visibility: FileVisibility): void {
-  getDb()
+export async function setFileVisibility(id: number, visibility: FileVisibility): Promise<void> {
+  await getDb()
     .prepare(`UPDATE files SET visibility=?, updated_at=datetime('now') WHERE id=?`)
     .run(visibility, id);
 }
@@ -1363,32 +1447,32 @@ export function setFileVisibility(id: number, visibility: FileVisibility): void 
  * - sanitization_state='scan_complete'
  * - no unresolved findings (stale=0 and status='unresolved')
  */
-export function canMakeFilePublic(fileId: number): boolean {
+export async function canMakeFilePublic(fileId: number): Promise<boolean> {
   const db = getDb();
-  const file = db.prepare('SELECT sanitization_state FROM files WHERE id=?').get(fileId) as
+  const file = (await db.prepare('SELECT sanitization_state FROM files WHERE id=?').get(fileId)) as
     | { sanitization_state: string }
     | undefined;
   if (!file || file.sanitization_state !== 'scan_complete') return false;
 
-  const unresolved = db
+  const unresolved = (await db
     .prepare(
       "SELECT COUNT(*) AS n FROM file_findings WHERE file_id=? AND stale=0 AND status='unresolved'"
     )
-    .get(fileId) as { n: number };
+    .get(fileId)) as { n: number };
   return unresolved.n === 0;
 }
 
 /** Get all non-stale findings for a file, ordered by span_start. */
-export function getFileFindings(fileId: number): FileFindingRow[] {
-  return getDb()
+export async function getFileFindings(fileId: number): Promise<FileFindingRow[]> {
+  return (await getDb()
     .prepare(`SELECT * FROM file_findings WHERE file_id=? AND stale=0 ORDER BY span_start ASC`)
-    .all(fileId) as FileFindingRow[];
+    .all(fileId)) as FileFindingRow[];
 }
 
 /** Get a single finding by ID. */
-export function getFileFinding(findingId: number): FileFindingRow | null {
+export async function getFileFinding(findingId: number): Promise<FileFindingRow | null> {
   return (
-    (getDb().prepare('SELECT * FROM file_findings WHERE id=?').get(findingId) as
+    ((await getDb().prepare('SELECT * FROM file_findings WHERE id=?').get(findingId)) as
       | FileFindingRow
       | undefined) ?? null
   );
@@ -1401,8 +1485,11 @@ export interface ResolveFindingInput {
   resolvedBy: number;
 }
 
-export function resolveFileFinding(findingId: number, input: ResolveFindingInput): void {
-  getDb()
+export async function resolveFileFinding(
+  findingId: number,
+  input: ResolveFindingInput
+): Promise<void> {
+  await getDb()
     .prepare(
       `UPDATE file_findings
        SET status=?, resolved_mask=?, dismiss_reason=?, resolved_by=?, resolved_at=datetime('now')
@@ -1418,29 +1505,32 @@ export function resolveFileFinding(findingId: number, input: ResolveFindingInput
 }
 
 /** Get scan log rows for a file, newest first. */
-export function getFileScanLog(fileId: number, limit = 20) {
-  return getDb()
+export async function getFileScanLog(
+  fileId: number,
+  limit = 20
+): Promise<import('./types').FileScanLogRow[]> {
+  return (await getDb()
     .prepare(`SELECT * FROM file_scan_log WHERE file_id=? ORDER BY scan_ts DESC LIMIT ?`)
-    .all(fileId, limit) as import('./types').FileScanLogRow[];
+    .all(fileId, limit)) as import('./types').FileScanLogRow[];
 }
 
 /**
  * Publish a file: apply resolved masks to produce content_public, set visibility='public'.
  * Only call after canMakeFilePublic() returns true.
  */
-export function publishFile(fileId: number): void {
+export async function publishFile(fileId: number): Promise<void> {
   const db = getDb();
-  const file = db.prepare('SELECT content_private FROM files WHERE id=?').get(fileId) as
+  const file = (await db.prepare('SELECT content_private FROM files WHERE id=?').get(fileId)) as
     | { content_private: string }
     | undefined;
   if (!file) throw new Error('File not found');
 
-  const findings = db
+  const findings = (await db
     .prepare(
       `SELECT span_start, span_end, resolved_mask, suggested_mask, status
        FROM file_findings WHERE file_id=? AND stale=0 AND status IN ('masked')`
     )
-    .all(fileId) as Array<{
+    .all(fileId)) as Array<{
     span_start: number;
     span_end: number;
     resolved_mask: string | null;
@@ -1462,9 +1552,11 @@ export function publishFile(fileId: number): void {
     content = content.slice(0, m.spanStart) + m.maskToken + content.slice(m.spanEnd);
   }
 
-  db.prepare(
-    `UPDATE files SET content_public=?, visibility='public', updated_at=datetime('now') WHERE id=?`
-  ).run(content, fileId);
+  await db
+    .prepare(
+      `UPDATE files SET content_public=?, visibility='public', updated_at=datetime('now') WHERE id=?`
+    )
+    .run(content, fileId);
 }
 
 // ---- v7: owner confidential terms (deny-list) --------------------------------
@@ -1476,8 +1568,10 @@ export interface OwnerConfidentialTermInput {
   authTag: string;
 }
 
-export function addConfidentialTerm(input: OwnerConfidentialTermInput): { id: number } {
-  const res = getDb()
+export async function addConfidentialTerm(
+  input: OwnerConfidentialTermInput
+): Promise<{ id: number }> {
+  const res = await getDb()
     .prepare(
       `INSERT INTO owner_confidential_terms (owner_id, term_encrypted, iv, auth_tag)
        VALUES (?, ?, ?, ?)`
@@ -1486,32 +1580,34 @@ export function addConfidentialTerm(input: OwnerConfidentialTermInput): { id: nu
   return { id: Number(res.lastInsertRowid) };
 }
 
-export function deleteConfidentialTerm(id: number, ownerId: number): void {
-  getDb()
+export async function deleteConfidentialTerm(id: number, ownerId: number): Promise<void> {
+  await getDb()
     .prepare('DELETE FROM owner_confidential_terms WHERE id=? AND owner_id=?')
     .run(id, ownerId);
 }
 
-export function getConfidentialTermCount(ownerId: number): number {
+export async function getConfidentialTermCount(ownerId: number): Promise<number> {
   return (
-    getDb()
+    (await getDb()
       .prepare('SELECT COUNT(*) AS n FROM owner_confidential_terms WHERE owner_id=?')
-      .get(ownerId) as { n: number }
+      .get(ownerId)) as { n: number }
   ).n;
 }
 
-export function getRawConfidentialTerms(ownerId: number): Array<{
-  id: number;
-  term_encrypted: string;
-  iv: string;
-  auth_tag: string;
-  created_at: string;
-}> {
-  return getDb()
+export async function getRawConfidentialTerms(ownerId: number): Promise<
+  Array<{
+    id: number;
+    term_encrypted: string;
+    iv: string;
+    auth_tag: string;
+    created_at: string;
+  }>
+> {
+  return (await getDb()
     .prepare(
       'SELECT id, term_encrypted, iv, auth_tag, created_at FROM owner_confidential_terms WHERE owner_id=? ORDER BY id'
     )
-    .all(ownerId) as Array<{
+    .all(ownerId)) as Array<{
     id: number;
     term_encrypted: string;
     iv: string;

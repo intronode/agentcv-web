@@ -17,7 +17,7 @@ export async function GET(_request: Request, { params }: Params): Promise<NextRe
     return NextResponse.json({ error: 'Invalid file id' }, { status: 400 });
   }
 
-  const file = getFileById(id);
+  const file = await getFileById(id);
   if (!file) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -31,15 +31,15 @@ export async function GET(_request: Request, { params }: Params): Promise<NextRe
     const userId = Number(session.user.id);
     const db = getDb();
     const table = file.subject_type === 'agent' ? 'agents' : 'teams';
-    const subject = db.prepare(`SELECT owner_id FROM ${table} WHERE id=?`).get(file.subject_id) as
-      | { owner_id: number }
-      | undefined;
+    const subject = (await db
+      .prepare(`SELECT owner_id FROM ${table} WHERE id=?`)
+      .get(file.subject_id)) as { owner_id: number } | undefined;
     if (!subject) {
       return NextResponse.json({ error: 'Subject not found' }, { status: 404 });
     }
-    const owner = db.prepare('SELECT user_id FROM owners WHERE id=?').get(subject.owner_id) as
-      | OwnerRow
-      | undefined;
+    const owner = (await db
+      .prepare('SELECT user_id FROM owners WHERE id=?')
+      .get(subject.owner_id)) as OwnerRow | undefined;
     if (!owner || owner.user_id !== userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -68,7 +68,7 @@ export async function PUT(request: Request, { params }: Params): Promise<NextRes
     }
     const userId = Number(session.user.id);
 
-    const file = getFileById(id);
+    const file = await getFileById(id);
     if (!file) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
@@ -76,15 +76,15 @@ export async function PUT(request: Request, { params }: Params): Promise<NextRes
     // Verify ownership
     const db = getDb();
     const table = file.subject_type === 'agent' ? 'agents' : 'teams';
-    const subject = db.prepare(`SELECT owner_id FROM ${table} WHERE id=?`).get(file.subject_id) as
-      | { owner_id: number }
-      | undefined;
+    const subject = (await db
+      .prepare(`SELECT owner_id FROM ${table} WHERE id=?`)
+      .get(file.subject_id)) as { owner_id: number } | undefined;
     if (!subject) {
       return NextResponse.json({ error: 'Subject not found' }, { status: 404 });
     }
-    const owner = db.prepare('SELECT user_id FROM owners WHERE id=?').get(subject.owner_id) as
-      | OwnerRow
-      | undefined;
+    const owner = (await db
+      .prepare('SELECT user_id FROM owners WHERE id=?')
+      .get(subject.owner_id)) as OwnerRow | undefined;
     if (!owner || owner.user_id !== userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -92,19 +92,19 @@ export async function PUT(request: Request, { params }: Params): Promise<NextRes
     const body = await readJsonBody(request);
     const contentPrivate = reqStr(body, 'content', { max: 65536 });
 
-    updateFile(id, { contentPrivate });
+    await updateFile(id, { contentPrivate });
 
     // Revert to private if currently public (content changed — re-review required)
-    const refreshed = getFileById(id);
+    const refreshed = await getFileById(id);
     if (refreshed?.visibility === 'public') {
-      getDb()
+      await getDb()
         .prepare(`UPDATE files SET visibility='private', updated_at=datetime('now') WHERE id=?`)
         .run(id);
     }
 
     // Trigger rescan (fail-closed)
     try {
-      runScan(id, 'content_change');
+      await runScan(id, 'content_change');
     } catch (scanErr) {
       console.error('PUT /api/files/[id] — scan failed for file', id, scanErr);
     }

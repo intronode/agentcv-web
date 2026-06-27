@@ -18,7 +18,7 @@ export default async function RequestPage({ searchParams }: PageProps) {
   // Pre-load the referenced configuration name if slug provided.
   let refConfig: { slug: string; name: string } | null = null;
   if (configSlug) {
-    const profile = getConfigurationProfile(configSlug);
+    const profile = await getConfigurationProfile(configSlug);
     if (profile) {
       refConfig = { slug: configSlug, name: profile.configuration.name };
     }

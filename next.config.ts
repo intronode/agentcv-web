@@ -1,7 +1,9 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['better-sqlite3'],
+  // libSQL ships native bindings (libsql, @libsql/*-<platform>) — keep them out
+  // of the server bundle so Next traces the real .node files at runtime.
+  serverExternalPackages: ['@libsql/client', 'libsql'],
   async redirects() {
     return [
       {

@@ -15,7 +15,7 @@ export default async function RegisterTeamPage() {
         email: session.user.email ?? null,
       }
     : null;
-  const { industries, taskKinds } = getDistinctTagValues();
+  const { industries, taskKinds } = await getDistinctTagValues();
   return (
     <RegisterTeamClient
       sessionUser={sessionUser}

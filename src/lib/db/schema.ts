@@ -6,7 +6,8 @@
 // v5: users table + owners.user_id for Auth.js v5 account ownership.
 // v6: operational files per agent/team (files, file_findings, file_scan_log).
 // v7: owner_confidential_terms table for per-owner deny-list (AES-256-GCM encrypted).
-export const SCHEMA_VERSION = 7;
+// v8: contact_requests.subject_type/subject_id nullable — drop the (owner,0) sentinel.
+export const SCHEMA_VERSION = 8;
 
 export const SCHEMA_SQL = `
 PRAGMA user_version = ${SCHEMA_VERSION};
@@ -157,8 +158,11 @@ CREATE TABLE attestations (
 
 CREATE TABLE contact_requests (
   id INTEGER PRIMARY KEY,
-  subject_type TEXT NOT NULL CHECK (subject_type IN ('agent','team','owner')),
-  subject_id INTEGER NOT NULL,
+  -- v8: subject is nullable. A request_setup/general request with no referenced
+  -- entity stores NULL for both columns (was the (subject_type='owner', subject_id=0)
+  -- sentinel, which was indistinguishable from a real owner row).
+  subject_type TEXT CHECK (subject_type IS NULL OR subject_type IN ('agent','team','owner')),
+  subject_id INTEGER,
   requester_name TEXT NOT NULL,
   requester_email TEXT NOT NULL,
   message TEXT NOT NULL,

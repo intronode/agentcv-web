@@ -24,7 +24,7 @@ async function resolveOwnerAndCheckAccess(
   userId: number
 ): Promise<{ ownerId: number } | NextResponse> {
   const db = getDb();
-  const owner = db.prepare('SELECT * FROM owners WHERE handle=?').get(handle) as
+  const owner = (await db.prepare('SELECT * FROM owners WHERE handle=?').get(handle)) as
     | OwnerRow
     | undefined;
   if (!owner) {
@@ -50,9 +50,9 @@ export async function GET(_request: Request, { params }: Params): Promise<NextRe
     if (ownerOrError instanceof NextResponse) return ownerOrError;
     const { ownerId } = ownerOrError;
 
-    const count = getConfidentialTermCount(ownerId);
+    const count = await getConfidentialTermCount(ownerId);
     // Return count and redacted list (id + created_at only; encrypted content is never sent to client)
-    const terms = getRawConfidentialTerms(ownerId).map(({ id, created_at }) => ({
+    const terms = (await getRawConfidentialTerms(ownerId)).map(({ id, created_at }) => ({
       id,
       created_at,
     }));
@@ -104,7 +104,7 @@ export async function POST(request: Request, { params }: Params): Promise<NextRe
     const encrypted = Buffer.concat([cipher.update(term, 'utf8'), cipher.final()]);
     const authTag = cipher.getAuthTag();
 
-    const result = addConfidentialTerm({
+    const result = await addConfidentialTerm({
       ownerId,
       termEncrypted: encrypted.toString('hex'),
       iv: iv.toString('hex'),

@@ -28,7 +28,7 @@ export async function DELETE(_request: Request, { params }: Params): Promise<Nex
     const userId = Number(session.user.id);
 
     const db = getDb();
-    const owner = db.prepare('SELECT * FROM owners WHERE handle=?').get(handle) as
+    const owner = (await db.prepare('SELECT * FROM owners WHERE handle=?').get(handle)) as
       | OwnerRow
       | undefined;
     if (!owner) {
@@ -38,7 +38,7 @@ export async function DELETE(_request: Request, { params }: Params): Promise<Nex
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    deleteConfidentialTerm(termId, owner.id);
+    await deleteConfidentialTerm(termId, owner.id);
 
     return NextResponse.json({ deleted: true });
   } catch (error) {

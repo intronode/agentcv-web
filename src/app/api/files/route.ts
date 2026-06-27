@@ -33,9 +33,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Resolve subject
     const db = getDb();
     const table = subjectType === 'agent' ? 'agents' : 'teams';
-    const subject = db
+    const subject = (await db
       .prepare(`SELECT id, owner_id FROM ${table} WHERE slug=?`)
-      .get(subjectSlug) as { id: number; owner_id: number } | undefined;
+      .get(subjectSlug)) as { id: number; owner_id: number } | undefined;
     if (!subject) {
       return NextResponse.json(
         { error: `Unknown ${subjectType}: ${subjectSlug}` },
@@ -44,9 +44,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Check ownership — only the owner of the subject can upload files
-    const owner = db.prepare('SELECT user_id FROM owners WHERE id=?').get(subject.owner_id) as
-      | OwnerRow
-      | undefined;
+    const owner = (await db
+      .prepare('SELECT user_id FROM owners WHERE id=?')
+      .get(subject.owner_id)) as OwnerRow | undefined;
     if (!owner || owner.user_id !== userId) {
       return NextResponse.json(
         { error: 'Forbidden — only the subject owner can upload files' },
@@ -54,7 +54,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const result = createFile({
+    const result = await createFile({
       subjectType,
       subjectId: subject.id,
       path,
@@ -64,7 +64,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     // Trigger scan immediately after create (fail-closed: scan_error blocks publish)
     try {
-      runScan(result.id, 'content_change');
+      await runScan(result.id, 'content_change');
     } catch (scanErr) {
       // runScan itself is fail-closed and writes scan_error to the DB.
       // Log but do not fail the file creation response.

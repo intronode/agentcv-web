@@ -26,7 +26,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const profile = getTeamProfile(slug);
+  const profile = await getTeamProfile(slug);
   if (!profile) return { title: 'Team — AgentCV' };
   return {
     title: `${profile.team.name} — AgentCV`,
@@ -115,7 +115,7 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
   const sp = searchParams ? await searchParams : {};
   const openProofForm = sp['action'] === 'add-proof';
   const justCreated = sp['created'] === '1';
-  const profile = getTeamProfile(slug);
+  const profile = await getTeamProfile(slug);
   if (!profile) notFound();
 
   const { team, owner, tier, members, metrics, proof, attestations } = profile;
@@ -124,13 +124,13 @@ export default async function TeamProfilePage({ params, searchParams }: PageProp
   const session = await auth();
   const userId = session?.user?.id ? Number(session.user.id) : null;
   const db = getDb();
-  const ownerRow = db.prepare('SELECT user_id FROM owners WHERE id=?').get(team.owner_id) as
-    | { user_id: number | null }
-    | undefined;
+  const ownerRow = (await db
+    .prepare('SELECT user_id FROM owners WHERE id=?')
+    .get(team.owner_id)) as { user_id: number | null } | undefined;
   const isOwner = userId !== null && ownerRow?.user_id === userId;
   const files = isOwner
-    ? getFilesForSubject('team', team.id, false)
-    : getFilesForSubject('team', team.id, true);
+    ? await getFilesForSubject('team', team.id, false)
+    : await getFilesForSubject('team', team.id, true);
 
   const topologyType = team.topology_type as TopologyType | null;
   const industries: string[] = team.industries ? (JSON.parse(team.industries) as string[]) : [];

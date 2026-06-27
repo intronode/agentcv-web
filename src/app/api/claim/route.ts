@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   const requesterEmail = session.user.email ?? '';
 
   try {
-    const result = createOwnerClaimRequest({
+    const result = await createOwnerClaimRequest({
       userId,
       ownerHandle,
       requesterName,

@@ -34,7 +34,7 @@ export default async function AgentFilePage({ params }: PageProps) {
   const isReview = path[path.length - 1] === 'review';
   const filePath = isReview ? path.slice(0, -1).join('/') : path.join('/');
 
-  const profile = getAgentProfile(slug);
+  const profile = await getAgentProfile(slug);
   if (!profile) notFound();
 
   const { agent, owner } = profile;
@@ -43,13 +43,13 @@ export default async function AgentFilePage({ params }: PageProps) {
   const session = await auth();
   const userId = session?.user?.id ? Number(session.user.id) : null;
   const db = getDb();
-  const ownerRow = db.prepare('SELECT user_id FROM owners WHERE id=?').get(owner.id) as
+  const ownerRow = (await db.prepare('SELECT user_id FROM owners WHERE id=?').get(owner.id)) as
     | { user_id: number | null }
     | undefined;
   const isOwner = userId !== null && ownerRow?.user_id === userId;
 
   // Get file
-  const file = getFileByPath('agent', agent.id, filePath);
+  const file = await getFileByPath('agent', agent.id, filePath);
   if (!file) notFound();
 
   // Private file: only owner can view
@@ -61,7 +61,7 @@ export default async function AgentFilePage({ params }: PageProps) {
   if (isReview) {
     if (!isOwner) notFound();
 
-    const findings = getFileFindings(file.id);
+    const findings = await getFileFindings(file.id);
     // canPublish = "scan completed successfully" — the client handles allResolved tracking.
     // The API route (/api/files/[id]/visibility) has its own canMakeFilePublic() gate
     // that enforces no-unresolved-findings at publish time (server-side security).
@@ -89,10 +89,10 @@ export default async function AgentFilePage({ params }: PageProps) {
         : '';
 
   const files = isOwner
-    ? getFilesForSubject('agent', agent.id, false)
-    : getFilesForSubject('agent', agent.id, true);
+    ? await getFilesForSubject('agent', agent.id, false)
+    : await getFilesForSubject('agent', agent.id, true);
 
-  const scanLog = isOwner ? getFileScanLog(file.id, 5) : [];
+  const scanLog = isOwner ? await getFileScanLog(file.id, 5) : [];
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10 overflow-hidden">

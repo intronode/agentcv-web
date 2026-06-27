@@ -56,7 +56,7 @@ export default async function TeamsPage({ searchParams }: PageProps) {
       ? (sortRaw as (typeof VALID_SORTS)[number])
       : undefined;
 
-  const teams = listTeams({
+  const teams = await listTeams({
     q,
     topology_type: topology,
     platform,
@@ -67,7 +67,7 @@ export default async function TeamsPage({ searchParams }: PageProps) {
     sort: sort as 'recency' | 'tier' | 'agent_count' | undefined,
   });
 
-  const options = teamFilterOptions();
+  const options = await teamFilterOptions();
   const hasFilters = !!(q || topology || platform || industry || tier || layer || agentBand);
 
   return (

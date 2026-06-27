@@ -9,12 +9,13 @@
     "lint": "next lint",
     "prepare": "husky || true",
     "db:reset": "tsx scripts/db-reset.ts",
+    "db:push": "tsx scripts/db-push.ts",
     "shoot": "node scripts/shoot.mjs",
     "check:contrast": "node scripts/check-contrast.mjs --port 3190",
     "smoke:prod": "bash scripts/smoke-prod-fresh.sh"
   },
   "dependencies": {
-    "better-sqlite3": "^12.10.0",
+    "@libsql/client": "^0.17.4",
     "highlight.js": "^11.11.1",
     "next": "^15.1.0",
     "next-auth": "^5.0.0-beta.31",
@@ -26,7 +27,6 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.0",
     "@tailwindcss/postcss": "^4.0.0",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

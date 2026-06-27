@@ -17,10 +17,10 @@ const TOPOLOGY_INDEX: { type: TopologyType; description: string }[] = [
   { type: 'other', description: 'Custom or hybrid topology' },
 ];
 
-export default function HomePage() {
-  const counts = getCounts();
-  const featured = getFeatured();
-  const layers = getLayerCounts();
+export default async function HomePage() {
+  const counts = await getCounts();
+  const featured = await getFeatured();
+  const layers = await getLayerCounts();
 
   const evidenceLinkedPct =
     counts.proofEntries > 0 ? Math.round((layers.evidenceLinked / counts.proofEntries) * 100) : 0;

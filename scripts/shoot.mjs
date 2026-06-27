@@ -360,17 +360,17 @@ retainer contract. This information is proprietary and not for public release.
     // ── SQLite evidence rows ──────────────────────────────────────────────────
     // Query the DB directly for file row, findings with resolutions, scan log entries.
     try {
-      const require = createRequire(import.meta.url);
-      const Database = require('better-sqlite3');
+      const { createClient } = await import('@libsql/client');
       const dbPath = resolve(new URL('.', import.meta.url).pathname, '..', 'data', 'agentcv.db');
-      const db = new Database(dbPath, { readonly: true });
+      const db = createClient({ url: `file:${dbPath}`, intMode: 'number' });
 
       // File row
-      const fileRow = db.prepare(
-        `SELECT id, path, visibility, sanitization_state, created_at, updated_at
+      const fileRow = (await db.execute({
+        sql: `SELECT id, path, visibility, sanitization_state, created_at, updated_at
          FROM files WHERE path=? AND subject_type='team'
-         ORDER BY id DESC LIMIT 1`
-      ).get(probePath);
+         ORDER BY id DESC LIMIT 1`,
+        args: [probePath],
+      })).rows[0];
 
       if (fileRow) {
         evidenceLines.push('');
@@ -379,20 +379,22 @@ retainer contract. This information is proprietary and not for public release.
         evidenceLines.push(`  created_at=${fileRow.created_at} updated_at=${fileRow.updated_at}`);
 
         // Findings
-        const findings = db.prepare(
-          `SELECT id, detector_id, finding_type, severity, status, suggested_mask, resolved_mask, resolved_at
-           FROM file_findings WHERE file_id=? ORDER BY id`
-        ).all(fileRow.id);
+        const findings = (await db.execute({
+          sql: `SELECT id, detector_id, finding_type, severity, status, suggested_mask, resolved_mask, resolved_at
+           FROM file_findings WHERE file_id=? ORDER BY id`,
+          args: [fileRow.id],
+        })).rows;
         evidenceLines.push(`file_findings: ${findings.length} total`);
         for (const f of findings) {
           evidenceLines.push(`  finding id=${f.id} type=${f.finding_type} severity=${f.severity} detector=${f.detector_id} status=${f.status} resolved_mask=${f.resolved_mask ?? '(none)'}`);
         }
 
         // Scan log
-        const scanLogs = db.prepare(
-          `SELECT id, scan_ts, finding_count, triggered_by, error_message
-           FROM file_scan_log WHERE file_id=? ORDER BY id`
-        ).all(fileRow.id);
+        const scanLogs = (await db.execute({
+          sql: `SELECT id, scan_ts, finding_count, triggered_by, error_message
+           FROM file_scan_log WHERE file_id=? ORDER BY id`,
+          args: [fileRow.id],
+        })).rows;
         evidenceLines.push(`file_scan_log: ${scanLogs.length} entries`);
         for (const s of scanLogs) {
           evidenceLines.push(`  scan id=${s.id} ts=${s.scan_ts} findings=${s.finding_count} trigger=${s.triggered_by} error=${s.error_message ?? '(none)'}`);

@@ -273,7 +273,7 @@ function diffIndices(values: (string | null)[]): Set<number> {
 export default async function ComparePage({ searchParams }: PageProps) {
   const params = await searchParams;
   const requestedSlugs = getSlugs(params.ids);
-  const configs = getConfigurationsForCompare(requestedSlugs);
+  const configs = await getConfigurationsForCompare(requestedSlugs);
 
   const droppedSlugs = requestedSlugs.filter(
     (s) => !configs.some((c) => c.configuration.slug === s)

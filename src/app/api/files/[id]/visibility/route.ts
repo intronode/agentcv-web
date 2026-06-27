@@ -23,7 +23,7 @@ export async function PATCH(request: Request, { params }: Params): Promise<NextR
     }
     const userId = Number(session.user.id);
 
-    const file = getFileById(id);
+    const file = await getFileById(id);
     if (!file) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
@@ -31,15 +31,15 @@ export async function PATCH(request: Request, { params }: Params): Promise<NextR
     // Verify ownership
     const db = getDb();
     const table = file.subject_type === 'agent' ? 'agents' : 'teams';
-    const subject = db.prepare(`SELECT owner_id FROM ${table} WHERE id=?`).get(file.subject_id) as
-      | { owner_id: number }
-      | undefined;
+    const subject = (await db
+      .prepare(`SELECT owner_id FROM ${table} WHERE id=?`)
+      .get(file.subject_id)) as { owner_id: number } | undefined;
     if (!subject) {
       return NextResponse.json({ error: 'Subject not found' }, { status: 404 });
     }
-    const owner = db.prepare('SELECT user_id FROM owners WHERE id=?').get(subject.owner_id) as
-      | OwnerRow
-      | undefined;
+    const owner = (await db
+      .prepare('SELECT user_id FROM owners WHERE id=?')
+      .get(subject.owner_id)) as OwnerRow | undefined;
     if (!owner || owner.user_id !== userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -51,7 +51,7 @@ export async function PATCH(request: Request, { params }: Params): Promise<NextR
 
     if (visibility === 'public') {
       // Sanitization gate: scan_complete + no unresolved findings
-      if (!canMakeFilePublic(id)) {
+      if (!(await canMakeFilePublic(id))) {
         return NextResponse.json(
           {
             error:
@@ -62,10 +62,10 @@ export async function PATCH(request: Request, { params }: Params): Promise<NextR
         );
       }
       // publishFile applies masks → content_public and sets visibility='public'
-      publishFile(id);
+      await publishFile(id);
     } else {
       // Reverting to private: simple visibility update (no mask application needed)
-      setFileVisibility(id, visibility);
+      await setFileVisibility(id, visibility);
     }
 
     return NextResponse.json({ id, visibility });

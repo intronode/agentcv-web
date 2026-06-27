@@ -28,28 +28,28 @@ export const DETECTOR_VERSIONS = {
  * Returns ScanResult (scanLogId, findings, error, detectorVersions).
  * FAIL-CLOSED: any thrown error → scan_error state, no publish allowed.
  */
-export function runScan(fileId: number, triggeredBy: ScanTrigger): ScanResult {
+export async function runScan(fileId: number, triggeredBy: ScanTrigger): Promise<ScanResult> {
   const db = getDb();
 
   // Mark prior findings stale before scan
-  db.prepare(`UPDATE file_findings SET stale=1 WHERE file_id=? AND stale=0`).run(fileId);
+  await db.prepare(`UPDATE file_findings SET stale=1 WHERE file_id=? AND stale=0`).run(fileId);
 
   // Fetch file content
-  const fileRow = db
+  const fileRow = (await db
     .prepare('SELECT content_private, subject_type, subject_id FROM files WHERE id=?')
-    .get(fileId) as
+    .get(fileId)) as
     | { content_private: string; subject_type: string; subject_id: number }
     | undefined;
 
   if (!fileRow) {
     // No file — this is an internal error; write a scan_error log
-    const logRes = db
+    const logRes = await db
       .prepare(
         `INSERT INTO file_scan_log (file_id, detector_versions, finding_count, error_message, triggered_by)
          VALUES (?, ?, 0, ?, ?)`
       )
       .run(fileId, JSON.stringify(DETECTOR_VERSIONS), 'File not found during scan', triggeredBy);
-    db.prepare(`UPDATE files SET sanitization_state='scan_error' WHERE id=?`).run(fileId);
+    await db.prepare(`UPDATE files SET sanitization_state='scan_error' WHERE id=?`).run(fileId);
     return {
       scanLogId: Number(logRes.lastInsertRowid),
       findings: [],
@@ -61,7 +61,7 @@ export function runScan(fileId: number, triggeredBy: ScanTrigger): ScanResult {
   const content = fileRow.content_private;
 
   // Fetch deny-list for this owner
-  const denyList = loadDenyList(fileRow.subject_type, fileRow.subject_id);
+  const denyList = await loadDenyList(fileRow.subject_type, fileRow.subject_id);
 
   let errorMessage: string | null = null;
   let allFindings: ReturnType<typeof detectSecrets> = [];
@@ -78,8 +78,8 @@ export function runScan(fileId: number, triggeredBy: ScanTrigger): ScanResult {
     assignEntityNumbers(allFindings);
   } catch (err) {
     errorMessage = err instanceof Error ? err.message : String(err);
-    db.prepare(`UPDATE files SET sanitization_state='scan_error' WHERE id=?`).run(fileId);
-    const logRes = db
+    await db.prepare(`UPDATE files SET sanitization_state='scan_error' WHERE id=?`).run(fileId);
+    const logRes = await db
       .prepare(
         `INSERT INTO file_scan_log (file_id, detector_versions, finding_count, error_message, triggered_by)
          VALUES (?, ?, 0, ?, ?)`
@@ -94,7 +94,7 @@ export function runScan(fileId: number, triggeredBy: ScanTrigger): ScanResult {
   }
 
   // Insert scan log row
-  const logRes = db
+  const logRes = await db
     .prepare(
       `INSERT INTO file_scan_log (file_id, detector_versions, finding_count, error_message, triggered_by)
        VALUES (?, ?, ?, NULL, ?)`
@@ -102,34 +102,42 @@ export function runScan(fileId: number, triggeredBy: ScanTrigger): ScanResult {
     .run(fileId, JSON.stringify(DETECTOR_VERSIONS), allFindings.length, triggeredBy);
   const scanLogId = Number(logRes.lastInsertRowid);
 
-  // Insert findings
-  const insertFinding = db.prepare(
-    `INSERT INTO file_findings
+  // Insert findings atomically.
+  const tx = await db.transaction();
+  try {
+    for (const f of allFindings) {
+      await tx.execute({
+        sql: `INSERT INTO file_findings
       (file_id, scan_log_id, detector_id, detector_version, finding_type, severity,
        span_start, span_end, excerpt, suggested_mask, status, stale)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unresolved', 0)`
-  );
-  const insertMany = db.transaction(() => {
-    for (const f of allFindings) {
-      insertFinding.run(
-        fileId,
-        scanLogId,
-        f.detectorId,
-        f.detectorVersion,
-        f.findingType,
-        f.severity,
-        f.spanStart,
-        f.spanEnd,
-        f.excerpt,
-        f.suggestedMask
-      );
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unresolved', 0)`,
+        args: [
+          fileId,
+          scanLogId,
+          f.detectorId,
+          f.detectorVersion,
+          f.findingType,
+          f.severity,
+          f.spanStart,
+          f.spanEnd,
+          f.excerpt,
+          f.suggestedMask,
+        ],
+      });
     }
-  });
-  insertMany();
+    await tx.commit();
+  } catch (e) {
+    try {
+      await tx.rollback();
+    } catch {
+      /* transaction already finalized */
+    }
+    throw e;
+  }
 
   // Update file state
   const newState = errorMessage ? 'scan_error' : 'scan_complete';
-  db.prepare(`UPDATE files SET sanitization_state=? WHERE id=?`).run(newState, fileId);
+  await db.prepare(`UPDATE files SET sanitization_state=? WHERE id=?`).run(newState, fileId);
 
   return {
     scanLogId,
@@ -159,19 +167,19 @@ function assignEntityNumbers(findings: ReturnType<typeof detectSecrets>): void {
  * Decrypt and return owner deny-list terms for the given subject.
  * Returns [] if no terms or SANITIZER_KEY not set (graceful degradation).
  */
-function loadDenyList(subjectType: string, subjectId: number): string[] {
+async function loadDenyList(subjectType: string, subjectId: number): Promise<string[]> {
   const db = getDb();
   try {
     // Find owner for this subject
     const table = subjectType === 'agent' ? 'agents' : 'teams';
-    const subjectRow = db.prepare(`SELECT owner_id FROM ${table} WHERE id=?`).get(subjectId) as
-      | { owner_id: number }
-      | undefined;
+    const subjectRow = (await db
+      .prepare(`SELECT owner_id FROM ${table} WHERE id=?`)
+      .get(subjectId)) as { owner_id: number } | undefined;
     if (!subjectRow) return [];
 
-    const rows = db
+    const rows = (await db
       .prepare('SELECT term_encrypted, iv, auth_tag FROM owner_confidential_terms WHERE owner_id=?')
-      .all(subjectRow.owner_id) as Array<{
+      .all(subjectRow.owner_id)) as Array<{
       term_encrypted: string;
       iv: string;
       auth_tag: string;

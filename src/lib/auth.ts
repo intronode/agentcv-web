@@ -71,7 +71,11 @@ function buildProviders(): NextAuthConfig['providers'] {
           // with the same handle reuse the same users row (enabling owner linkage
           // set up in the seed for QA pipelines with DEV_LOGIN=1).
           const syntheticEmail = `${handle}@dev.agentcv.local`;
-          const user = upsertUser({ email: syntheticEmail, name, provider: 'dev-credentials' });
+          const user = await upsertUser({
+            email: syntheticEmail,
+            name,
+            provider: 'dev-credentials',
+          });
           return {
             id: String(user.id),
             name,
@@ -96,7 +100,7 @@ const fullConfig: NextAuthConfig = {
     ...authConfig.callbacks,
     async signIn({ user, account }) {
       if (account?.provider && account.provider !== 'dev-credentials') {
-        upsertUser({
+        await upsertUser({
           email: user.email,
           name: user.name ?? '',
           image: user.image,

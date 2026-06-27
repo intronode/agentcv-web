@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: Params): Promise<NextRe
     }
     const userId = Number(session.user.id);
 
-    const file = getFileById(fileId);
+    const file = await getFileById(fileId);
     if (!file) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
@@ -37,20 +37,20 @@ export async function POST(request: Request, { params }: Params): Promise<NextRe
     // Verify ownership
     const db = getDb();
     const table = file.subject_type === 'agent' ? 'agents' : 'teams';
-    const subject = db.prepare(`SELECT owner_id FROM ${table} WHERE id=?`).get(file.subject_id) as
-      | { owner_id: number }
-      | undefined;
+    const subject = (await db
+      .prepare(`SELECT owner_id FROM ${table} WHERE id=?`)
+      .get(file.subject_id)) as { owner_id: number } | undefined;
     if (!subject) {
       return NextResponse.json({ error: 'Subject not found' }, { status: 404 });
     }
-    const owner = db.prepare('SELECT user_id FROM owners WHERE id=?').get(subject.owner_id) as
-      | OwnerRow
-      | undefined;
+    const owner = (await db
+      .prepare('SELECT user_id FROM owners WHERE id=?')
+      .get(subject.owner_id)) as OwnerRow | undefined;
     if (!owner || owner.user_id !== userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const finding = getFileFinding(findingId);
+    const finding = await getFileFinding(findingId);
     if (!finding || finding.file_id !== fileId) {
       return NextResponse.json({ error: 'Finding not found' }, { status: 404 });
     }
@@ -86,7 +86,7 @@ export async function POST(request: Request, { params }: Params): Promise<NextRe
         );
       }
 
-      resolveFileFinding(findingId, {
+      await resolveFileFinding(findingId, {
         status: 'masked',
         resolvedMask,
         resolvedBy: userId,
@@ -105,7 +105,7 @@ export async function POST(request: Request, { params }: Params): Promise<NextRe
         );
       }
 
-      resolveFileFinding(findingId, {
+      await resolveFileFinding(findingId, {
         status: 'dismissed',
         dismissReason,
         resolvedBy: userId,

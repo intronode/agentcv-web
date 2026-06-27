@@ -32,7 +32,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const profile = getAgentProfile(slug);
+  const profile = await getAgentProfile(slug);
   return { title: profile ? `${profile.agent.name} — AgentCV` : 'Agent — AgentCV' };
 }
 
@@ -40,7 +40,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
   const { slug } = await params;
   const sp = searchParams ? await searchParams : {};
   const openProofForm = sp['action'] === 'add-proof';
-  const profile = getAgentProfile(slug);
+  const profile = await getAgentProfile(slug);
   if (!profile) notFound();
   const {
     agent,
@@ -59,7 +59,7 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
   // parent configurations so the empty state can surface them honestly.
   const configHeadlineMetrics: Map<string, ConfigHeadlineMetric> =
     metrics.length === 0 && teams.length > 0
-      ? (getConfigurationHeadlineMetrics(teams.map((t) => t.slug)) as Map<
+      ? ((await getConfigurationHeadlineMetrics(teams.map((t) => t.slug))) as Map<
           string,
           ConfigHeadlineMetric
         >)
@@ -67,7 +67,9 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
 
   // Fetch team tiers to show context when agent's tier < team's tier.
   const teamTiers: Map<string, string> =
-    teams.length > 0 ? (getTeamTiers(teams.map((t) => t.slug)) as Map<string, string>) : new Map();
+    teams.length > 0
+      ? ((await getTeamTiers(teams.map((t) => t.slug))) as Map<string, string>)
+      : new Map();
 
   // Tier rank for comparison: higher index = higher tier
   const TIER_RANK: Record<string, number> = {
@@ -82,13 +84,13 @@ export default async function AgentProfilePage({ params, searchParams }: PagePro
   const session = await auth();
   const userId = session?.user?.id ? Number(session.user.id) : null;
   const db = getDb();
-  const ownerRow = db.prepare('SELECT user_id FROM owners WHERE id=?').get(owner.id) as
+  const ownerRow = (await db.prepare('SELECT user_id FROM owners WHERE id=?').get(owner.id)) as
     | { user_id: number | null }
     | undefined;
   const isOwner = userId !== null && ownerRow?.user_id === userId;
   const files = isOwner
-    ? getFilesForSubject('agent', agent.id, false)
-    : getFilesForSubject('agent', agent.id, true);
+    ? await getFilesForSubject('agent', agent.id, false)
+    : await getFilesForSubject('agent', agent.id, true);
 
   // Collect teams whose tier is strictly higher than the agent's tier
   const higherTierTeams = teams.filter((t) => {

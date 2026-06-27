@@ -15,6 +15,6 @@ export default async function RegisterAgentPage() {
         email: session.user.email ?? null,
       }
     : null;
-  const { agentCategories } = getDistinctTagValues();
+  const { agentCategories } = await getDistinctTagValues();
   return <RegisterAgentClient sessionUser={sessionUser} agentCategories={agentCategories} />;
 }

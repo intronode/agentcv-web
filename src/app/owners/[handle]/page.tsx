@@ -24,7 +24,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { handle } = await params;
-  const profile = getOwnerProfile(handle);
+  const profile = await getOwnerProfile(handle);
   return { title: profile ? `${profile.owner.display_name} — AgentCV` : 'Owner — AgentCV' };
 }
 
@@ -39,7 +39,7 @@ const PROOF_TYPE_LABELS: Record<string, string> = {
 
 export default async function OwnerProfilePage({ params }: PageProps) {
   const { handle } = await params;
-  const profile = getOwnerProfile(handle);
+  const profile = await getOwnerProfile(handle);
   if (!profile) notFound();
   const { owner, agents, teams, proofFeed } = profile;
 
@@ -53,14 +53,14 @@ export default async function OwnerProfilePage({ params }: PageProps) {
 
   // Confidential terms — only loaded for the owner themselves
   // getConfidentialTermCount / getRawConfidentialTerms require the DB owner.id
-  const confidentialTermCount = isOwnedByMe ? getConfidentialTermCount(owner.id) : 0;
+  const confidentialTermCount = isOwnedByMe ? await getConfidentialTermCount(owner.id) : 0;
   const confidentialTerms = isOwnedByMe
-    ? getRawConfidentialTerms(owner.id).map(({ id, created_at }) => ({ id, created_at }))
+    ? (await getRawConfidentialTerms(owner.id)).map(({ id, created_at }) => ({ id, created_at }))
     : [];
 
   // Owners strip — all owners with teams, for cross-owner discoverability
-  const ownersStrip = getOwnersStrip();
-  const totalTeams = getCounts().teams;
+  const ownersStrip = await getOwnersStrip();
+  const totalTeams = (await getCounts()).teams;
 
   const totalProof =
     agents.reduce((s, a) => s + a.proofCount, 0) + teams.reduce((s, t) => s + t.proofCount, 0);

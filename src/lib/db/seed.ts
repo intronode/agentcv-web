@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { Db } from './index';
 import type {
   LineageKind,
   MetricUnit,
@@ -104,7 +104,7 @@ interface SeedMetric {
   provenance?: Provenance;
 }
 
-export function seed(db: Database.Database): void {
+export async function seed(db: Db): Promise<void> {
   const ownerIds = new Map<string, number>();
   const agentIds = new Map<string, number>();
   const configIds = new Map<string, number>();
@@ -265,7 +265,10 @@ export function seed(db: Database.Database): void {
     ],
   ];
   for (const [handle, name, kind, bio, url] of owners) {
-    ownerIds.set(handle, Number(insOwner.run(handle, name, kind, bio, url).lastInsertRowid));
+    ownerIds.set(
+      handle,
+      Number((await insOwner.run(handle, name, kind, bio, url)).lastInsertRowid)
+    );
   }
 
   // ---- QA user → owner linkage ----
@@ -276,9 +279,10 @@ export function seed(db: Database.Database): void {
     'INSERT INTO users (email, name, image, provider) VALUES (?, ?, ?, ?)'
   );
   const introQaUserId = Number(
-    insUser.run('intronode@dev.agentcv.local', 'Intronode', null, 'dev-credentials').lastInsertRowid
+    (await insUser.run('intronode@dev.agentcv.local', 'Intronode', null, 'dev-credentials'))
+      .lastInsertRowid
   );
-  db.prepare('UPDATE owners SET user_id=? WHERE handle=?').run(introQaUserId, 'intronode');
+  await db.prepare('UPDATE owners SET user_id=? WHERE handle=?').run(introQaUserId, 'intronode');
 
   // ---- agents ----
   const insAgent = db.prepare(
@@ -1111,7 +1115,7 @@ export function seed(db: Database.Database): void {
     const ownerId = ownerIds.get(a.owner);
     if (ownerId === undefined) throw new Error(`seed: unknown owner ${a.owner}`);
     const lineageOf = a.lineageOf ? (agentIds.get(a.lineageOf) ?? null) : null;
-    const res = insAgent.run(
+    const res = await insAgent.run(
       a.slug,
       a.name,
       a.avatar,
@@ -2017,7 +2021,7 @@ export function seed(db: Database.Database): void {
   for (const c of configurations) {
     const ownerId = ownerIds.get(c.owner);
     if (ownerId === undefined) throw new Error(`seed: unknown owner ${c.owner}`);
-    const res = insConfig.run(
+    const res = await insConfig.run(
       c.slug,
       c.name,
       c.avatar,
@@ -2042,9 +2046,10 @@ export function seed(db: Database.Database): void {
     );
     const configId = Number(res.lastInsertRowid);
     configIds.set(c.slug, configId);
-    c.members.forEach(([slug, role, detail], i) => {
-      insMember.run(configId, subjectId(['agent', slug]), role, detail, i);
-    });
+    for (const [i, member] of c.members.entries()) {
+      const [slug, role, detail] = member;
+      await insMember.run(configId, subjectId(['agent', slug]), role, detail, i);
+    }
   }
 
   // ---- proof entries ----
@@ -2514,7 +2519,7 @@ export function seed(db: Database.Database): void {
     },
   ];
   for (const p of proofs) {
-    insProof.run(
+    await insProof.run(
       p.subject[0],
       subjectId(p.subject),
       p.date,
@@ -3089,7 +3094,7 @@ export function seed(db: Database.Database): void {
     m(['team', 'dkraft-ci-reviewer'], 'success_rate', 'Finding acceptance rate', 89.4, 'pct'),
   ];
   for (const x of metrics) {
-    insMetric.run(
+    await insMetric.run(
       x.subject[0],
       subjectId(x.subject),
       x.key,
@@ -3133,7 +3138,7 @@ export function seed(db: Database.Database): void {
     ['crewai-analyst', 'Research synthesis', 80],
   ];
   for (const [slug, name, level] of caps) {
-    insCap.run(subjectId(['agent', slug]), name, level);
+    await insCap.run(subjectId(['agent', slug]), name, level);
   }
 
   // ---- attestations (fictional only — the flagship has none yet, honestly) ----
@@ -3141,7 +3146,7 @@ export function seed(db: Database.Database): void {
     `INSERT INTO attestations (subject_type, subject_id, author_name, author_url, relationship, statement, illustrative)
      VALUES (?,?,?,?,?,?,?)`
   );
-  insAtt.run(
+  await insAtt.run(
     'team',
     subjectId(['team', 'mira-support-desk']),
     'Nordwind GmbH (fictional)',
@@ -3150,7 +3155,7 @@ export function seed(db: Database.Database): void {
     'The desk handled our EU launch volume without adding headcount. Escalations were clean and rare. (Fictional demo attestation.)',
     1
   );
-  insAtt.run(
+  await insAtt.run(
     'agent',
     subjectId(['agent', 'codepilot-cr']),
     'Forge & Co (fictional)',
@@ -3180,13 +3185,13 @@ export function seed(db: Database.Database): void {
   );
 
   // Helper: insert a public seed file (scan log row included)
-  const seedPublicFile = (
+  const seedPublicFile = async (
     subjectType: SubjectType,
     subjectId_: number,
     path: string,
     content: string
-  ): void => {
-    const res = insFile.run(
+  ): Promise<void> => {
+    const res = await insFile.run(
       subjectType,
       subjectId_,
       path,
@@ -3195,23 +3200,23 @@ export function seed(db: Database.Database): void {
       'public',
       'scan_complete'
     );
-    insScanLog.run(Number(res.lastInsertRowid), SEED_DETECTOR_VERSIONS);
+    await insScanLog.run(Number(res.lastInsertRowid), SEED_DETECTOR_VERSIONS);
   };
 
   // Helper: insert a private seed file (no scan log — starts at needs_scan)
-  const seedPrivateFile = (
+  const seedPrivateFile = async (
     subjectType: SubjectType,
     subjectId_: number,
     path: string,
     content: string
-  ): void => {
-    insFile.run(subjectType, subjectId_, path, content, null, 'private', 'needs_scan');
+  ): Promise<void> => {
+    await insFile.run(subjectType, subjectId_, path, content, null, 'private', 'needs_scan');
   };
 
   // ari-collective (real): public operational files
   const ariTeamId = subjectId(['team', 'ari-collective']);
 
-  seedPublicFile(
+  await seedPublicFile(
     'team',
     ariTeamId,
     'LESSONS.md',
@@ -3244,7 +3249,7 @@ Entries are real; provenance: Intronode internal sessions.
 `
   );
 
-  seedPublicFile(
+  await seedPublicFile(
     'team',
     ariTeamId,
     'TOPOLOGY.md',
@@ -3288,7 +3293,7 @@ All other decisions: Ari autonomy, report after execution.
 `
   );
 
-  seedPublicFile(
+  await seedPublicFile(
     'team',
     ariTeamId,
     'ROLES.md',
@@ -3322,7 +3327,7 @@ _Data beyond name, role, and team topology for Stanley, Arthur, and Laplace is m
 `
   );
 
-  seedPublicFile(
+  await seedPublicFile(
     'team',
     ariTeamId,
     'COST-HONESTY.md',
@@ -3357,7 +3362,7 @@ control-plane biased and would misrepresent individual member history.
 `
   );
 
-  seedPublicFile(
+  await seedPublicFile(
     'team',
     ariTeamId,
     'OVERSIGHT.md',
@@ -3400,7 +3405,7 @@ permissions, making failures traceable and recoverable.
 
   // helios-swarm (illustrative): private runbook
   const heliosTeamId = subjectId(['team', 'helios-swarm']);
-  seedPrivateFile(
+  await seedPrivateFile(
     'team',
     heliosTeamId,
     'RUNBOOK.md',
@@ -3430,7 +3435,7 @@ Contact: ops@helios-ai.example (illustrative placeholder)
 
   // haven-support (illustrative agent): private soul file
   const havenAgentId = subjectId(['agent', 'haven-support']);
-  seedPrivateFile(
+  await seedPrivateFile(
     'agent',
     havenAgentId,
     'SOUL.md',
