@@ -66,6 +66,14 @@ export default function RegisterAgentClient({ sessionUser, agentCategories = [] 
       return;
     }
     setFieldErrors({});
+    // Submission requires a signed-in user (the API enforces 401). Gate here so
+    // the form's client-side validation still runs for everyone, but a valid
+    // anonymous submit is redirected to sign-in rather than bouncing off a 401.
+    if (!sessionUser) {
+      setError('Please sign in to submit — your submission links to your account.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -363,25 +371,24 @@ export default function RegisterAgentClient({ sessionUser, agentCategories = [] 
         )}
 
         <div className="flex items-center gap-4">
-          {sessionUser ? (
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-lg bg-accent-button px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover disabled:opacity-50"
-            >
-              {submitting ? 'Registering…' : 'Register agent'}
-            </button>
-          ) : (
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-lg bg-accent-button px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover disabled:opacity-50"
+          >
+            {submitting ? 'Registering…' : 'Register agent'}
+          </button>
+          {!sessionUser && (
             <Link
               href="/signin"
-              className="rounded-lg bg-accent-button px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-button-hover"
+              className="text-xs text-text-secondary underline-offset-2 transition-colors hover:text-text-primary hover:underline"
             >
               Sign in to submit
             </Link>
           )}
           <Link
             href="/register"
-            className="text-xs text-text-tertiary hover:text-text-primary transition-colors"
+            className="text-xs text-text-tertiary transition-colors hover:text-text-primary"
           >
             ← Back to chooser
           </Link>

@@ -1,0 +1,31 @@
+sign-in redirect: http://localhost:3190/
+session-verified: navbar does NOT show "Sign in" link — authenticated OK
+auth-signin.png: captured authenticated home page (no "Sign in" link in navbar)
+deny-list-ui: term "Initech" added — visible in list: true
+deny-list-terms.png: captured owner page with Confidential terms section
+scan-log-panel: opened OK
+sanitizer-scan-log.png: captured
+probe-path: QA-PROBE-1782543672444-71720-5f4b2b01-b0a3-4039-9699-deb21bd10ed5.md
+POST /api/files: HTTP 201
+  file id: 8  path: QA-PROBE-1782543672444-71720-5f4b2b01-b0a3-4039-9699-deb21bd10ed5.md
+findings on review page: 5
+summary-bar: 5 unresolved findings|5 total
+publish-before-mask: DISABLED (correct — findings blocking publish)
+sanitizer-block.png: captured (publish blocked, findings listed)
+findings masked: 5
+publish-after-mask: ENABLED
+publish-clicked: success
+sanitizer-masked-published.png: captured public file page with masks applied
+
+=== SQLite Evidence ===
+files row: id=8 path=QA-PROBE-1782543672444-71720-5f4b2b01-b0a3-4039-9699-deb21bd10ed5.md visibility=public sanitization_state=scan_complete
+  created_at=2026-06-27 07:01:20 updated_at=2026-06-27 07:01:27
+file_findings: 5 total
+  finding id=1 type=secret severity=critical detector=secrets.provider-prefix.openai status=masked resolved_mask=[api-key]
+  finding id=2 type=confidential severity=blocking detector=confidential.counterparty-name status=masked resolved_mask=[client]
+  finding id=3 type=pii severity=blocking detector=pii.email status=masked resolved_mask=[email]
+  finding id=4 type=confidential severity=blocking detector=confidential.deny-list status=masked resolved_mask=[codename]
+  finding id=5 type=confidential severity=blocking detector=confidential.deal-proximity-high status=masked resolved_mask=[amount]
+file_scan_log: 1 entries
+  scan id=6 ts=2026-06-27 07:01:20 findings=5 trigger=content_change error=(none)
+=== End SQLite Evidence ===

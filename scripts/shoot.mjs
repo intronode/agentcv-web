@@ -538,6 +538,35 @@ async function openDesktopPage(browser, url, consoleEntries, routeSlug) {
   return { page, context };
 }
 
+// Sign in via the dev-credentials form so an interaction can exercise an
+// authenticated write flow (content creation now requires auth). Requires the
+// server to run with DEV_LOGIN=1 (qa-shoot.sh sets this).
+async function signInDev(page, baseUrl, handle, name) {
+  try {
+    await page.goto(`${baseUrl}/signin`, { waitUntil: 'networkidle', timeout: 30000 });
+  } catch {
+    await page.goto(`${baseUrl}/signin`, { waitUntil: 'load', timeout: 30000 });
+  }
+  await sleep(SETTLE_MS);
+  const devToggle = page.locator('#dev-disclosure-toggle');
+  if ((await devToggle.count()) === 0) {
+    throw new Error('signInDev: dev disclosure toggle not found — DEV_LOGIN=1 must be set on the server.');
+  }
+  await devToggle.click();
+  await sleep(200);
+  await page.fill('#dev-handle', handle);
+  await page.fill('#dev-name', name);
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }).catch(() => null),
+    page.locator('button[type="submit"]:has-text("Sign in")').click(),
+  ]);
+  await sleep(SETTLE_MS);
+  const url = page.url();
+  if (url.includes('/api/auth/error') || url.includes('/signin')) {
+    throw new Error(`signInDev: sign-in failed, landed on ${url}`);
+  }
+}
+
 /**
  * Measure the maximum scrollWidth of both documentElement and body.
  * Returns the larger of the two values.
@@ -752,6 +781,15 @@ async function main() {
       consoleEntries,
       'register-team-success-interaction',
     );
+
+    // Team registration now requires auth — sign in, then return to the form.
+    await signInDev(page, baseUrl, 'qa-probe-submitter', 'QA Probe Submitter');
+    try {
+      await page.goto(`${baseUrl}/register/team`, { waitUntil: 'networkidle', timeout: 30000 });
+    } catch {
+      await page.goto(`${baseUrl}/register/team`, { waitUntil: 'load', timeout: 30000 });
+    }
+    await sleep(SETTLE_MS);
 
     // Step 1 — Identity
     await page.fill('#st1-name', 'QA Probe Team');
