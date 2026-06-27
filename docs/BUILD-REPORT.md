@@ -413,3 +413,65 @@ Summary line from after-fix run:
 `SUMMARY: 20 public routes + 2 auth routes checked, 0 routes with failures, 0 routes skipped, 0 unique failing pairs, 0 uncheckable elements`
 
 All auth-route scan-log and review surfaces now pass WCAG AA at 4.5:1 or above.
+
+## Laplace re-gate hygiene bounce — resolution (2026-06-27)
+
+Laplace's integrated re-gate of commit `8c73cfb` returned overall REJECT on
+**hygiene only** — fresh-clone AUTH, build/tsc, overflow, contrast (incl.
+`--auth`), and sanitizer all PASSED. Two hygiene items, both resolved below.
+
+### Item 1 — gitleaks: 5 `generic-api-key` findings since `9d752ce`
+
+**Diagnosis (before fixing).** Ran `gitleaks 8.30.1` git scan
+(`gitleaks git --log-opts="9d752ce..HEAD"`) — 5 `generic-api-key` findings, all
+in **commit history** (not the working tree). Classified each:
+
+| #   | Fingerprint (commit:file:rule:line)                                            | Matched value                             | Classification                                                                                                                                                                                                                                                                                           |
+| --- | ------------------------------------------------------------------------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `b63925b…:docs/evidence/gate-v4/laplace-gate-v4-report.md:generic-api-key:118` | `db_password = "aB3xK9mP2nQ7rT1sW6vY..."` | **Safe** — illustrative row in the sanitizer detection-test table (note trailing `...`); documents a DETECTED test input.                                                                                                                                                                                |
+| 2   | `b63925b…:…/laplace-gate-v4-report.md:generic-api-key:188`                     | `SANITIZER_KEY="0123456789abcdef"×4`      | **Safe** — gate report quoting the historical qa-shoot.sh dummy key while assessing it; ascending-hex dummy.                                                                                                                                                                                             |
+| 3   | `b63925b…:…/laplace-gate-v4-report.md:generic-api-key:200`                     | `DEV_FALLBACK_SECRET = '56ca5bbc…'`       | **Safe** — gate report quoting the historical auth.config.ts dev-fallback while assessing it.                                                                                                                                                                                                            |
+| 4   | `69cd488…:scripts/qa-shoot.sh:generic-api-key:109`                             | `SANITIZER_KEY="0123456789abcdef"×4`      | **Safe** — historical hardcoded QA-LOCAL key (ascending-hex). Already remediated in HEAD → now `openssl rand -hex 32` per run.                                                                                                                                                                           |
+| 5   | `0942b44…:src/lib/auth.config.ts:generic-api-key:18`                           | `DEV_FALLBACK_SECRET = '56ca5bbc…'`       | **Safe** — historical DEV-ONLY fallback JWT secret; never the secret of any live deployment (app not deployed). Already remediated in HEAD → low-entropy plain-English `LOCAL_DEV_FALLBACK`, and `resolveSecret()` now THROWS in production when `AUTH_SECRET` is unset. Nothing to rotate (never live). |
+
+No finding is a genuine live credential: items 4 & 5 are labeled dummy/dev-only
+values already removed from the working tree (`gitleaks dir` over tracked source
+is clean — the only `dir`-scan hits are untracked `.next/cache` build artifacts
+in an agent worktree, not source); items 1–3 are documentation that quotes those
+known-safe values for assessment.
+
+**Fix.** Added `.gitleaksignore` with **5 fingerprint-scoped entries** (no blanket
+rules), each with an inline justification comment. Re-ran the exact bounce scan:
+
+```
+$ gitleaks git --log-opts="9d752ce..HEAD" -v
+24 commits scanned.
+no leaks found        (exit 0)
+```
+
+### Item 2 — husky pre-commit negative test
+
+**Diagnosis.** The pre-commit hook was `npx lint-staged` (prettier `--write`
+only). Negative test on a throwaway branch — staged a type-error file
+(`const x: number = "string"`) and committed: prettier reformatted it and the
+**bad commit succeeded (exit 0)**. Confirmed Laplace's concern: the hook ran but
+did **not** block bad commits (prettier checks syntax/format, not types; eslint
+was never invoked).
+
+**Fix.** Appended `npx tsc --noEmit` to `.husky/pre-commit`. Husky v9 invokes the
+user hook via `sh -e`, so any non-zero command (lint-staged OR tsc) aborts the
+commit — no `set -e`/`&&` needed. Project tsc runs in ~1.1s.
+
+**Demonstration (throwaway branch, then deleted).**
+
+- Negative: staged `const x: number = "not a number"`, `git commit` →
+  `error TS2322: Type 'string' is not assignable to type 'number'`,
+  `husky - pre-commit script failed (code 2)`, **commit exit 1, HEAD unchanged**
+  (commit aborted).
+- Positive control: clean file (`const x: number = 42`) → **commit exit 0**,
+  commit created — proves the hook gates rather than always-failing.
+- Cleanup: throwaway branch deleted, back on `main` @ `8c73cfb`, no test files
+  left.
+
+Both items resolved; changes are `.gitleaksignore` (new) + `.husky/pre-commit`
+(typecheck gate) + this report. No deploys, no vercel-fork.

@@ -1,0 +1,42 @@
+# .gitleaksignore — fingerprint-scoped suppressions for KNOWN-SAFE matches.
+#
+# Each entry below is a gitleaks fingerprint (commit:file:rule:startline) for a
+# match that is a labeled dummy / test fixture / dev-only fallback — NOT a real
+# credential. Every entry is justified inline. No blanket rules: only these five
+# exact fingerprints in commit history are suppressed.
+#
+# All five live in IMMUTABLE git history. Each underlying pattern has already
+# been remediated in the working tree (HEAD):
+#   - scripts/qa-shoot.sh  → SANITIZER_KEY now `openssl rand -hex 32` (random per run)
+#   - src/lib/auth.config.ts → fallback now the low-entropy plain-English
+#     LOCAL_DEV_FALLBACK, and resolveSecret() THROWS in production when
+#     AUTH_SECRET is unset (no fallback can ever reach a real deploy).
+# Verify with: gitleaks git --log-opts="9d752ce..HEAD" -v   → expect 0 leaks.
+
+# (1) Sanitizer detection-test table row in the v4 gate report. The value
+#     `db_password = "aB3xK9mP2nQ7rT1sW6vY..."` (note trailing `...`) is an
+#     ILLUSTRATIVE test input documenting that the sanitizer DETECTS it. Not a
+#     credential.
+b63925b58839f13575add88e34d5e5b076bb329c:docs/evidence/gate-v4/laplace-gate-v4-report.md:generic-api-key:118
+
+# (2) Gate report QUOTING the historical qa-shoot.sh dummy SANITIZER_KEY while
+#     assessing finding #4 below. Value is the ascending-hex string
+#     `0123456789abcdef`×4 — an obvious dummy, not a real key.
+b63925b58839f13575add88e34d5e5b076bb329c:docs/evidence/gate-v4/laplace-gate-v4-report.md:generic-api-key:188
+
+# (3) Gate report QUOTING the historical auth.config.ts dev-fallback while
+#     assessing finding #5 below. Documentation of a known-safe value, not a
+#     live secret.
+b63925b58839f13575add88e34d5e5b076bb329c:docs/evidence/gate-v4/laplace-gate-v4-report.md:generic-api-key:200
+
+# (4) Historical hardcoded QA-LOCAL SANITIZER_KEY in scripts/qa-shoot.sh
+#     (ascending-hex `0123456789abcdef`×4). Local-only QA test value, never
+#     deployed. Remediated in HEAD → now `openssl rand -hex 32` per run.
+69cd488acfad5a45e6eeafbeae6d5b615a5671ff:scripts/qa-shoot.sh:generic-api-key:109
+
+# (5) Historical DEV-ONLY fallback JWT secret in src/lib/auth.config.ts. Used
+#     only on the non-production local-dev path; never the secret of any live
+#     deployment (the app has not been deployed). Remediated in HEAD → replaced
+#     by the low-entropy plain-English LOCAL_DEV_FALLBACK and resolveSecret()
+#     now THROWS in production. Nothing to rotate (never live).
+0942b44aeef77fe95abf0c8663245c82aba08746:src/lib/auth.config.ts:generic-api-key:18

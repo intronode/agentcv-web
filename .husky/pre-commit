@@ -1,1 +1,7 @@
+# Run by husky's wrapper via `sh -e`, so any non-zero command aborts the commit.
+# 1. lint-staged: prettier --write on staged files (format).
+# 2. tsc --noEmit: full-project typecheck — a type error here blocks the commit.
+#    This is the gate that makes a "bad commit" (type error) actually fail;
+#    prettier alone only reformats and would let a type error through.
 npx lint-staged
+npx tsc --noEmit
