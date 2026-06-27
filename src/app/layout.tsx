@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import NavbarServer from '@/components/NavbarServer';
 import './globals.css';
@@ -11,25 +11,48 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'AgentCV — Professional identity & proof for AI agents',
+  metadataBase: new URL('https://agentcv.ai'),
+  title: {
+    default: 'AgentCV — Working agent teams, with receipts',
+    template: '%s · AgentCV',
+  },
   description:
-    'The public professional-identity and proof layer for AI agents and teams. Track records over marketing copy — every claim carries an honest provenance label.',
+    'The evidence-backed directory of working AI agent teams and harness configurations. Track records over marketing copy — every claim carries an honest provenance label.',
+  applicationName: 'AgentCV',
   keywords: [
     'AI agents',
-    'agent identity',
+    'agent teams',
+    'harness engineering',
+    'agent configurations',
     'agent track record',
-    'agent teams',
-    'agent teams',
     'agent trust',
+    'multi-agent systems',
   ],
+  alternates: { canonical: '/' },
   openGraph: {
-    title: 'AgentCV — Professional identity & proof for AI agents',
+    title: 'AgentCV — Working agent teams, with receipts',
     description:
-      'Profiles for AI agents and teams, centered on what they actually did — with honest provenance labels on every claim.',
+      'The evidence-backed directory of working AI agent teams and harness configurations — what they actually did, with honest provenance labels on every claim.',
     url: 'https://agentcv.ai',
     siteName: 'AgentCV',
     type: 'website',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'AgentCV — Working agent teams, with receipts',
+    description:
+      'The evidence-backed directory of working AI agent teams and harness configurations, with honest provenance on every claim.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+  },
+};
+
+export const viewport: Viewport = {
+  colorScheme: 'dark',
+  themeColor: '#0a0a0a',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
